@@ -46,9 +46,9 @@ export function ServerCard({
                 <span className="sr-only">Edit</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-background dark:bg-gray-800">
               <DialogHeader>
-                <DialogTitle>Edit {serverKey}</DialogTitle>
+                <DialogTitle className="dark:text-white">Edit {serverKey}</DialogTitle>
               </DialogHeader>
               <ServerForm
                 config={config}
@@ -67,9 +67,9 @@ export function ServerCard({
                 <span className="sr-only">Delete</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-background dark:bg-gray-800">
               <DialogHeader>
-                <DialogTitle>Confirm Deletion</DialogTitle>
+                <DialogTitle className="dark:text-white">Confirm Deletion</DialogTitle>
               </DialogHeader>
               <p className="text-sm text-muted-foreground">
                 Are you sure you want to delete {serverKey}?

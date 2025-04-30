@@ -81,9 +81,9 @@ export function ServerForm({ config, onSubmit, buttonName }: ServerFormProps) {
           name="command"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Command</FormLabel>
+              <FormLabel className=" dark:text-gray-200">Command</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input className={"dark:bg-gray-800 dark:border-gray-500 dark:text-white"} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -94,16 +94,16 @@ export function ServerForm({ config, onSubmit, buttonName }: ServerFormProps) {
           name="args"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Arguments</FormLabel>
+              <FormLabel className=" dark:text-gray-200">Arguments</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="space-separated args" />
+                <Input className={"dark:bg-gray-800 dark:border-gray-500 dark:text-white"} {...field} placeholder="space-separated args" />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <div className="space-y-2">
-          <FormLabel>Environment Variables</FormLabel>
+          <FormLabel className=" dark:text-gray-200">Environment Variables</FormLabel>
           {fields.map((field, index) => (
             <div key={field.id} className="flex items-center gap-2">
               <FormField
@@ -112,7 +112,7 @@ export function ServerForm({ config, onSubmit, buttonName }: ServerFormProps) {
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormControl>
-                      <Input placeholder="Key" {...field} />
+                      <Input className={"dark:bg-gray-800 dark:border-gray-500 dark:text-white"} placeholder="Key" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -124,7 +124,7 @@ export function ServerForm({ config, onSubmit, buttonName }: ServerFormProps) {
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormControl>
-                      <Input placeholder="Value" {...field} />
+                      <Input className={"dark:bg-gray-800 dark:border-gray-500 dark:text-white"} placeholder="Value" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
