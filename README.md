@@ -64,6 +64,12 @@ bun tauri dev
 
 > **Disclaimer:** If you face any issues, delete the `package-lock.json` file and the `node_modules` directory, then run:
 > ```bash
+> npm cache clean --force
+> npm install
+> ```
+> Again, if you face any errors, remove the `package-lock.json` file and the `node_modules` directory again, then run:
+> ```
+> npm cache clean --force
 > npm install --legacy-peer-deps
 > ```
 >
