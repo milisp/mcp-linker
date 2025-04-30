@@ -35,9 +35,9 @@ export function ServerCard({
   };
 
   return (
-    <Card className="w-full max-w-xs border border-muted bg-muted/30 shadow-sm rounded-lg">
+    <Card className="w-full max-w-xs border shadow rounded-lg">
       <CardHeader className="flex items-center justify-between pb-2 px-3 pt-3">
-        <CardTitle className="text-base font-semibold truncate">
+        <CardTitle className="text-base font-semibold truncate dark:text-white">
           {serverKey}
         </CardTitle>
         <div className="flex space-x-1">
@@ -47,9 +47,9 @@ export function ServerCard({
                 <span>Get</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-background dark:bg-gray-800">
               <DialogHeader>
-                <DialogTitle>Get {serverKey}</DialogTitle>
+                <DialogTitle className="dark:text-white">Get {serverKey}</DialogTitle>
               </DialogHeader>
               <ServerForm
                 config={config}
@@ -72,9 +72,9 @@ export function ServerCard({
                 <span className="sr-only">Delete</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-background dark:bg-gray-800">
               <DialogHeader>
-                <DialogTitle>Confirm Deletion</DialogTitle>
+                <DialogTitle className="dark:text-white">Confirm Deletion</DialogTitle>
               </DialogHeader>
               <p className="text-sm text-muted-foreground">
                 Are you sure you want to delete {serverKey}?
