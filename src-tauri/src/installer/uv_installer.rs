@@ -1,8 +1,6 @@
 use std::process::Command;
 
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
-
+#[allow(dead_code)]
 pub fn install_uv_by_curl() -> Result<String, String> {
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
