@@ -1,5 +1,6 @@
 use std::process::Command;
 
+#[allow(dead_code)]
 pub fn install_uv_by_curl() -> Result<String, String> {
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
