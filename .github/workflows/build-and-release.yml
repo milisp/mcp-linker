@@ -1,0 +1,44 @@
+name: Build Tauri App for Windows (Dev)
+
+on:
+  push:
+    branches:
+      - dev  # Trigger only on push to the dev branch
+  workflow_dispatch: # Allow manual trigger in GitHub UI
+
+jobs:
+  build:
+    name: Build on Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Bun runtime
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          export PATH="$HOME/.bun/bin:$PATH"
+
+      - name: Install dependencies with npm
+        run: npm install --legacy-peer-deps
+
+      - name: Install Tauri CLI
+        run: npx tauri --version
+
+      - name: Build Tauri app
+        run: npx tauri build
+
+      - name: Upload build artifacts (EXE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MCP-Linker-Windows
+          path: src-tauri/target/release/bundle/**/*.exe
