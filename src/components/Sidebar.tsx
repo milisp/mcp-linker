@@ -24,11 +24,7 @@ export const Sidebar = ({
             onClick={() => open("https://github.com/milisp/mcp-linker")}
             className="flex text-xl font-bold text-gray-800 dark:text-gray-100 mb-2"
           >
-            <img
-              src="/logo.png"
-              alt="Logo"
-              style={{ width: 32, height: 32 }}
-            />
+            <img src="/logo.png" alt="Logo" style={{ width: 32, height: 32 }} />
             {t("appStore")}
           </a>
         </div>

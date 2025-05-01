@@ -1,8 +1,7 @@
 // AppList.tsx (updated)
-import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import type { ServerType } from "@/types";
-import { open } from "@tauri-apps/plugin-shell";
+import { useEffect, useRef, useState } from "react";
 import { ServerConfigDialog } from "./ServerConfigDialog";
 import { ServerCard } from "./server-card";
 
@@ -55,15 +54,6 @@ export function ServerList({
     setIsDialogOpen(true);
   };
 
-  function openUrl(url: string, branch = "main") {
-    if (url.includes("github.com") && url.includes("modelcontextprotocol")) {
-      const parts = url.split("/src/");
-      const baseUrl = parts[0];
-      const path = parts[1] ? `/src/${parts[1]}` : "";
-      url = `${baseUrl}/tree/${branch}${path}`;
-    }
-    open(url);
-  }
   return (
     <div ref={containerRef} className="h-full">
       <Input
@@ -87,7 +77,6 @@ export function ServerList({
               key={`${app.name}-${app.source}`}
               app={app}
               onOpenDialog={openDialog}
-              openUrl={openUrl}
               isFavorited={isFavorited(app.source)}
               onToggleFavorite={toggleFavorite}
             />

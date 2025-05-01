@@ -1,19 +1,18 @@
+import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import type { ServerType } from "@/types";
-import { Flame, Github } from "lucide-react";
+import { openUrl } from "@/utils/urlHelper";
+import { Flame, Github, Star, StarOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Star, StarOff } from "lucide-react";
 
 interface ServerCardProps {
   app: ServerType;
   onOpenDialog: (server: ServerType) => void;
-  openUrl: (url: string, branch?: string) => void;
   isFavorited: boolean;
   onToggleFavorite: (source: string) => void;
 }
@@ -21,7 +20,6 @@ interface ServerCardProps {
 export function ServerCard({
   app,
   onOpenDialog,
-  openUrl,
   isFavorited,
   onToggleFavorite,
 }: ServerCardProps) {

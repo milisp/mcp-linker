@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import type { ServerType, ServerConfig } from "../../types";
+import type { ServerType, ServerConfig } from "@/types";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -73,18 +73,8 @@ export const ServerConfigDialog = forwardRef<
           setEnvValues(initialEnvValues);
         }
 
-        // Try to load saved draft from localStorage
-        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (parsed.serverName) setServerName(parsed.serverName);
-            if (parsed.config) setConfig(parsed.config);
-            if (parsed.envValues) setEnvValues(parsed.envValues);
-          } catch {
-            // ignore parse errors
-          }
-        }
+        // Clear saved draft when server changes
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
       }
     }, [currentServer]);
 
