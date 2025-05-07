@@ -171,6 +171,7 @@ export const ServerConfigDialog = forwardRef<
                 envValues={envValues}
                 setEnvValues={setEnvValues}
                 onEnvChange={handleEnvChange}
+                isEdit={false}
               />
             )}
           </div>

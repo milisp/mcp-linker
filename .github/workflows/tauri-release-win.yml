@@ -1,15 +1,12 @@
 name: Tauri Release Windows
 
 on:
-  push:
-    tags:
-      - 'v*'
-    paths:
-      - '.github/workflows/tauri-release-win.yml'
-      - 'src/**'
-      - 'src-tauri/**'
-      - 'package.json'
-  workflow_dispatch: # Allow manual trigger in GitHub UI
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+        type: string
 
 jobs:
   release:
@@ -29,6 +26,8 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
+          name: ${{ inputs.version }}
+          tag_name: ${{ inputs.version }}
           files: dist/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
