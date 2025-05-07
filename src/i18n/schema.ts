@@ -1,5 +1,6 @@
 export interface TranslationSchema {
   get: string;
+  addCustomServer: string;
   confirmDeletion: string;
   deleteConfirmation: string;
   cancel: string;

@@ -3,6 +3,7 @@ import { TranslationSchema } from "../schema";
 const en: { translation: TranslationSchema } = {
   translation: {
     get: "Get",
+    addCustomServer: "Add Custom server",
     confirmDeletion: "Confirm Deletion",
     deleteConfirmation: "Are you sure you want to delete {{serverKey}}?",
     cancel: "Cancel",

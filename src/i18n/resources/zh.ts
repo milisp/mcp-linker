@@ -3,6 +3,7 @@ import { TranslationSchema } from "../schema";
 const zh: { translation: TranslationSchema } = {
   translation: {
     get: "获取",
+    addCustomServer: "添加定制的服务器",
     confirmDeletion: "确认删除",
     deleteConfirmation: "您确定要删除{{serverKey}}吗？",
     cancel: "取消",

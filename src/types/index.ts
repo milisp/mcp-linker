@@ -4,9 +4,9 @@ export type ServerConfig = {
   env?: Record<string, any>;
   disabled?: boolean;
   autoApprove?: string[];
-  type: string;
-  url: string;
-  headers: string;
+  type?: string;
+  url?: string;
+  headers?: Record<string, any>;
 };
 
 export type ServerType = {

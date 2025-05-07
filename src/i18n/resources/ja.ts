@@ -3,6 +3,7 @@ import { TranslationSchema } from "../schema";
 const ja: { translation: TranslationSchema } = {
   translation: {
     get: "取得",
+    addCustomServer: "Add Custom server",
     confirmDeletion: "Confirm Deletion",
     deleteConfirmation: "Are you sure you want to delete {{serverKey}}?",
     cancel: "Cancel",

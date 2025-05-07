@@ -34,7 +34,7 @@
 - [For Users](#-for-users)
   - [Download](#-download-mcp-linker)
   - [Features](#-features)
-  - [Quick Start Guide](#-quick-start-guide)
+  - [Quick Start](#-quick-start-guide)
   - [How It Works](#-how-it-works)
   - [Configuration File Paths](#-configuration-file-paths)
   - [Screenshots](#-screenshots)
