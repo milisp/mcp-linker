@@ -2,7 +2,9 @@
 set -e
 
 if [ -z "$1" ]; then
-  echo "Usage: ./release.sh v1.0.0"
+  echo "Usage: ./release.sh 1.0.0"
+  echo "can't use v1.0.0"
+  echo "`package > version` must be a semver string"
   exit 1
 fi
 
