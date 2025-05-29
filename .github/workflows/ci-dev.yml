@@ -1,0 +1,52 @@
+name: Build Tauri App for Windows dev
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Bun on Windows
+        shell: pwsh
+        run: |
+          irm https://bun.sh/install.ps1 | iex
+          echo "$HOME\.bun\bin" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
+
+      - name: Install dependencies bun
+        run: bun install
+
+      - name: Check Tauri version
+        run: bun tauri --version
+
+      - name: Set environment variables
+        run: |
+          echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" >> $env:GITHUB_ENV
+          echo "VITE_REDIRECT_URL=${{ secrets.VITE_REDIRECT_URL }}" >> $env:GITHUB_ENV
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> $env:GITHUB_ENV
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Build Rust app with bun
+        run: bun tauri build
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MCP-Linker-Windows-CI
+          path: |
+            src-tauri/target/release/bundle/**/*.exe
+            src-tauri/target/release/bundle/**/*.msi

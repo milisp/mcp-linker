@@ -26,7 +26,7 @@ export const InfiniteScrollServers = ({
   if (servers.length === 0) {
     return (
       <div className="p-8 text-gray-500 dark:text-gray-400">
-        {isLoading ? (
+        {isLoading || isFetching ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="space-y-2">

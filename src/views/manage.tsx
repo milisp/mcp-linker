@@ -12,17 +12,27 @@ export default function McpManage() {
   const [config, setConfig] = useState<ConfigType>({
     mcpServers: {},
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadConfig();
   }, [selectedClient, selectedPath]);
 
   async function loadConfig() {
+    setIsLoading(true);
+    setError(null);
     try {
+      // Validate path for Windows systems
+      if (selectedClient === "custom" && !selectedPath) {
+        throw new Error("Path is required for custom client");
+      }
+
       const data = await invoke<ConfigType>("read_json_file", {
         clientName: selectedClient,
         path: selectedPath || undefined,
       });
+
       if (data) {
         setConfig(data);
       } else {
@@ -30,7 +40,12 @@ export default function McpManage() {
       }
     } catch (error) {
       console.error(`Error loading config: ${error}`);
-      toast.error("Failed to load configuration");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load configuration";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -49,7 +64,11 @@ export default function McpManage() {
       toast.success("Configuration updated successfully");
     } catch (error) {
       console.error(`Error updating config: ${error}`);
-      toast.error("Failed to update configuration");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to update configuration";
+      toast.error(errorMessage);
     }
   };
 
@@ -69,10 +88,43 @@ export default function McpManage() {
       await loadConfig();
       toast.success("Configuration deleted successfully");
     } catch (error) {
-      // If backend operation fails, restore the previous state
       console.error(`Error deleting config: ${error}`);
-      toast.error("Failed to delete configuration");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to delete configuration";
+      toast.error(errorMessage);
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading configuration...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-center p-4 bg-red-50 rounded-lg">
+          <h3 className="text-red-800 font-medium">
+            Error Loading Configuration
+          </h3>
+          <p className="text-red-600 mt-2">{error}</p>
+          <button
+            onClick={loadConfig}
+            className="mt-4 px-4 py-2 bg-red-100 text-red-800 rounded hover:bg-red-200 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -86,6 +138,11 @@ export default function McpManage() {
           onDelete={deleteConfigKey}
         />
       ))}
+      {Object.keys(config.mcpServers).length === 0 && (
+        <div className="col-span-full text-center py-8 text-gray-500">
+          No servers configured yet
+        </div>
+      )}
     </div>
   );
 }
