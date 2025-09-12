@@ -1,6 +1,6 @@
 [package]
 name = "mcp-linker"
-version = "1.7.1"
+version = "1.7.2"
 description = "Easily connect and manage MCP servers for Claude and other clients"
 authors = ["milisp"]
 edition = "2021"

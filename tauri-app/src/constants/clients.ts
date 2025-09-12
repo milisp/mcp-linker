@@ -56,8 +56,8 @@ const clients = [
   { 
     value: "codex", 
     label: "Codex", 
-    url: "", 
-    desc: "Reads/writes MCP servers in ~/.codex/config.toml" 
+    url: "https://github.com/openai/codex", 
+    desc: "Codex CLI is a coding agent from OpenAI that runs locally on your computer." 
   },
 ];
 
