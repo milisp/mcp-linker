@@ -33,10 +33,17 @@ export function LicenseNag() {
     if (typeof window !== "undefined" && sessionStorage.getItem(SESSION_FLAG)) {
       return false; // already dismissed this session
     }
+    // Wait for user state to be known to avoid flashing for paid users
+    if (loading || user === null) {
+      return false;
+    }
     const tier = user?.tier?.toUpperCase();
-    // Show only if tier is FREE or missing
-    return !tier || tier === "FREE";
-  }, [user?.tier]);
+    const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
+    const hasActiveTrial = Boolean(user?.trialActive && trialEndsAt && trialEndsAt.getTime() > Date.now());
+    console.log('user has trial', hasActiveTrial, user)
+    // Show only if tier is FREE or missing AND no active trial
+    return (!tier || tier === "FREE") && !hasActiveTrial;
+  }, [user, loading]);
 
   // Fetch current user once on mount if unknown
   useEffect(() => {
@@ -66,6 +73,16 @@ export function LicenseNag() {
     };
     load();
   }, [shouldShow]);
+
+  // Auto-dismiss if a paid tier (including LIFETIME/PRO/TEAM) is detected after opening
+  useEffect(() => {
+    const tier = user?.tier?.toUpperCase();
+    const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
+    const hasActiveTrial = Boolean(user?.trialActive && trialEndsAt && trialEndsAt.getTime() > Date.now());
+    if (open && !loading && ((tier && tier !== "FREE") || hasActiveTrial)) {
+      onDismiss();
+    }
+  }, [open, user?.tier, user?.trialActive, user?.trialEndsAt, loading]);
 
   const onDismiss = () => {
     setOpen(false);
