@@ -44,6 +44,34 @@ pub(crate) fn normalize_codex_config(mut server_config: Value) -> Result<Value, 
         }
     }
 
+    // Normalize disabled/isActive flags into enabled boolean
+    if let Some(disabled_flag) = server_config
+        .get("disabled")
+        .and_then(|v| v.as_bool())
+    {
+        if let Some(obj) = server_config.as_object_mut() {
+            if disabled_flag {
+                obj.insert("enabled".into(), Value::from(false));
+            } else {
+                obj.remove("enabled");
+            }
+            obj.remove("disabled");
+        }
+    }
+    if let Some(is_active_flag) = server_config
+        .get("isActive")
+        .and_then(|v| v.as_bool())
+    {
+        if let Some(obj) = server_config.as_object_mut() {
+            if !is_active_flag {
+                obj.insert("enabled".into(), Value::from(false));
+            } else {
+                obj.remove("enabled");
+            }
+            obj.remove("isActive");
+        }
+    }
+
     println!("[Codex] normalize output: {}", server_config);
     Ok(server_config)
 }
