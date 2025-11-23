@@ -7,9 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { relaunch } from '@tauri-apps/plugin-process';
 import { check, Update } from "@tauri-apps/plugin-updater";
 import { useEffect, useState } from "react";
-import { relaunch } from '@tauri-apps/plugin-process';
 
 interface UpdateState {
   update?: Update;
@@ -68,8 +68,7 @@ export function UpdateChecker() {
 
   // Check update frequency control
   const shouldCheckForUpdates = (): boolean => {
-    // In development, always allow checks so it's easy to verify UI
-    if (import.meta.env.DEV) return true;
+    if (import.meta.env.DEV) return false;
     const lastCheckTime = localStorage.getItem(STORAGE_KEYS.LAST_CHECK_TIME);
     if (!lastCheckTime) return true;
 
