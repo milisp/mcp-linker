@@ -8,9 +8,6 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "fs:default",
-    "fs:default",
-    "fs:default",
     "opener:default",
     "shell:default",
     "dialog:default",
@@ -31,6 +28,10 @@
     },
     {
       "identifier": "fs:allow-appcache-write"
+    },
+    {
+      "identifier": "fs:allow-app-read",
+      "allow": [{ "path": "$HOME/.codex/*" },{ "path": "$HOME/.codex/sessions/**/*" }]
     }
   ]
 }

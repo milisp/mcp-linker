@@ -1,5 +1,5 @@
-import { ChatPane } from "@/components/ChatPane";
-import { FileViewer } from "@/components/FileViewer";
+import { ChatView } from "@/components/chat/ChatView";
+import { FileViewer } from "@/components/filetree/FileViewer";
 import { useFileViewerStore } from "@/hooks/useFileViewerStore";
 
 export default function ChatPage() {
@@ -11,20 +11,20 @@ export default function ChatPage() {
         <>
           {/* File content on the left */}
           <div className="flex-1 min-w-0">
-            <FileViewer 
-              filePath={selectedFile} 
-              onClose={() => setSelectedFile(null)} 
+            <FileViewer
+              filePath={selectedFile}
+              onClose={() => setSelectedFile(null)}
             />
           </div>
           {/* Chat on the right */}
           <div className="w-96 border-l">
-            <ChatPane />
+            <ChatView />
           </div>
         </>
       ) : (
         /* Full width chat when no file selected */
         <div className="flex-1">
-          <ChatPane />
+          <ChatView />
         </div>
       )}
     </div>

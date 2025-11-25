@@ -1,6 +1,6 @@
-import { FileViewer } from "./FileViewer";
-import { ChatPane } from "./ChatPane";
 import { useFileViewerStore } from "@/hooks/useFileViewerStore";
+import { FileViewer } from "./filetree/FileViewer";
+import { ChatView } from "./chat/ChatView";
 
 interface MainContentProps {
   currentTab: string;
@@ -20,7 +20,7 @@ export function MainContent({ currentTab }: MainContentProps) {
           />
         </div>
         <div className="w-96 border-l">
-          <ChatPane />
+          <ChatView />
         </div>
       </div>
     );
@@ -29,7 +29,7 @@ export function MainContent({ currentTab }: MainContentProps) {
   // Default: just show ChatPane for other tabs or when no file selected
   return (
     <div className="flex-1">
-      <ChatPane />
+      <ChatView />
     </div>
   );
 }

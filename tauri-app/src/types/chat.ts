@@ -1,41 +1,52 @@
-export interface ChatMessage {
-  role: "user" | "assistant" | "system";
-  content: string;
-  timestamp: number;
-  model?: string;
-  image?: string;
+import type { EventMsg } from "@/bindings/EventMsg";
+
+export interface EventMeta {
+  streamKey?: string;
+  streamStartedAt?: number;
+  streamDurationMs?: number;
+  persisted?: boolean;
 }
 
-export type ChatMode = "chat" | "agent";
-
-export interface Conversation {
-  id: string;
-  title: string;
-  messages: ChatMessage[];
-  mode: ChatMode;
-  createdAt: number;
-  updatedAt: number;
-  isFavorite?: boolean;
+export interface CodexEvent {
+  id: number;
+  event: string; // "codex:event"
+  payload: {
+    method: string; // e.g. "codex/event/agent_message"
+    params: {
+      conversationId: string;
+      id: string;
+      msg: EventMsg;
+    };
+  };
+  meta?: EventMeta;
 }
 
-export interface ChatRequest {
-  message: string;
-  provider: string;
+export type ResumeConversationResult = {
+  conversationId: string;
   model: string;
-}
+  initialMessages?: CodexEvent["payload"]["params"]["msg"][] | null;
+};
 
-export type Provider =
-  | "anthropic"
-  | "openai"
-  | "openrouter"
-  | "google"
-  | "ollama";
+export const extractInitialMessages = (
+  response: ResumeConversationResult,
+): CodexEvent["payload"]["params"]["msg"][] | null => {
+  return response.initialMessages ?? null;
+};
 
-export interface AppConfig {
-  provider?: string;
-  api_key?: string;
-  chat_url?: string;
-  model_name?: string;
-  proxy?: boolean;
-  support_tool?: boolean;
+// dont need exec_command_output_delta
+export const DELTA_EVENT_TYPES = new Set<EventMsg["type"]>([
+  "agent_message_delta",
+  "agent_message_content_delta",
+  "agent_reasoning_delta",
+  "agent_reasoning_raw_content_delta",
+  "reasoning_content_delta",
+  "reasoning_raw_content_delta",
+]);
+
+export interface MediaAttachment {
+  id: string;
+  type: "image" | "audio";
+  path: string;
+  name: string;
+  mimeType?: string;
 }

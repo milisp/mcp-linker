@@ -7,7 +7,7 @@ import { useDeepLink } from "@/hooks/useDeepLink";
 import { useGlobalDialogStore } from "@/stores/globalDialogStore";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./App.css";
-import Layout from "./components/Layout";
+import Layout from "@/components/layout";
 import LicenseNag from "@/components/common/LicenseNag";
 
 const queryClient = new QueryClient({
@@ -29,7 +29,11 @@ function App() {
       <McpRefreshProvider>
         <ThemeProvider storageKey="vite-ui-theme">
           <Layout />
-          <GlobalDialog open={open} type={type || "login"} onClose={hideDialog} />
+          <GlobalDialog
+            open={open}
+            type={type || "login"}
+            onClose={hideDialog}
+          />
           <LicenseNag />
           <UpdateChecker />
         </ThemeProvider>

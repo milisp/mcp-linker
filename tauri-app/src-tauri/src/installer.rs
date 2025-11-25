@@ -1,15 +1,6 @@
-use serde::{Deserialize, Serialize};
 use std::process::Command;
 
 mod uv_installer;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct InstallResult {
-    success: bool,
-    message: String,
-    stderr: Option<String>,
-    stdout: Option<String>,
-}
 
 // Fixed: Consistent parameter naming
 #[tauri::command]

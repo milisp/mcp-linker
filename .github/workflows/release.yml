@@ -66,6 +66,12 @@ jobs:
         run: bun install
         working-directory: tauri-app
 
+      - name: codex export bindings
+        run: |
+          cargo install --git https://github.com/milisp/codexia codex_bindings
+          codex_export_bindings
+        working-directory: tauri-app
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

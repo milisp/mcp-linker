@@ -3,16 +3,11 @@
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
 )]
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::env;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
-
-use cmd::chat::ChatState;
-use mcp_client::tool::ToolSet;
-
-pub struct GlobalToolSet(pub Arc<ToolSet>);
+use sleep::{allow_sleep, prevent_sleep, SleepState};
+use codex_client::state::AppState;
 
 mod adapter;
 mod claude_code_commands;
@@ -28,16 +23,29 @@ mod filesystem;
 mod git;
 mod installer;
 mod json_manager;
-mod mcp_client;
 mod mcp_commands;
 mod mcp_crud;
 mod mcp_sync;
+mod sleep;
+mod state;
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Config {
-    #[serde(rename = "mcpServers", alias = "servers")]
-    mcp_servers: Value,
-}
+use state::WatchState;
+use filesystem::{
+    directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
+    file_analysis::calculate_file_tokens,
+    file_io::{read_file, write_file},
+    file_parsers::{csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content},
+    git_diff::get_git_file_diff,
+    git_status::get_git_status,
+    git_worktree::{
+        prepare_git_worktree,
+        git_commit_changes,
+        apply_reverse_patch,
+        commit_changes_to_worktree,
+        delete_git_worktree,
+    },
+    watch::{start_watch_directory, stop_watch_directory},
+};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -102,67 +110,82 @@ pub fn run() {
             claude_disabled::claude_disable_server,
             claude_disabled::claude_enable_server,
             claude_disabled::claude_update_disabled,
-            filesystem::read_directory,
-            filesystem::get_default_directories,
-            filesystem::read_file_content,
-            filesystem::calculate_file_tokens,
-            cmd::chat::send_message,
-            cmd::chat::send_message_stream,
-            cmd::chat::list_tools,
+            read_directory,
+            get_default_directories,
+            search_files,
+            canonicalize_path,
+            calculate_file_tokens,
+            read_file,
+            write_file,
+            read_pdf_content,
+            read_csv_content,
+            read_xlsx_content,
+            get_git_file_diff,
+            get_git_status,
+            prepare_git_worktree,
+            git_commit_changes,
+            apply_reverse_patch,
+            delete_git_worktree,
+            commit_changes_to_worktree,
+            start_watch_directory,
+            stop_watch_directory,
+            codex_client::commands::check::check_codex_version,
+            codex_client::commands::read_codex_config,
+            codex_client::commands::get_project_name,
+            codex_client::commands::is_version_controlled,
+            codex_client::commands::set_project_trust,
+            codex_client::commands::read_mcp_servers,
+            codex_client::commands::add_mcp_server,
+            codex_client::commands::delete_mcp_server,
+            codex_client::commands::set_mcp_server_enabled,
+            codex_client::commands::read_model_providers,
+            codex_client::commands::read_profiles,
+            codex_client::commands::get_provider_config,
+            codex_client::commands::get_profile_config,
+            codex_client::commands::add_or_update_profile,
+            codex_client::commands::delete_profile,
+            codex_client::commands::add_or_update_model_provider,
+            codex_client::commands::delete_model_provider,
+            codex_client::commands::send_user_message,
+            codex_client::commands::turn_start,
+            codex_client::commands::new_conversation,
+            codex_client::commands::resume_conversation,
+            codex_client::commands::interrupt_conversation,
+            codex_client::commands::respond_exec_command_request,
+            codex_client::commands::respond_apply_patch_request,
+            codex_client::commands::get_account,
+            codex_client::commands::login_account_chatgpt,
+            codex_client::commands::login_account_api_key,
+            codex_client::commands::cancel_login_account,
+            codex_client::commands::logout_account,
+            codex_client::commands::add_conversation_listener,
+            codex_client::commands::remove_conversation_listener,
+            codex_client::commands::get_account_rate_limits,
+            codex_client::commands::initialize_client,
+            codex_client::commands::scan_projects,
+            codex_client::commands::load_project_sessions,
+            codex_client::commands::delete_session_file,
+            codex_client::commands::update_cache_title,
+            codex_client::commands::delete_sessions_files,
+            codex_client::commands::write_project_cache,
+            codex_client::commands::update_project_favorites,
+            codex_client::commands::remove_project_session,
+            codex_client::commands::get_session_files,
+            codex_client::commands::read_session_file,
+            codex_client::commands::read_token_usage,
+            prevent_sleep,
+            allow_sleep,
         ])
-        .manage(ChatState {
-            session: Mutex::new(None),
-        })
         .manage(Arc::new(Mutex::new(None::<String>)))
-        .setup(|app| {
+        .manage(AppState::new())
+        .manage(SleepState::default())
+        .manage(WatchState::new())
+        .setup(|_app| {
             #[cfg(any(windows, target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
-                app.deep_link().register_all()?;
+                _app.deep_link().register_all()?;
             }
-
-            let app_handle = app.handle().clone();
-
-            tauri::async_runtime::spawn(async move {
-                let mcp_config = match config::McpConfig::load(&app_handle).await {
-                    Ok(cfg) => cfg,
-                    Err(e) => {
-                        eprintln!("Failed to load MCP config: {e}. Using default empty config.");
-                        Default::default()
-                    }
-                };
-
-                let mcp_clients = match mcp_config.create_mcp_clients().await {
-                    Ok(clients) => clients,
-                    Err(e) => {
-                        eprintln!(
-                            "Failed to create MCP clients: {e}. Continuing without MCP clients."
-                        );
-                        std::collections::HashMap::new()
-                    }
-                };
-
-                let mut tool_set = mcp_client::tool::ToolSet::default();
-                for (name, client) in mcp_clients.iter() {
-                    println!("load MCP tool: {}", name);
-                    let server = client.peer().clone();
-                    match mcp_client::tool::get_mcp_tools(server).await {
-                        Ok(tools) => {
-                            for tool in tools {
-                                tool_set.add_tool(tool);
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to load tools for '{}': {e}", name);
-                        }
-                    }
-                }
-                tool_set.set_clients(mcp_clients);
-                println!("{:?}", tool_set);
-
-                app_handle.manage(GlobalToolSet(Arc::new(tool_set)));
-            });
-
             Ok(())
         })
         .run(tauri::generate_context!())

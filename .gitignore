@@ -34,3 +34,5 @@ bun.lockb
 
 .claude/
 CLAUDE.md
+
+tauri-app/src/bindings/

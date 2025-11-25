@@ -7,8 +7,6 @@ use std::path::PathBuf;
 #[tauri::command]
 pub async fn read_json_file(client_name: String, path: Option<String>) -> Result<Value, String> {
     if client_name == "codex" {
-        // Read from ~/.codex/config.toml via codex commands
-        println!("[JSONCommands] read_json_file for codex");
         let servers = codex_cmds::read_mcp_servers().await?;
         let disabled = codex_cmds::list_disabled().await?;
         let json = json!({ "mcpServers": servers, "__disabled": disabled });
