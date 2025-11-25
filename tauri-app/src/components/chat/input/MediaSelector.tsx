@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { createMediaAttachment, isMediaFile } from "@/utils/mediaUtils";
+import { open } from "@tauri-apps/plugin-dialog";
 import { Image, Music, Paperclip } from "lucide-react";
 import React from "react";
 
@@ -15,7 +16,6 @@ export const MediaSelector: React.FC = () => {
 
   const handleSelectMedia = async () => {
     try {
-      const { open } = await import("@tauri-apps/plugin-dialog");
       const selected: string | string[] | null = await open({
         multiple: true,
         filters: [
