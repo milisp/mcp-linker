@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/v2/config.json",
   "productName": "MCPLinker",
   "version": "../package.json",
-  "identifier": "com.milisp.mcplinker",
+  "identifier": "dev.milisp.mcplinker",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -40,7 +40,34 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "resources": [],
+    "externalBin": [],
+    "copyright": "© 2025 Milisp. All rights reserved.",
+    "category": "DeveloperTool",
+    "shortDescription": "add & syncs MCP servers across clients",
+    "longDescription": "mcp manager, add & syncs MCP server configurations across clients like Claude, Cursor💡 build-in Codexia agent",
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      },
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+      }
+    },
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.15",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "providerShortName": null,
+      "entitlements": "entitlements.plist",
+      "dmg": {
+        "windowSize": { "width": 540, "height": 380 },
+        "appPosition": { "x": 140, "y": 200 },
+        "applicationFolderPosition": { "x": 400, "y": 200 }
+      }
+    }
   },
   "plugins": {
     "deep-link": {

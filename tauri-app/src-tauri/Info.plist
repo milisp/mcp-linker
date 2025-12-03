@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSRequiresAquaSystemAppearance</key>
+  <false/>
+  <key>LSMinimumSystemVersion</key>
+  <string>10.15</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.8.0</string>
+  <key>CFBundleName</key>
+  <string>MCPLinker</string>
+  <key>CFBundleDisplayName</key>
+  <string>MCP Linker</string>
+  <key>CFBundleIdentifier</key>
+  <string>dev.milisp.mcplinker</string>
+  <key>CFBundleDocumentTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeName</key>
+      <string>mcp-linker Agent</string>
+      <key>CFBundleTypeRole</key>
+      <string>Editor</string>
+      <key>CFBundleTypeExtensions</key>
+      <array>
+        <string>db</string>
+        <string>toml</string>
+        <string>json</string>
+        <string>jsonl</string>
+      </array>
+      <key>CFBundleTypeIconFile</key>
+      <string>icon.icns</string>
+      <key>LSHandlerRank</key>
+      <string>Owner</string>
+    </dict>
+  </array>
+  <key>NSAppleEventsUsageDescription</key>
+  <string>mcp-linker needs to send Apple Events to other applications.</string>
+  <key>NSAppleScriptEnabled</key>
+  <true/>
+  <key>NSCameraUsageDescription</key>
+  <string>mcp-linker needs camera access for capturing images for AI processing.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>mcp-linker needs microphone access for voice input features.</string>
+</dict>
+</plist>
