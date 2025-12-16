@@ -45,5 +45,13 @@
     <true/>
     <key>com.apple.security.cs.disable-executable-page-protection</key>
     <true/>
+
+    <!-- Allow reading environment variables -->
+    <key>com.apple.security.get-task-allow</key>
+    <true/>
+
+    <!-- Allow DYLD environment variables -->
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
 </dict>
 </plist>
