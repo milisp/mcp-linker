@@ -148,16 +148,10 @@ export const getNavigationRoutes = (
       icon: iconMap.discover,
     },
     {
-      id: "chat",
-      name: "Chat",
-      path: "/chat",
-      icon: iconMap.chat,
-    },
-    {
-      id: "notes",
-      name: "Notes",
-      path: "/notes",
-      icon: iconMap.notes,
+      id: "manage",
+      name: t("nav.manage"),
+      path: "/manage",
+      icon: iconMap.manage,
     },
     {
       id: "dxt",
@@ -166,10 +160,16 @@ export const getNavigationRoutes = (
       icon: iconMap.dxt,
     },
     {
-      id: "manage",
-      name: t("nav.manage"),
-      path: "/manage",
-      icon: iconMap.manage,
+      id: "chat",
+      name: "Codex Agent",
+      path: "/chat",
+      icon: iconMap.chat,
+    },
+    {
+      id: "notes",
+      name: "Notes",
+      path: "/notes",
+      icon: iconMap.notes,
     },
     {
       id: "claude-code-manage",
