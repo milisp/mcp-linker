@@ -1,15 +1,15 @@
-import React, { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowUp, Square, AudioLines, Globe } from "lucide-react";
-import { useChatInputStore } from "@/stores/chatInputStore";
-import { MediaSelector } from "./MediaSelector";
-import { MediaAttachmentList } from "./MediaAttachmentList";
-import { useCodexStore } from "@/stores/useCodexStore";
-import { PromptOptimizerControl } from "./PromptOptimizerControl";
 import { usePromptOptimization } from "@/hooks/usePromptOptimization";
+import { useChatInputStore } from "@/stores/codex/useChatInputStore";
+import { useCodexStore } from "@/stores/codex/useCodexStore";
 import type { MediaAttachment } from "@/types/chat";
+import { ArrowUp, AudioLines, Globe, Square } from "lucide-react";
+import React, { useEffect, useRef } from "react";
 import { FileSearchPopover } from "./FileSearchPopover";
+import { MediaAttachmentList } from "./MediaAttachmentList";
+import { MediaSelector } from "./MediaSelector";
+import { PromptOptimizerControl } from "./PromptOptimizerControl";
 
 interface ChatInputProps {
   inputValue: string;

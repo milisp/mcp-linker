@@ -7,9 +7,9 @@ use std::env;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
 use sleep::{allow_sleep, prevent_sleep, SleepState};
-use codex_client::state::AppState;
 
 mod adapter;
+mod codex_commands;
 mod claude_code_commands;
 mod claude_disabled;
 mod client;
@@ -29,6 +29,7 @@ mod mcp_sync;
 mod sleep;
 mod state;
 
+use codex_commands::CodexState;
 use state::WatchState;
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
@@ -129,63 +130,61 @@ pub fn run() {
             commit_changes_to_worktree,
             start_watch_directory,
             stop_watch_directory,
-            codex_client::commands::check::check_codex_version,
-            codex_client::commands::read_codex_config,
-            codex_client::commands::get_project_name,
-            codex_client::commands::is_version_controlled,
-            codex_client::commands::set_project_trust,
-            codex_client::commands::read_mcp_servers,
-            codex_client::commands::add_mcp_server,
-            codex_client::commands::delete_mcp_server,
-            codex_client::commands::set_mcp_server_enabled,
-            codex_client::commands::read_model_providers,
-            codex_client::commands::read_profiles,
-            codex_client::commands::get_provider_config,
-            codex_client::commands::get_profile_config,
-            codex_client::commands::add_or_update_profile,
-            codex_client::commands::delete_profile,
-            codex_client::commands::add_or_update_model_provider,
-            codex_client::commands::delete_model_provider,
-            codex_client::commands::send_user_message,
-            codex_client::commands::turn_start,
-            codex_client::commands::new_conversation,
-            codex_client::commands::resume_conversation,
-            codex_client::commands::interrupt_conversation,
-            codex_client::commands::respond_exec_command_request,
-            codex_client::commands::respond_apply_patch_request,
-            codex_client::commands::get_account,
-            codex_client::commands::login_account_chatgpt,
-            codex_client::commands::login_account_api_key,
-            codex_client::commands::cancel_login_account,
-            codex_client::commands::logout_account,
-            codex_client::commands::add_conversation_listener,
-            codex_client::commands::remove_conversation_listener,
-            codex_client::commands::get_account_rate_limits,
-            codex_client::commands::initialize_client,
-            codex_client::commands::scan_projects,
-            codex_client::commands::load_project_sessions,
-            codex_client::commands::delete_session_file,
-            codex_client::commands::update_cache_title,
-            codex_client::commands::delete_sessions_files,
-            codex_client::commands::write_project_cache,
-            codex_client::commands::update_project_favorites,
-            codex_client::commands::remove_project_session,
-            codex_client::commands::get_session_files,
-            codex_client::commands::read_session_file,
-            codex_client::commands::read_token_usage,
+            codex_commands::check::check_codex_version,
+            codex_commands::read_codex_config,
+            codex_commands::get_project_name,
+            codex_commands::is_version_controlled,
+            codex_commands::set_project_trust,
+            codex_commands::read_model_providers,
+            codex_commands::read_profiles,
+            codex_commands::get_provider_config,
+            codex_commands::get_profile_config,
+            codex_commands::add_or_update_profile,
+            codex_commands::delete_profile,
+            codex_commands::add_or_update_model_provider,
+            codex_commands::delete_model_provider,
+            codex_commands::send_user_message,
+            codex_commands::turn_start,
+            codex_commands::new_conversation,
+            codex_commands::resume_conversation,
+            codex_commands::interrupt_conversation,
+            codex_commands::respond_exec_command_request,
+            codex_commands::respond_apply_patch_request,
+            codex_commands::get_account,
+            codex_commands::login_account_chatgpt,
+            codex_commands::login_account_api_key,
+            codex_commands::cancel_login_account,
+            codex_commands::logout_account,
+            codex_commands::add_conversation_listener,
+            codex_commands::remove_conversation_listener,
+            codex_commands::get_account_rate_limits,
+            codex_commands::initialize_client,
+            codex_commands::scan_projects,
+            codex_commands::load_project_sessions,
+            codex_commands::update_cache_title,
+            codex_commands::update_project_favorites,
+            codex_commands::remove_project_session,
+            codex_commands::read_token_usage,
             prevent_sleep,
             allow_sleep,
         ])
         .manage(Arc::new(Mutex::new(None::<String>)))
-        .manage(AppState::new())
+        .manage(CodexState::new())
         .manage(SleepState::default())
         .manage(WatchState::new())
-        .setup(|_app| {
+        .setup(|app| {
             #[cfg(any(windows, target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
-                _app.deep_link().register_all()?;
+                app.deep_link().register_all()?;
             }
+
+            let codex_state = app.state::<CodexState>();
+            codex_commands::setup_event_bridge(
+                app.handle().clone(),
+                codex_state.client_state.clone(),
+            );
+
             Ok(())
         })
         .run(tauri::generate_context!())

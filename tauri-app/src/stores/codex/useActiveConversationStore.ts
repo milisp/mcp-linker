@@ -1,6 +1,6 @@
-import { create } from "zustand";
 import { ConversationSummary } from "@/bindings/ConversationSummary";
-import { useCodexStore } from "@/stores/useCodexStore";
+import { useCodexStore } from "@/stores/codex/useCodexStore";
+import { create } from "zustand";
 
 type ConversationStateByCwd = {
   activeConversationId: string | null;

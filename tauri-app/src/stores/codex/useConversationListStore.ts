@@ -1,6 +1,6 @@
 import type { ConversationSummary } from "@/bindings/ConversationSummary";
 import type { SessionSource } from "@/bindings/SessionSource";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+import { useActiveConversationStore } from "@/stores/codex/useActiveConversationStore";
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 

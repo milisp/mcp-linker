@@ -4,14 +4,9 @@ import type { TurnStartParams } from "@/bindings/v2/TurnStartParams";
 import type { TurnStartResponse } from "@/bindings/v2/TurnStartResponse";
 import type { UserInput } from "@/bindings/v2/UserInput";
 import type { mode as ConversationMode } from "@/components/config/ConversationParams";
-import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
+import { useBuildNewConversationParams } from "@/hooks/codex";
 import { useProviderStore, useSandboxStore } from "@/stores";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useCodexStore } from "@/stores/useCodexStore";
-import { waitForConversationListenerReady } from "@/stores/useConversationListenerStore";
-import { useConversationListStore } from "@/stores/useConversationListStore";
-import { useEventStore } from "@/stores/useEventStore";
-import { useSessionStore } from "@/stores/useSessionStore";
+import { useActiveConversationStore, useCodexStore, useConversationListStore, useEventStore, useSessionStore, waitForConversationListenerReady } from "@/stores/codex";
 import { type MediaAttachment } from "@/types/chat";
 import { buildMessageParams } from "@/utils/buildParams";
 import { invoke } from "@tauri-apps/api/core";
@@ -70,15 +65,12 @@ const buildSandboxPolicy = (
 const normalizeApprovalPolicy = (policy: string): V2AskForApproval => {
   switch (policy) {
     case "untrusted":
-      return "unlessTrusted";
     case "on-failure":
-      return "onFailure";
     case "on-request":
-      return "onRequest";
     case "never":
-      return "never";
+      return policy as V2AskForApproval;
     default:
-      return "onRequest";
+      return "on-request";
   }
 };
 

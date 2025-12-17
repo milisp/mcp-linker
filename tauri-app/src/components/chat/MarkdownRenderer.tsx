@@ -1,10 +1,10 @@
-import { memo, useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { cn } from '@/lib/utils';
 import { useThemeStore } from '@/stores/settings/ThemeStore';
+import { memo, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import remarkGfm from 'remark-gfm';
 
 interface MarkdownRendererProps {
   content: string;
@@ -21,7 +21,7 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
   content, 
   className = "" 
 }) => {
-  const theme = useThemeStore((state) => state.theme);
+  const { theme } = useThemeStore();
   const syntaxTheme = useMemo(
     () => (theme === 'dark' ? oneDark : oneLight),
     [theme]
@@ -30,7 +30,7 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
   return (
     <div
       className={cn(
-        'text-sm text-foreground leading-relaxed prose prose-sm max-w-full break-words overflow-hidden',
+        'text-sm text-foreground leading-relaxed prose prose-sm max-w-full overflow-hidden',
         theme === 'dark' && 'prose-invert',
         className,
       )}
@@ -41,14 +41,14 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
           p: ({ children }) => <p className="mb-2 last:mb-0 select-text">{children}</p>,
           
           code: ({ inline, className, children, ...props }: any) => {
-            if (!inline) {
-              const language = getLanguage(className);
+            const language = getLanguage(className);
+            if (!inline && language) {
               const codeContent = String(children || '').replace(/\n$/, '');
-              
+
               return (
                 <SyntaxHighlighter
                   style={syntaxTheme}
-                  language={language || 'text'}
+                  language={language}
                   PreTag="div"
                   wrapLongLines
                   customStyle={{ margin: 0, borderRadius: 8, background: 'transparent' }}
@@ -59,11 +59,11 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
                 </SyntaxHighlighter>
               );
             }
-            
+
             return (
               <code
                 className={cn(
-                  'px-1 py-0.5 rounded text-[13px] font-mono select-text',
+                  'px-1 py-0.5 rounded text-[13px] font-mono select-text whitespace-nowrap',
                   theme === 'dark' ? 'bg-muted text-primary' : 'bg-gray-100 text-gray-800'
                 )}
                 {...props}

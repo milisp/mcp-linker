@@ -1,18 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  EventItem,
   EVENT_FILTER_OPTIONS,
+  EventItem,
   type EventFilterType,
 } from "@/components/events/EventItem";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useChatScroll } from "@/hooks/codex/useChatScroll";
 import type { CodexEvent } from "@/types/chat";
 import { DELTA_EVENT_TYPES } from "@/types/chat";
-import { useChatScroll } from "@/hooks/useChatScroll";
-import { ScrollButtons } from "./actions/ScrollButtons";
-import { EventMsgType } from "./EventMsgType";
-import { EventFilterPopover } from "./EventFilterPopover";
 import { Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ScrollButtons } from "./actions/ScrollButtons";
 import BouncingDotsLoader from "./BouncingDotsLoader";
+import { EventFilterPopover } from "./EventFilterPopover";
+import { EventMsgType } from "./EventMsgType";
 
 // Build a stable key for React list rendering. Avoid index-based keys.
 const getEventKey = (event: CodexEvent): string => {

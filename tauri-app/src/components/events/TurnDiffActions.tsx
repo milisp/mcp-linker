@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useCodexStore } from "@/stores/useCodexStore";
+import { useActiveConversationStore } from "@/stores/codex/useActiveConversationStore";
+import { useCodexStore } from "@/stores/codex/useCodexStore";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
 import { invoke } from "@tauri-apps/api/core";
 import { Files } from "lucide-react";

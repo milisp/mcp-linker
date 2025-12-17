@@ -1,9 +1,9 @@
-import { useMemo } from "react";
-import { CheckCircle2 } from "lucide-react";
-import { CodexEvent } from "@/types/chat";
-import { useEventStore } from "@/stores/useEventStore";
-import { Badge } from "@/components/ui/badge";
 import { DiffViewer } from "@/components/DiffViewer";
+import { Badge } from "@/components/ui/badge";
+import { useEventStore } from "@/stores/codex/useEventStore";
+import { CodexEvent } from "@/types/chat";
+import { CheckCircle2 } from "lucide-react";
+import { useMemo } from "react";
 
 export function McpToolCallItem({ event }: { event: CodexEvent }) {
   const { msg, conversationId } = event.payload.params;

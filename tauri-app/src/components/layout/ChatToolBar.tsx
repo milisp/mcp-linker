@@ -1,8 +1,8 @@
 import { InitializeResponse } from "@/bindings/InitializeResponse";
-import { useChatInputStore } from "@/stores/chatInputStore";
+import { useActiveConversationStore } from "@/stores/codex/useActiveConversationStore";
+import { useChatInputStore } from "@/stores/codex/useChatInputStore";
+import { useCodexStore } from "@/stores/codex/useCodexStore";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useCodexStore } from "@/stores/useCodexStore";
 import { useFolderStore } from "@/stores/useFolderStore";
 import { runCommand } from "@/utils/runCommand";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";

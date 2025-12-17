@@ -1,6 +1,6 @@
 import { DiffViewer } from "@/components/DiffViewer";
 import { Button } from "@/components/ui/button";
-import { useChatInputStore } from "@/stores/chatInputStore";
+import { useChatInputStore } from "@/stores/codex/useChatInputStore";
 import { useThemeStore } from "@/stores/settings/ThemeStore";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { getErrorMessage } from "@/utils/errorUtils";

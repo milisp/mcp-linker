@@ -61,7 +61,7 @@ tauri-plugin-single-instance = { version = "2.0.0", features = ["deep-link"] }
 tauri-plugin-updater = "2"
 
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-codex_bindings = { git = "https://github.com/milisp/codexia", package = "codex_bindings"}
+codex-bindings = { git = "https://github.com/milisp/codexia", package = "codex-bindings"}
 codex-client = { git = "https://github.com/milisp/codexia", package = "codex-client" }
 
 [dev-dependencies]

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { useCodexStore } from "./useCodexStore";
+import { useCodexStore } from "./codex/useCodexStore";
 
 interface FolderHistory {
   path: string;

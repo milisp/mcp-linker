@@ -1,7 +1,7 @@
-import { useMemo } from "react";
 import { getNewConversationParams } from "@/components/config/ConversationParams";
 import { useProviderStore, useSandboxStore } from "@/stores";
-import { useCodexStore } from "@/stores/useCodexStore";
+import { useCodexStore } from "@/stores/codex/useCodexStore";
+import { useMemo } from "react";
 
 export function useBuildNewConversationParams() {
   const { providers, selectedProviderId, selectedModel, reasoningEffort } =

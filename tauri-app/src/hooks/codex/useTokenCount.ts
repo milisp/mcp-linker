@@ -1,5 +1,5 @@
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useTokenCountStore } from "@/stores/useTokenCountStore";
+import { useActiveConversationStore } from "@/stores/codex";
+import { useTokenCountStore } from "@/stores/codex";
 import { type CodexEvent } from "@/types/chat";
 
 export function useTokenCount() {

@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useChatInputStore } from "@/stores/chatInputStore";
+import { useChatInputStore } from "@/stores/codex/useChatInputStore";
 import { useFolderStore } from "@/stores/useFolderStore";
 import {
   ChevronDown,

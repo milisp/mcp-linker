@@ -1,7 +1,6 @@
 import { NewConversationParams } from "@/bindings/NewConversationParams";
 import { NewConversationResponse } from "@/bindings/NewConversationResponse";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useConversationMetadataStore } from "@/stores/useConversationMetadataStore";
+import { useActiveConversationStore, useConversationMetadataStore } from "@/stores/codex";
 import { ResumeConversationResult } from "@/types/chat";
 import { invoke } from "@tauri-apps/api/core";
 

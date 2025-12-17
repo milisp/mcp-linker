@@ -1,8 +1,6 @@
 import { ConversationId } from "@/bindings/ConversationId";
+import { useCodexStore, useConversationListenerStore, useSessionStore } from "@/stores/codex";
 import { useSettingsStore } from "@/stores/settings/SettingsStore";
-import { useCodexStore } from "@/stores/useCodexStore";
-import { useConversationListenerStore } from "@/stores/useConversationListenerStore";
-import { useSessionStore } from "@/stores/useSessionStore";
 import { CodexEvent } from "@/types/chat";
 import { useBackendErrorListener } from "@/utils/backendErrorListener";
 import { playBeep } from "@/utils/beep";

@@ -4,8 +4,8 @@ import { BulkDeleteButtons } from "@/components/chat/actions/BulkDeleteButtons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCodexStore } from "@/stores/useCodexStore";
-import { useConversationListStore } from "@/stores/useConversationListStore";
+import { useCodexStore } from "@/stores/codex/useCodexStore";
+import { useConversationListStore } from "@/stores/codex/useConversationListStore";
 import { Tags } from "lucide-react";
 import { useMemo, useState } from "react";
 

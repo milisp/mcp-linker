@@ -1,6 +1,6 @@
 import { ConversationSummary } from "@/bindings/ConversationSummary";
 import { Button } from "@/components/ui/button";
-import { useConversationListStore } from "@/stores/useConversationListStore";
+import { useConversationListStore } from "@/stores/codex/useConversationListStore";
 import { invoke } from "@tauri-apps/api/core";
 import { Trash2 } from "lucide-react";
 

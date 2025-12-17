@@ -1,4 +1,4 @@
-import { useSessionStore } from "@/stores/useSessionStore";
+import { useSessionStore } from "@/stores/codex/useSessionStore";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 import { toast } from "sonner";

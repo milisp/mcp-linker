@@ -5,7 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useChatInputStore } from "@/stores/chatInputStore";
+import { useChatInputStore } from "@/stores/codex/useChatInputStore";
 import { createMediaAttachment, isMediaFile } from "@/utils/mediaUtils";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Image, Music, Paperclip } from "lucide-react";

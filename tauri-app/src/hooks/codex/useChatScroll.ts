@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSessionStore } from "@/stores/useSessionStore";
+import { useSessionStore } from "@/stores/codex/useSessionStore";
 import { formatDurationMs } from "@/utils/formatDuration";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface UseChatScrollOptions {
   activeConversationId?: string | null;

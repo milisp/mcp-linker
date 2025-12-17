@@ -2,22 +2,22 @@ import type { ConversationSummary } from "@/bindings/ConversationSummary";
 import { ConversationListItem } from "@/components/chat/ConversationListItem";
 import RenameDialog from "@/components/chat/RenameDialog";
 import { Button } from "@/components/ui/button";
-import { useResumeConversation } from "@/hooks/useResumeConversation";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useCodexStore } from "@/stores/useCodexStore";
+import { useResumeConversation } from "@/hooks/codex/useResumeConversation";
+import { useActiveConversationStore } from "@/stores/codex/useActiveConversationStore";
+import { useCodexStore } from "@/stores/codex/useCodexStore";
 import {
-    loadProjectSessions,
-    useConversationListStore,
-} from "@/stores/useConversationListStore";
+  loadProjectSessions,
+  useConversationListStore,
+} from "@/stores/codex/useConversationListStore";
 import { renameConversation } from "@/utils/renameConversation";
 import { invoke } from "@tauri-apps/api/core";
 import { Loader2 } from "lucide-react";
 import {
-    useEffect,
-    useMemo,
-    useState,
-    type Dispatch,
-    type SetStateAction,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
 
 interface ConversationListProps {

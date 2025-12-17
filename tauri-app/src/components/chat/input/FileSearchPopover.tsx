@@ -1,8 +1,8 @@
 import { Command, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useChatInputStore, type FileReference } from '@/stores/chatInputStore';
+import { useChatInputStore, type FileReference } from '@/stores/codex/useChatInputStore';
+import { useCodexStore } from '@/stores/codex/useCodexStore';
 import { useSettingsStore } from '@/stores/settings/SettingsStore';
-import { useCodexStore } from '@/stores/useCodexStore';
 import { invoke } from '@tauri-apps/api/core';
 import React, { useEffect, useState } from 'react';
 
