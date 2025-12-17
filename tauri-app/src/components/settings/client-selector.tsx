@@ -16,8 +16,8 @@ export function ClientSelector() {
   const { hasPaidTier } = useTier();
 
   function handleChange(value: string) {
-    // Block selection for non-paid clients (except claude)
-    const isBlocked = !hasPaidTier && value !== "claude";
+    // Block selection for non-paid clients (except claude) unless in dev mode
+    const isBlocked = !hasPaidTier && value !== "claude" && !import.meta.env.DEV;
     if (isBlocked) {
       return; // Don't change selection
     }
@@ -36,7 +36,7 @@ export function ClientSelector() {
         <SelectContent>
           {clientOptions.map((option) => {
             // Show upgrade button for non-claude clients when on free tier
-            const needsUpgrade = !hasPaidTier && option.value !== "claude";
+            const needsUpgrade = !hasPaidTier && option.value !== "claude" && !import.meta.env.DEV;
 
             if (needsUpgrade) {
               // Custom rendering for locked items with clickable upgrade button
