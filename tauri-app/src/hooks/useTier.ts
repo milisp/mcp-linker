@@ -21,6 +21,7 @@ export function useTier() {
 
     const isFree = !tier || tier === "FREE";
     const hasPaidTier = Boolean(tier && tier !== "FREE");
+    const canAccessPaidFeatures = !isFree || hasActiveTrial;
 
     return {
       tier,
@@ -29,6 +30,7 @@ export function useTier() {
       hasPaidTier,
       hasActiveTrial,
       trialEndsAt,
+      canAccessPaidFeatures,
     };
   }, [user, loading]);
 }

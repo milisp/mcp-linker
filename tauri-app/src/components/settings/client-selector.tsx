@@ -13,11 +13,11 @@ import { UpgradePlanButton } from "../common/UpgradePlanButton";
 
 export function ClientSelector() {
   const { selectedClient, setSelectedClient } = useClientPathStore();
-  const { hasPaidTier } = useTier();
+  const { canAccessPaidFeatures, hasPaidTier } = useTier();
 
   function handleChange(value: string) {
     // Block selection for non-paid clients (except claude) unless in dev mode
-    const isBlocked = !hasPaidTier && value !== "claude" && !import.meta.env.DEV;
+    const isBlocked = !canAccessPaidFeatures && value !== "claude" && !import.meta.env.DEV;
     if (isBlocked) {
       return; // Don't change selection
     }
