@@ -1,3 +1,6 @@
+import { ProjectSelector } from "@/components/claude-code/ProjectSelector";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { useTier } from "@/hooks/useTier";
 import { needspathClient } from "@/lib/data";
 import { AppRoutes, getNavigationRoutes } from "@/routes";
 import { useConfigScopeStore } from "@/stores";
@@ -7,6 +10,7 @@ import { MessageCircle, PanelLeft } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Toaster } from "sonner";
+import { UpgradePlanButton } from "../common/UpgradePlanButton";
 import { TeamSelector } from "../manage/team/TeamSelector";
 import {
   ClientSelector,
@@ -15,14 +19,13 @@ import {
 import { ConfigFileSelector } from "../settings/ConfigFileSelector";
 import LangSelect from "../settings/LangSelect";
 import { PathSelector } from "../settings/PathSelector";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { ProjectSelector } from "@/components/claude-code/ProjectSelector";
 
 const Layout = () => {
   const { selectedClient } = useClientPathStore();
   const { scope } = useConfigScopeStore();
   const { t } = useTranslation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { hasPaidTier } = useTier();
 
   // Get navigation routes with icons
   const navs = getNavigationRoutes(t as (key: string, options?: any) => string);
@@ -45,7 +48,7 @@ const Layout = () => {
             <PanelLeft size={20} />
           </button>
           <ConfigScopeSelector />
-          {scope === "personal" ? <ClientSelector /> : <TeamSelector />}
+          {scope === "personal" ? <ClientSelector /> : <TeamSelector />} {!hasPaidTier && <UpgradePlanButton />}
         </span>
         {scope === "personal" ? (
           <>

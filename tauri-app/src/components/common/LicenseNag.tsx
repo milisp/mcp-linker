@@ -11,6 +11,7 @@ import type { Quote } from "@/data/quotes";
 import { getRandomOfflineQuote } from "@/data/quotes";
 import { api } from "@/lib/api";
 import { useUserStore } from "@/stores/userStore";
+import { useTier } from "@/hooks/useTier";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
 import { useEffect, useMemo, useState } from "react";
 // import { toast } from "sonner";
@@ -24,7 +25,8 @@ const SESSION_FLAG = "mcp-linker-nag-dismissed";
  * Shows for FREE/unknown tiers. Paid tiers (PRO/TEAM/others) won't see it.
  */
 export function LicenseNag() {
-  const { user, loading, fetchUser } = useUserStore();
+  const { user, fetchUser } = useUserStore();
+  const { isFree, hasActiveTrial, loading } = useTier();
   const [open, setOpen] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
 
@@ -37,13 +39,9 @@ export function LicenseNag() {
     if (loading || user === null) {
       return false;
     }
-    const tier = user?.tier?.toUpperCase();
-    const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
-    const hasActiveTrial = Boolean(user?.trialActive && trialEndsAt && trialEndsAt.getTime() > Date.now());
-    console.log('user has trial', hasActiveTrial, user)
     // Show only if tier is FREE or missing AND no active trial
-    return (!tier || tier === "FREE") && !hasActiveTrial;
-  }, [user, loading]);
+    return isFree && !hasActiveTrial;
+  }, [user, loading, isFree, hasActiveTrial]);
 
   // Fetch current user once on mount if unknown
   useEffect(() => {
@@ -76,13 +74,11 @@ export function LicenseNag() {
 
   // Auto-dismiss if a paid tier (including LIFETIME/PRO/TEAM) is detected after opening
   useEffect(() => {
-    const tier = user?.tier?.toUpperCase();
-    const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
-    const hasActiveTrial = Boolean(user?.trialActive && trialEndsAt && trialEndsAt.getTime() > Date.now());
-    if (open && !loading && ((tier && tier !== "FREE") || hasActiveTrial)) {
+    if (open && !loading && (!isFree || hasActiveTrial)) {
       onDismiss();
     }
-  }, [open, user?.tier, user?.trialActive, user?.trialEndsAt, loading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isFree, hasActiveTrial, loading]);
 
   const onDismiss = () => {
     setOpen(false);
