@@ -68,7 +68,7 @@ jobs:
 
       - name: codex export bindings
         run: |
-          cargo install --git https://github.com/milisp/codexia codex_bindings
+          cargo install --git https://github.com/milisp/codexia codex-bindings
           codex_export_bindings
         working-directory: tauri-app
 
