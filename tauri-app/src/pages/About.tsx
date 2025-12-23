@@ -38,7 +38,7 @@ export default function About() {
     {
       icon: <Shield className="h-5 w-5" />,
       title: "Secure Cloud Sync",
-      description: "Encrypted backup and sync for Pro users",
+      description: "Encrypted backup and sync for Professional users",
     },
     {
       icon: <Globe className="h-5 w-5" />,

@@ -4,6 +4,7 @@ import { create } from "zustand";
 // User info with tier from backend
 export type UserWithTier = {
   id: string;
+  email?: string;
   fullname?: string;
   tier?: string;
   trialActive: boolean;

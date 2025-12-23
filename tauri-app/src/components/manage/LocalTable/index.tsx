@@ -15,6 +15,7 @@ import {
 import { DataTable } from "@/components/ui/data-table";
 import { useCloudSync } from "@/hooks/useCloudSync";
 import { useMcpConfig } from "@/hooks/useMcpConfig";
+import { useTier } from "@/hooks/useTier";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useGlobalDialogStore } from "@/stores/globalDialogStore";
 import { UserWithTier } from "@/stores/userStore";
@@ -32,7 +33,7 @@ interface LocalTableProps {
   user: UserWithTier;
 }
 
-export const LocalTable = ({ isAuthenticated, user }: LocalTableProps) => {
+export const LocalTable = ({ isAuthenticated, user: _user }: LocalTableProps) => {
   const { selectedClient, selectedPath } = useClientPathStore();
   const [localSyncDialogOpen, setLocalSyncDialogOpen] = useState(false);
   const [cloudSyncDialogOpen, setCloudSyncDialogOpen] = useState(false);
@@ -118,28 +119,20 @@ export const LocalTable = ({ isAuthenticated, user }: LocalTableProps) => {
 
   // Header action handlers
   const handleLocalSync = () => setLocalSyncDialogOpen(true);
+  const { canUseCloudSync } = useTier();
+
   const handleCloudSync = () => {
     if (!isAuthenticated) {
       showGlobalDialog("login");
       return;
     }
-    if (user.tier === "FREE") {
-      if (user.trialActive) {
-        if (
-          !user.trialEndsAt ||
-          new Date(user.trialEndsAt).getTime() < Date.now()
-        ) {
-          // Trial expired or no trial end date, show upgrade dialog
-          showGlobalDialog("upgrade");
-          return;
-        }
-        // Trial is active and not expired, allow sync (do nothing)
-      } else {
-        // No trial, show start trial dialog
-        showGlobalDialog("startTrial");
-        return;
-      }
+
+    // Check if user has Professional or Team tier for cloud sync
+    if (!canUseCloudSync) {
+      showGlobalDialog("upgrade");
+      return;
     }
+
     if (!key) {
       setShowMissingKeyDialog(true);
       return;

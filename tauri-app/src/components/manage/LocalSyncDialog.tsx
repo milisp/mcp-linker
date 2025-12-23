@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { availableClients } from "@/constants/clients";
+import { useTier } from "@/hooks/useTier";
 import { needspathClient } from "@/lib/data";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -53,6 +54,8 @@ export function LocalSyncDialog({
   const [isLoadingToPath, setIsLoadingToPath] = useState(false);
 
   const { getClientPath, setClientPath } = useClientPathStore();
+
+  const { tier, hasMinimumTier } = useTier();
 
   // Effect to save syncFromClient to localStorage
   useEffect(() => {
@@ -150,6 +153,21 @@ export function LocalSyncDialog({
   const needsFromPath = needspathClient.includes(syncFromClient);
   const needsToPath = needspathClient.includes(syncToClient);
 
+  const filteredClients = availableClients.filter((client) => {
+    // Free users: only allow Claude and Windsurf
+    if (tier === "FREE" || !tier) {
+      return client.value === "claude" || client.value === "windsurf";
+    }
+
+    // Lifetime users: exclude Codex and Claude Code
+    if (tier === "LIFETIME") {
+      return client.value !== "codex" && client.value !== "claude_code";
+    }
+
+    // Other tiers: check minimum required tier
+    return hasMinimumTier(client.requiredTier);
+  });
+
   return (
     <Dialog
       open={open}
@@ -182,7 +200,7 @@ export function LocalSyncDialog({
                 />
               </SelectTrigger>
               <SelectContent>
-                {availableClients
+                {filteredClients
                   .filter((client) => client.value !== currentClient)
                   .map((client) => (
                     <SelectItem key={client.value} value={client.value}>
@@ -228,7 +246,7 @@ export function LocalSyncDialog({
                 />
               </SelectTrigger>
               <SelectContent>
-                {availableClients.map((client) => (
+                {filteredClients.map((client) => (
                   <SelectItem key={client.value} value={client.value}>
                     {client.label}
                   </SelectItem>

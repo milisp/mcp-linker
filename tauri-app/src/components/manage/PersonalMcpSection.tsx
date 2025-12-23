@@ -2,6 +2,7 @@ import { LocalTable } from "@/components/manage/LocalTable/index";
 import { PersonalCloudTable } from "@/components/manage/PersonalCloudTable";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTier } from "@/hooks/useTier";
 import { Cloud } from "lucide-react";
 
 /**
@@ -27,6 +28,8 @@ export function PersonalMcpSection({
   encryptionKey,
   navigate,
 }: PersonalMcpSectionProps) {
+  const { canUseCloudSync } = useTier();
+
   return (
     <Tabs
       value={personalTab}
@@ -37,7 +40,7 @@ export function PersonalMcpSection({
         <TabsTrigger value="personalLocal">Local</TabsTrigger>
         <TabsTrigger value="personalCloud">
           <Cloud />
-          Cloud {user?.tier === "FREE" && "🔒"}
+          Cloud {!canUseCloudSync && "🔒"}
         </TabsTrigger>
       </TabsList>
       <TabsContent value="personalLocal" className="flex-1 min-h-0">

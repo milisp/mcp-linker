@@ -118,10 +118,7 @@ export function LicenseNag() {
         <DialogFooter className="gap-2 sm:justify-between">
           <Button variant="outline" onClick={onDismiss}>Maybe later</Button>
           <div className="flex gap-2">
-            <Button onClick={() => openUrl("https://mcp-linker.store/pricing")}>Get Lifetime (One‑Time)</Button>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={() => openUrl("https://mcp-linker.store/pricing")}>Upgrade to Pro</Button>
+            <Button onClick={() => openUrl("https://mcp-linker.store/pricing")}>View Pricing Options</Button>
           </div>
         </DialogFooter>
       </DialogContent>

@@ -29,7 +29,7 @@ export default function Dashboard() {
   useEffect(() => {
     async function getUser() {
       const userData = await getCurrentUser();
-      console.debug(userData);
+      console.debug("userData", userData);
       setUser({
         ...userData,
         trialEndsAt: userData.trialEndsAt ? new Date(userData.trialEndsAt) : undefined,

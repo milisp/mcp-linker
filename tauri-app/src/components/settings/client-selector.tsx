@@ -13,17 +13,23 @@ import { UpgradePlanButton } from "../common/UpgradePlanButton";
 
 export function ClientSelector() {
   const { selectedClient, setSelectedClient } = useClientPathStore();
-  const { canAccessPaidFeatures, hasPaidTier } = useTier();
+  const { canAccessClient } = useTier();
 
   function handleChange(value: string) {
-    // Block selection for non-paid clients (except claude) unless in dev mode
-    const isBlocked = !canAccessPaidFeatures && value !== "claude" && !import.meta.env.DEV;
-    if (isBlocked) {
+    // Skip access check for 'custom' option
+    if (value === "custom") {
+      setSelectedClient(value);
+      return;
+    }
+
+    // Find the client option to check required tier
+    const clientOption = clientOptions.find(opt => opt.value === value);
+
+    // Block selection if user doesn't have required tier (unless in dev mode)
+    if (clientOption && clientOption.requiredTier && !canAccessClient(clientOption.requiredTier) && !import.meta.env.DEV) {
       return; // Don't change selection
     }
 
-    // Allow claude_code to work like other clients in Manage without forcing navigation.
-    // The dedicated page remains available at /claude-code-manage if users open it explicitly.
     setSelectedClient(value);
   }
 
@@ -35,10 +41,19 @@ export function ClientSelector() {
         </SelectTrigger>
         <SelectContent>
           {clientOptions.map((option) => {
-            // Show upgrade button for non-claude clients when on free tier
-            const needsUpgrade = !hasPaidTier && option.value !== "claude" && !import.meta.env.DEV;
+            // Skip tier check for 'custom' option
+            if (option.value === "custom") {
+              return (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              );
+            }
 
-            if (needsUpgrade) {
+            // Check if user can access this client (bypass in dev mode)
+            const canAccess = !option.requiredTier || canAccessClient(option.requiredTier) || import.meta.env.DEV;
+
+            if (!canAccess) {
               // Custom rendering for locked items with clickable upgrade button
               return (
                 <div
