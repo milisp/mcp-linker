@@ -7,33 +7,13 @@
   <key>LSMinimumSystemVersion</key>
   <string>10.15</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.8.0</string>
+  <string>2.0.0</string>
   <key>CFBundleName</key>
   <string>MCPLinker</string>
   <key>CFBundleDisplayName</key>
   <string>MCP Linker</string>
   <key>CFBundleIdentifier</key>
   <string>dev.milisp.mcplinker</string>
-  <key>CFBundleDocumentTypes</key>
-  <array>
-    <dict>
-      <key>CFBundleTypeName</key>
-      <string>mcp-linker Agent</string>
-      <key>CFBundleTypeRole</key>
-      <string>Editor</string>
-      <key>CFBundleTypeExtensions</key>
-      <array>
-        <string>db</string>
-        <string>toml</string>
-        <string>json</string>
-        <string>jsonl</string>
-      </array>
-      <key>CFBundleTypeIconFile</key>
-      <string>icon.icns</string>
-      <key>LSHandlerRank</key>
-      <string>Owner</string>
-    </dict>
-  </array>
   <key>NSAppleEventsUsageDescription</key>
   <string>mcp-linker needs to send Apple Events to other applications.</string>
   <key>NSAppleScriptEnabled</key>
