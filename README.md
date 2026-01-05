@@ -86,7 +86,11 @@ Thanks to all our wonderful contributors!
 </a>
 
 ## License
-MIT License - see [LICENSE](LICENSE)
+
+MCP Linker is dual-licensed under **AGPL-3.0** and a **Commercial License**.
+
+- **AGPL-3.0** — for open-source use.
+- **Commercial License** — required for closed-source, proprietary, hosted, or SaaS use.
 
 ---
 **Found this helpful? Please ⭐ the project!**
