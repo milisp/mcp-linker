@@ -53,12 +53,18 @@ export default function AuthPage() {
               }
             } else if (!isPaid && !hasTrial && !isStudent) {
               // Only start trial for non-student, non-paid users
-              await api.post("/users/start-trial");
-              toast.success("Trial started! Enjoy your 14-day access.");
-              await fetchUser();
+              try {
+                await api.post("/users/start-trial");
+                toast.success("🎉 Trial started! Enjoy your 14-day free access to all features.");
+                await fetchUser();
+              } catch (error) {
+                console.error("Failed to start trial:", error);
+                toast.error("Failed to start trial. Please try again or contact support.");
+              }
             }
-          } catch (_) {
-            // Ignore errors; user can still use the app
+          } catch (error) {
+            console.error("Auth state change error:", error);
+            // Still allow user to proceed even if trial activation fails
           }
         }
       },
@@ -104,7 +110,18 @@ export default function AuthPage() {
   return (
     <div className="flex flex-col items-center justify-center h-full px-4 text-center">
       <h1 className="text-3xl font-bold mb-4">Welcome to MCP Linker</h1>
-      <p className="mb-6 text-gray-500 dark:text-gray-400">Sign in to get more</p>
+      <p className="mb-6 text-gray-500 dark:text-gray-400">Sign in to unlock premium features</p>
+
+      {/* Free Trial Notice */}
+      <div className="w-full max-w-sm mb-4 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+        <div className="text-2xl mb-2">🎉</div>
+        <p className="text-sm font-semibold text-green-900 dark:text-green-100 mb-1">
+          Start Your Free 14-Day Trial!
+        </p>
+        <p className="text-xs text-green-700 dark:text-green-300">
+          No credit card required. Full access to all features immediately upon sign-up.
+        </p>
+      </div>
 
       {/* Student Notice */}
       <div className="w-full max-w-sm mb-6 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -113,7 +130,7 @@ export default function AuthPage() {
           Students Get Free Access!
         </p>
         <p className="text-xs text-blue-700 dark:text-blue-300">
-          Sign up with your .edu email to unlock all local features for free
+          Sign up with your .edu email to unlock all local features permanently
         </p>
       </div>
 
