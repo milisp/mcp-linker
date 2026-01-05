@@ -6,9 +6,9 @@
     "url": "https://github.com/milisp/mcp-linker"
   },
   "author": "milisp",
-  "license": "MIT",
+  "license": ["AGPL-3.0", "Commercial"],
   "private": true,
-  "version": "2.0.0",
+  "version": "2.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
