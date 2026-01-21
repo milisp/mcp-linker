@@ -42,6 +42,9 @@ brew install --cask mcp-linker
 **Windows / Linux / macOS (Direct Download)**
 Download the: [📥latest Releases](https://github.com/milisp/mcp-linker/releases)
 
+> [!Note]
+> If you have subscribed, please relaunch the app after logging in for the first time.
+
 ### Getting Started
 
 1. **Browse** MCP servers in the built-in marketplace
