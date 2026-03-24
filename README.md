@@ -64,6 +64,7 @@ Model Context Protocol is like USB-C for AI — a standard way to connect AI mod
 ## 🧭 Related Projects
 
 - [milisp/codexia](http://github.com/milisp/codexia) - The missing GUI for the OpenAI Codex CLI, (FileTree + notepad + git diff + plan mode) all in a lightweight Tauri desktop app.
+- [claw-army/claude-node](https://github.com/claw-army/claude-node) - Python subprocess bridge for Claude Code CLI, giving Python code direct access to Claude Code native capabilities via stream-json.
 - [**awesome-claude-dxt**](https://github.com/milisp/awesome-claude-dxt) — a curated list of Claude Desktop Extensions (dxt), tools, and resources
 
 ## 💬 Community & Support
