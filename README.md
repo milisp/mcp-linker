@@ -33,6 +33,11 @@
 
 ### Installation
 
+**Arch Linux (AUR)**
+```bash
+yay -S mcp-linker-bin
+```
+
 **macOS (Homebrew)**
 ```bash
 brew tap milisp/mcp-linker
