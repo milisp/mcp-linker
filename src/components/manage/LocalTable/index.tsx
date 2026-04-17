@@ -2,16 +2,6 @@
 import { CloudSyncDialog } from "@/components/manage/CloudSyncDialog";
 import { LocalSyncDialog } from "@/components/manage/LocalSyncDialog";
 import { RefreshMcpConfig } from "@/components/manage/RefreshMcpConfig";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { DataTable } from "@/components/ui/data-table";
 import { useAuth } from "@/hooks/useAuth";
 import { useCloudSync } from "@/hooks/useCloudSync";
@@ -19,12 +9,12 @@ import { useMcpConfig } from "@/hooks/useMcpConfig";
 import { useTier } from "@/hooks/useTier";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useGlobalDialogStore } from "@/stores/globalDialogStore";
-import { useViewStore } from "@/stores/viewStore";
 import { getEncryptionKey } from "@/utils/encryption";
 import { RowSelectionState, Table } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 import { useServerTableColumns } from "../ServerTableColumns";
 import { LocalTableHeader } from "./LocalTableHeader";
+import { MissingKeyDialog } from "./MissingKeyDialog";
 import { useServersData } from "./useServersData";
 import { useSyncHandlers } from "./useSyncHandlers";
 
@@ -38,7 +28,6 @@ export const LocalTable = () => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [showMissingKeyDialog, setShowMissingKeyDialog] = useState(false);
   const showGlobalDialog = useGlobalDialogStore((s) => s.showDialog);
-  const { navigate } = useViewStore();
   const key = getEncryptionKey();
 
   const {
@@ -210,26 +199,10 @@ export const LocalTable = () => {
             servers={serversData}
             onCloudDownloadSuccess={loadConfig}
           />
-          <AlertDialog
+          <MissingKeyDialog
             open={showMissingKeyDialog}
             onOpenChange={setShowMissingKeyDialog}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Missing Encryption Key</AlertDialogTitle>
-                <AlertDialogDescription>
-                  To use cloud sync, please go to Settings and generate your
-                  encryption key.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => navigate("/settings")}>
-                  Go to Settings
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          />
         </>
       )}
     </div>
