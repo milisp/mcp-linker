@@ -1,5 +1,3 @@
-// Custom hook for sync handlers (local and cloud)
-// Always use English comments for code
 import { useCallback } from "react";
 
 export function useSyncHandlers(

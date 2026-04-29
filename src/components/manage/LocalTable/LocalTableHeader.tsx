@@ -1,5 +1,3 @@
-// Header component for LocalTable actions
-// Always use English comments for code
 import { UpgradePlanButton } from "@/components/common/UpgradePlanButton";
 import { Button } from "@/components/ui/button";
 import { useTier } from "@/hooks/useTier";
