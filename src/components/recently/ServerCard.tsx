@@ -1,4 +1,4 @@
-import { ServerForm } from "@/components/manage/ServerForm";
+import { ServerForm } from "@/components/manage/forms";
 import { ServerCard as SharedServerCard } from "@/components/shared/ServerCard";
 import { Button } from "@/components/ui/button";
 import {

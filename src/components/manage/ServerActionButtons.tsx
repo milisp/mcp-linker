@@ -11,7 +11,7 @@ import { ConfigType } from "@/types/mcpConfig";
 import { PenSquare } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ServerForm } from "./ServerForm";
+import { ServerForm } from "./forms";
 
 interface ServerActionButtonsProps {
   serverName: string;
