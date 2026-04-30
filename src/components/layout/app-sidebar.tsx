@@ -18,13 +18,14 @@ import {
   useSidebar
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/hooks/useAuth"
+import { useTier } from "@/hooks/useTier"
 import { cn } from "@/lib/utils"
 import { getNavigationRoutes } from "@/routes"
 import { signOut } from "@/services/auth"
 import { useViewStore } from "@/stores/viewStore"
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { platform } from "@tauri-apps/plugin-os"
-import { User } from "lucide-react"
+import { ExternalLink, User } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 export const AppSidebar = () => {
@@ -32,6 +33,7 @@ export const AppSidebar = () => {
   const navs = getNavigationRoutes(t as any);
   const { view, navigate } = useViewStore()
   const { user } = useAuth()
+  const { tier } = useTier()
   const platformName = platform()
   const isMacOS = platformName === "macos"
   const { open } = useSidebar()
@@ -81,24 +83,37 @@ export const AppSidebar = () => {
                 >
                   <span>{t("feedback")}</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate("/about")}
+                >
+                  <span>{t("nav.about")} MCP Linker</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {user?.email ? (
+                {user?.email ? (<>
                   <DropdownMenuItem>
-                    <span className="truncate">{user.email}</span>
+                    <span className="truncate text-muted-foreground">{user.email}</span>
                   </DropdownMenuItem>
+                  {tier === 'FREE' &&
+                    <DropdownMenuItem onClick={() => openUrl('https://mcp-linker.milisp.dev/pricing')}>
+                      <span>Upgrade Plan</span> <ExternalLink />
+                    </DropdownMenuItem>
+                  }
+                  </>
                 ) : (
                   <DropdownMenuItem onClick={() => navigate("/auth")}>
                     Login
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  {t("nav.settings")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {user && (
                   <DropdownMenuItem onClick={() => signOut()}>
                     Logout
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => navigate("/settings")}>
-                  Settings
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             {open && <ModeToggle />}

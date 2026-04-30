@@ -12,7 +12,6 @@ import SettingsPage from "@/pages/SettingsPage";
 import {
   Clock,
   Code,
-  Info,
   LayoutDashboard,
   NotebookPen,
   PlugIcon,
@@ -117,11 +116,6 @@ export const getNavigationRoutes = (
       id: "favorites",
       name: t("nav.favs"),
       icon: <Star />,
-    },
-    {
-      id: "about",
-      name: t("nav.about"),
-      icon: <Info />,
     },
     {
       id: "install-app",
