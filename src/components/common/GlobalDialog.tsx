@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
 import { useViewStore } from "@/stores/viewStore";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { toast } from "sonner";
+import { UpgradePlanButton } from "./UpgradePlanButton";
 
 /**
  * GlobalDialog for login or upgrade prompts
@@ -61,14 +61,7 @@ export function GlobalDialog({
             </Button>
           )}
           {type === "upgrade" && (
-            <Button
-              onClick={() => {
-                onClose();
-                openUrl("https://mcp-linker.store/pricing");
-              }}
-            >
-              Upgrade to Pro
-            </Button>
+            <UpgradePlanButton />
           )}
           {type === "startTrial" && (
             <Button
