@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { homePageUrl } from "@/constants/home-page-url";
 import type { Quote } from "@/data/quotes";
 import { getRandomOfflineQuote } from "@/data/quotes";
 import { useTier } from "@/hooks/useTier";
@@ -109,7 +110,7 @@ export function LicenseNag() {
         <DialogFooter className="gap-2 sm:justify-between">
           <Button variant="outline" onClick={onDismiss}>Maybe later</Button>
           <div className="flex gap-2">
-            <Button onClick={() => openUrl("https://mcp-linker.store/pricing")}>View Pricing Options</Button>
+            <Button onClick={() => openUrl(homePageUrl + "/pricing")}>View Pricing Options</Button>
           </div>
         </DialogFooter>
       </DialogContent>

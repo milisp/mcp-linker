@@ -1,0 +1,1 @@
+export const homePageUrl = "https://mcp-linker.milisp.dev";

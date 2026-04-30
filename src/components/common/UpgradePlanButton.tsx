@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
+import { homePageUrl } from "@/constants/home-page-url";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 export function UpgradePlanButton() {
   return (
     <Button
       onClick={() => {
-        openUrl("https://mcp-linker.store/pricing");
+        openUrl(homePageUrl + "/pricing");
       }}
       size="sm"
       variant="secondary"

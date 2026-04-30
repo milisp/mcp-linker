@@ -59,7 +59,7 @@
 ## 🚀 升級至 MCP-Linker Pro 或 Team 方案
 
 享受雲端同步等高級功能  
-👉 [查看方案與訂閱](https://mcp-linker.store/tiers)
+👉 [查看方案與訂閱](https://mcp-linker.milisp.dev/pricing)
 
 ## 📸 畫面截圖
 

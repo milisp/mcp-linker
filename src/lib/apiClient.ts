@@ -4,7 +4,7 @@ import { isSupabaseEnabled } from "@/utils/supabase";
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 
 export const apiUrl =
-  import.meta.env.VITE_API_BASE_URL || "https://api.mcp-linker.store/api/v1";
+  import.meta.env.VITE_API_BASE_URL || "https://api.milisp.dev/api/v1";
 console.log("API URL:", apiUrl);
 
 class ApiClient {

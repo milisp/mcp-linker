@@ -16,6 +16,6 @@ We’re also working on **Pro** and **Team** versions, with advanced features:
 
 Want to try MCP-Linker Pro early or be notified when it launches?
 
-➡️ **[Sign up here](https://mcp-linker.store/early-access)** (we’ll email you when it’s ready)
+➡️ **[Sign up here](https://mcp-linker.milisp.dev/early-access)** (we’ll email you when it’s ready)
 
 We won’t spam you.

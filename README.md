@@ -76,7 +76,7 @@ Model Context Protocol is like USB-C for AI — a standard way to connect AI mod
 
 - [💬 Join Discussions](https://github.com/milisp/mcp-linker/discussions)
 - [🐛 Report Issues](https://github.com/milisp/mcp-linker/issues)
-- [☁️ Pro Plans](https://mcp-linker.store/pricing) — Cloud sync starting at coffee price/month
+- [☁️ Pro Plans](https://mcp-linker.milisp.dev/pricing) — Cloud sync starting at coffee price/month
 
 ## 🛠️ Development
 

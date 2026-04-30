@@ -59,7 +59,7 @@ Agrega, administra y sincroniza servidores MCP (Model Context Protocol) entre cl
 ## 🚀 Actualiza a MCP-Linker Pro o Team
 
 Accede a sincronización en la nube y más  
-👉 [Ver niveles y suscribirse](https://mcp-linker.store/tiers)
+👉 [Ver niveles y suscribirse](https://mcp-linker.milisp.dev/pricing)
 
 ## 📸 Capturas de pantalla
 
