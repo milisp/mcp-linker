@@ -6,16 +6,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { api } from "@/lib/api";
 import { useViewStore } from "@/stores/viewStore";
-import { useState } from "react";
-import { toast } from "sonner";
 import { UpgradePlanButton } from "./UpgradePlanButton";
 
 /**
  * GlobalDialog for login or upgrade prompts
  * @param open - whether dialog is open
- * @param type - 'login' | 'upgrade' | 'startTrial'
+ * @param type - 'login' | 'upgrade'
  * @param onClose - close handler
  */
 export function GlobalDialog({
@@ -24,11 +21,10 @@ export function GlobalDialog({
   onClose,
 }: {
   open: boolean;
-  type: "login" | "upgrade" | "startTrial";
+  type: "login" | "upgrade";
   onClose: () => void;
 }) {
   const { navigate } = useViewStore();
-  const [loading, setLoading] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -62,34 +58,6 @@ export function GlobalDialog({
           )}
           {type === "upgrade" && (
             <UpgradePlanButton />
-          )}
-          {type === "startTrial" && (
-            <Button
-              disabled={loading}
-              onClick={async () => {
-                setLoading(true);
-                try {
-                  await api.post("/users/start-trial");
-                  toast.success(
-                    "Trial started! Enjoy your 14-day free access.",
-                  );
-                  setTimeout(() => {
-                    onClose();
-                    navigate(0);
-                  }, 1200);
-                } catch (e: any) {
-                  toast.error(
-                    e?.message ||
-                      "Failed to start trial. Please try again later.",
-                  );
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            >
-              {loading ? <span className="animate-spin mr-2">⏳</span> : null}
-              Start Free Trial
-            </Button>
           )}
           <Button variant="outline" onClick={onClose}>
             Maybe Later
