@@ -11,7 +11,7 @@ import type { Quote } from "@/data/quotes";
 import { getRandomOfflineQuote } from "@/data/quotes";
 import { useTier } from "@/hooks/useTier";
 import { api } from "@/lib/api";
-import { useUserStore } from "@/stores/userStore";
+
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useMemo, useState } from "react";
 // import { toast } from "sonner";
@@ -25,7 +25,6 @@ const SESSION_FLAG = "mcp-linker-nag-dismissed";
  * Shows for FREE/unknown tiers. Paid tiers (PRO/TEAM/others) won't see it.
  */
 export function LicenseNag() {
-  const { user, fetchUser } = useUserStore();
   const { isFree, hasActiveTrial, loading } = useTier();
   const [open, setOpen] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -35,21 +34,13 @@ export function LicenseNag() {
     if (typeof window !== "undefined" && sessionStorage.getItem(SESSION_FLAG)) {
       return false; // already dismissed this session
     }
-    // Wait for user state to be known to avoid flashing for paid users
-    if (loading || user === null) {
+    // Wait for tier to be known to avoid flashing for paid users
+    if (loading) {
       return false;
     }
     // Show only if tier is FREE or missing AND no active trial
     return isFree && !hasActiveTrial;
-  }, [user, loading, isFree, hasActiveTrial]);
-
-  // Fetch current user once on mount if unknown
-  useEffect(() => {
-    if (!user && !loading) {
-      fetchUser().catch(() => void 0);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loading, isFree, hasActiveTrial]);
 
   // Fetch quote with online fallback to offline
   useEffect(() => {

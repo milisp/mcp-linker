@@ -20,16 +20,24 @@ export function useIsFreeUser() {
   return isAuthenticated && user?.tier === "FREE";
 }
 
+const TRIAL_DAYS = 14;
+
 export function useTier() {
+  const { user: supabaseUser } = useAuth();
   const { user, loading } = useUserStore();
 
   return useMemo(() => {
     const tier = user?.tier?.toUpperCase();
-    const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
-    const hasActiveTrial = Boolean(
-      user?.trialActive && trialEndsAt && trialEndsAt.getTime() > Date.now()
-    );
-    const isStudent = Boolean(user?.email?.endsWith(".edu"));
+
+    // Derive trial window from supabase user creation time (no backend field needed)
+    const createdAt = supabaseUser?.created_at ? new Date(supabaseUser.created_at) : null;
+    const trialEndsAt = createdAt
+      ? new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000)
+      : null;
+    const hasActiveTrial = Boolean(trialEndsAt && trialEndsAt.getTime() > Date.now());
+
+    // Derive student status from supabase email (no backend field needed)
+    const isStudent = Boolean(supabaseUser?.email?.toLowerCase().endsWith(".edu"));
 
     const isFree = !tier || tier === "FREE";
     const hasPaidTier = Boolean(tier && tier !== "FREE");
@@ -84,5 +92,5 @@ export function useTier() {
       isLifetimePro,
       isProfessional,
     };
-  }, [user, loading]);
+  }, [user, loading, supabaseUser]);
 }

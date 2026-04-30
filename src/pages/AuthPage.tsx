@@ -5,10 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { api } from "@/lib/api";
-import authService from "@/services/auth";
 import { useAuthStore } from "@/stores/authStore";
-import { useUserStore } from "@/stores/userStore";
 import supabase, { isSupabaseEnabled } from "@/utils/supabase";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useState } from "react";
@@ -18,68 +15,26 @@ export default function AuthPage() {
   type Provider = "github" | "google";
   const lastProvider = useAuthStore((s) => s.lastOAuthProvider);
   const setLastOAuthProvider = useAuthStore((s) => s.setLastOAuthProvider);
-  const { fetchUser } = useUserStore();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
 
-  // After successful login, automatically start trial if eligible
-  // and show a small toast. Navigation is handled by useAuth elsewhere.
-  // We scope this to AuthPage per request.
+  // Show trial toast once on first sign-in if user registered within the past 14 days
   useEffect(() => {
     if (!isSupabaseEnabled || !supabase) return;
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (event) => {
-        if (event === "SIGNED_IN") {
-          try {
-            const user = await authService.getCurrentUser();
-            const tier = user?.tier?.toUpperCase?.();
-            const hasTrial = !!user?.trialActive;
-            const isPaid = tier !== "FREE";
-            const isStudent = !!user?.isStudent;
-
-            // Check if user has .edu email and is not already a student or on a paid plan
-            const userEmail = user?.email || "";
-            const isEduEmail = userEmail.toLowerCase().endsWith(".edu");
-
-            if (isEduEmail && tier === "FREE" && !isStudent) {
-              // Upgrade to student tier for .edu emails
-              try {
-                await api.post("/users/upgrade-student");
-                toast.success("🎓 Student account activated! You now have free access to all local features.");
-                await fetchUser();
-              } catch (error) {
-                console.error("Failed to upgrade to student tier:", error);
-                // Fall through to trial logic if student upgrade fails
-                if (!isPaid && !hasTrial) {
-                  await api.post("/users/start-trial");
-                  toast.success("Trial started! Enjoy your 14-day access.");
-                  await fetchUser();
-                }
-              }
-            } else if (!isPaid && !hasTrial && !isStudent) {
-              // Only start trial for non-student, non-paid users
-              try {
-                await api.post("/users/start-trial");
-                toast.success("🎉 Trial started! Enjoy your 14-day free access to all features.");
-                await fetchUser();
-              } catch (error) {
-                console.error("Failed to start trial:", error);
-                toast.error("Failed to start trial. Please try again or contact support.");
-              }
-            }
-          } catch (error) {
-            console.error("Auth state change error:", error);
-            // Still allow user to proceed even if trial activation fails
-          }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        const createdAt = new Date(session.user.created_at);
+        const trialEndsAt = new Date(createdAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+        if (trialEndsAt.getTime() > Date.now()) {
+          toast.success("🎉 Trial started! Enjoy your 14-day free access to all features.");
         }
-      },
-    );
-
-    return () => subscription.subscription.unsubscribe();
-  }, [fetchUser]);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleOAuthLogin = async (provider: Provider) => {
     if (!isSupabaseEnabled || !supabase) {
@@ -130,7 +85,6 @@ export default function AuthPage() {
           password,
         });
         if (error) throw error;
-        toast.success("Successfully logged in!");
       }
     } catch (error: any) {
       toast.error(error.message || "Authentication failed");

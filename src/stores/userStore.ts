@@ -7,8 +7,6 @@ export type UserWithTier = {
   email?: string;
   fullname?: string;
   tier?: string;
-  trialActive: boolean;
-  trialEndsAt: Date | null;
 };
 
 interface UserStore {
