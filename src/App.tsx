@@ -4,6 +4,7 @@ import { UpdateChecker } from "@/components/UpdateChecker";
 import { ThemeProvider } from "@/components/theme-provider";
 import { McpRefreshProvider } from "@/contexts/McpRefreshContext";
 import { useDeepLink } from "@/hooks/useDeepLink";
+import { useVersionTracking } from "@/hooks/useVersionTracking";
 import { useGlobalDialogStore } from "@/stores/globalDialogStore";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./App.css";
@@ -22,6 +23,7 @@ const queryClient = new QueryClient({
 
 function App() {
   useDeepLink();
+  useVersionTracking();
   const { open, type, hideDialog } = useGlobalDialogStore();
 
   return (
