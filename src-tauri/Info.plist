@@ -18,9 +18,5 @@
   <string>mcp-linker needs to send Apple Events to other applications.</string>
   <key>NSAppleScriptEnabled</key>
   <true/>
-  <key>NSCameraUsageDescription</key>
-  <string>mcp-linker needs camera access for capturing images for AI processing.</string>
-  <key>NSMicrophoneUsageDescription</key>
-  <string>mcp-linker needs microphone access for voice input features.</string>
 </dict>
 </plist>
