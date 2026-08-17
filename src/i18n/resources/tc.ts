@@ -36,7 +36,6 @@ const tc: { translation: TranslationSchema } = {
       updates: "更新",
       recentlyAdded: "最近新增",
       installapp: "新增伺服器",
-      dxt: "dxt",
       client: "用戶端",
     },
     content: {

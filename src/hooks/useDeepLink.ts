@@ -1,5 +1,4 @@
 import { useViewStore } from "@/stores/viewStore";
-import supabase from "@/utils/supabase";
 import { listen } from "@tauri-apps/api/event";
 import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { useEffect, useState } from "react";
@@ -19,14 +18,6 @@ export const useDeepLink = () => {
   const [isHandlingDeepLink, setIsHandlingDeepLink] = useState(false);
 
   useEffect(() => {
-    const urlObj = new URL(window.location.href);
-    const searchParams = new URLSearchParams(urlObj.search);
-    const code = searchParams.get("code");
-
-    if (code) {
-      setIsHandlingDeepLink(true);
-    }
-
     const handleUrl = async (urls: string[] | string) => {
       const url = Array.isArray(urls) ? urls[0] : urls;
       try {
@@ -37,7 +28,6 @@ export const useDeepLink = () => {
 
         setIsHandlingDeepLink(true);
         const urlObj = new URL(url);
-        const searchParams = new URLSearchParams(urlObj.search.substring(1));
 
         if (url.includes("install-app")) {
           const urlObj = new URL(url);
@@ -66,22 +56,9 @@ export const useDeepLink = () => {
           navigate(targetPath, { replace: true });
         }
 
-        const code = searchParams.get("code");
-        if (code && supabase) {
-          const { data, error } =
-            await supabase.auth.exchangeCodeForSession(code);
-          navigate("/manage");
-          if (error) throw error;
-          if (data.session) {
-            toast.success("User authenticated successfully");
-            navigate("/manage", { replace: true });
-            return;
-          }
-        }
       } catch (err) {
         processedUrls.delete(url);
-        toast.error("Authentication failed. Please sign in again.");
-        navigate("/auth", { replace: true });
+        toast.error(`Failed to handle link: ${err}`);
       } finally {
         setIsHandlingDeepLink(false);
       }

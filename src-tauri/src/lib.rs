@@ -13,7 +13,6 @@ mod client;
 mod cmd;
 mod codex;
 mod config;
-mod dxt;
 mod encryption;
 mod git;
 mod installer;
@@ -64,13 +63,6 @@ pub fn run() {
             encryption::generate_encryption_key,
             encryption::encrypt_data,
             encryption::decrypt_data,
-            dxt::load_manifests,
-            dxt::load_manifest,
-            dxt::fetch_and_save_manifest,
-            dxt::read_dxt_setting,
-            dxt::save_dxt_setting,
-            dxt::download_and_extract_manifests,
-            dxt::check_manifests_exist,
             claude_code_commands::claude_mcp_list,
             claude_code_commands::claude_mcp_get,
             claude_code_commands::claude_mcp_add,

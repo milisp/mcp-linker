@@ -1,27 +1,32 @@
-import { fetchServers } from "@/lib/api/servers";
-import { useQuery } from "@tanstack/react-query";
+import { fetchRegistryServers } from "@/lib/registry";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
+/**
+ * Paginated list of MCP servers from the official registry.
+ * The registry uses cursor pagination, so pages are accumulated by the query.
+ */
 export function useMcpServers({
-  page = 1,
-  pageSize = 20,
-  category = null,
   keyword = "",
-  sort = "github_stars",
-  direction = "desc",
-}: {
-  page?: number;
-  pageSize?: number;
-  category?: string | null;
-  keyword?: string;
-  sort?: string;
-  direction?: string;
-}) {
-  return useQuery({
-    queryKey: ["servers", page, pageSize, category, keyword, sort, direction],
-    queryFn: () =>
-      fetchServers(page, pageSize, category, keyword, sort, direction),
+  pageSize = 30,
+}: { keyword?: string; pageSize?: number } = {}) {
+  const query = useInfiniteQuery({
+    queryKey: ["registry-servers", keyword, pageSize],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam, signal }) =>
+      fetchRegistryServers({
+        cursor: pageParam,
+        search: keyword || undefined,
+        limit: pageSize,
+        signal,
+      }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
     retry: 2,
   });
+
+  return {
+    ...query,
+    servers: query.data?.pages.flatMap((p) => p.servers) ?? [],
+  };
 }

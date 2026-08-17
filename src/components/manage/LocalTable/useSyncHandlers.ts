@@ -2,21 +2,19 @@ import { useCallback } from "react";
 
 export function useSyncHandlers(
   syncConfig: any,
-  handleCloudUpload: any,
-  handleCloudDownload: any,
+  setIsSyncing: (syncing: boolean) => void,
 ) {
-  // Local sync handler
   const handleSync = useCallback(
-    (fromClient: string, toClient: string, overrideAll: boolean) => {
-      return syncConfig(fromClient, toClient, overrideAll);
+    async (fromClient: string, toClient: string, overrideAll: boolean) => {
+      setIsSyncing(true);
+      try {
+        return await syncConfig(fromClient, toClient, overrideAll);
+      } finally {
+        setIsSyncing(false);
+      }
     },
-    [syncConfig],
+    [syncConfig, setIsSyncing],
   );
 
-  // Cloud sync handlers are passed through
-  return {
-    handleSync,
-    handleCloudUpload,
-    handleCloudDownload,
-  };
+  return { handleSync };
 }

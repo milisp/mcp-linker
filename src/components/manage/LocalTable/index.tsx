@@ -1,34 +1,22 @@
 // Main LocalTable component, refactored to use hooks and header component
-import { CloudSyncDialog } from "@/components/manage/CloudSyncDialog";
 import { LocalSyncDialog } from "@/components/manage/LocalSyncDialog";
 import { RefreshMcpConfig } from "@/components/manage/RefreshMcpConfig";
 import { DataTable } from "@/components/ui/data-table";
-import { useAuth } from "@/hooks/useAuth";
-import { useCloudSync } from "@/hooks/useCloudSync";
 import { useMcpConfig } from "@/hooks/useMcpConfig";
-import { useTier } from "@/hooks/useTier";
 import { useClientPathStore } from "@/stores/clientPathStore";
-import { useGlobalDialogStore } from "@/stores/globalDialogStore";
-import { getEncryptionKey } from "@/utils/encryption";
 import { RowSelectionState, Table } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 import { useServerTableColumns } from "../ServerTableColumns";
 import { LocalTableHeader } from "./LocalTableHeader";
-import { MissingKeyDialog } from "./MissingKeyDialog";
 import { useServersData } from "./useServersData";
 import { useSyncHandlers } from "./useSyncHandlers";
 
 export const LocalTable = () => {
-  const { isAuthenticated } = useAuth();
   const { selectedClient, selectedPath } = useClientPathStore();
   const [localSyncDialogOpen, setLocalSyncDialogOpen] = useState(false);
-  const [cloudSyncDialogOpen, setCloudSyncDialogOpen] = useState(false);
   const [isDeleting, _setIsDeleting] = useState(false);
   const [_tableInstance, setTableInstance] = useState<Table<any> | null>(null);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [showMissingKeyDialog, setShowMissingKeyDialog] = useState(false);
-  const showGlobalDialog = useGlobalDialogStore((s) => s.showDialog);
-  const key = getEncryptionKey();
 
   const {
     config,
@@ -45,10 +33,7 @@ export const LocalTable = () => {
 
   const serversData = useServersData(config, disabledServers, selectedClient);
 
-  const { isSyncing, handleCloudUpload, handleCloudDownload } = useCloudSync(
-    selectedClient,
-    serversData,
-  );
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Batch actions
   const handleBatchDelete = async () => {
@@ -96,35 +81,10 @@ export const LocalTable = () => {
   };
 
   // Sync handlers
-  const { handleSync } = useSyncHandlers(
-    syncConfig,
-    handleCloudUpload,
-    handleCloudDownload,
-  );
+  const { handleSync } = useSyncHandlers(syncConfig, setIsSyncing);
 
   // Header action handlers
   const handleLocalSync = () => setLocalSyncDialogOpen(true);
-  const { canUseCloudSync } = useTier();
-
-  const handleCloudSync = () => {
-    if (!isAuthenticated) {
-      showGlobalDialog("login");
-      return;
-    }
-
-    // Check if user has Professional or Team tier for cloud sync
-    if (!canUseCloudSync) {
-      showGlobalDialog("upgrade");
-      return;
-    }
-
-    if (!key) {
-      setShowMissingKeyDialog(true);
-      return;
-    } else {
-      setCloudSyncDialogOpen(true);
-    }
-  };
 
   const localColumns = useServerTableColumns({
     disabledServers,
@@ -163,7 +123,6 @@ export const LocalTable = () => {
       <LocalTableHeader
         isSyncing={isSyncing}
         onLocalSync={handleLocalSync}
-        onCloudSync={handleCloudSync}
       />
       {error ? (
         <RefreshMcpConfig error={error} onRetry={loadConfig} />
@@ -189,19 +148,6 @@ export const LocalTable = () => {
             onLocalSync={handleSync}
             currentClient={selectedClient}
             isSyncing={isSyncing}
-          />
-          <CloudSyncDialog
-            open={cloudSyncDialogOpen}
-            onOpenChange={setCloudSyncDialogOpen}
-            onCloudUpload={handleCloudUpload}
-            onCloudDownload={handleCloudDownload}
-            isSyncing={isSyncing}
-            servers={serversData}
-            onCloudDownloadSuccess={loadConfig}
-          />
-          <MissingKeyDialog
-            open={showMissingKeyDialog}
-            onOpenChange={setShowMissingKeyDialog}
           />
         </>
       )}

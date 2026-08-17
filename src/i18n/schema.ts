@@ -32,7 +32,6 @@ export interface TranslationSchema {
     about: string;
     recentlyAdded: string;
     installapp: string;
-    dxt: string;
     client: string;
   };
   content: {

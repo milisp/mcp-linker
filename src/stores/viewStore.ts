@@ -6,16 +6,11 @@ export type ViewName =
   | "claude-code-manage"
   | "recently"
   | "settings"
-  | "auth"
   | "about"
-  | "dxt"
-  | "dxt-detail"
   | "server"
   | "install-app"
   | "notes"
-  | "favorites"
-  | "dashboard"
-  | "onboarding";
+  | "favorites";
 
 export type ViewParams = Record<string, string>;
 export type ViewSearch = Record<string, string>;
@@ -34,11 +29,6 @@ interface ViewStore extends ViewEntry {
 
 // Order matters: more specific patterns first
 const ROUTES: Array<{ re: RegExp; view: ViewName; keys: string[] }> = [
-  {
-    re: /^\/dxt\/([^/?]+)\/([^/?]+)/,
-    view: "dxt-detail",
-    keys: ["user", "repo"],
-  },
   {
     re: /^\/servers\/([^/?]+)\/([^/?]+)/,
     view: "server",
@@ -85,9 +75,6 @@ export function entryToPath({ view, params, search }: ViewEntry): string {
       path = params.owner
         ? `/servers/${params.owner}/${params.repo}`
         : `/servers/${params.id ?? ""}`;
-      break;
-    case "dxt-detail":
-      path = `/dxt/${params.user}/${params.repo}`;
       break;
     case "discover":
       path = "/";

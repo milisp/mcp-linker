@@ -1,17 +1,18 @@
+import type { ServerConfig } from "./index";
+
 export type ServerType = {
+  /** Registry server name in reverse-DNS form, e.g. io.github.user/weather */
   id: string;
   name: string;
   developer?: string;
   logoUrl?: string;
   description: string;
-  category?: string;
   source: string;
   isOfficial: boolean;
-  githubStars: number;
-  downloads: number;
-  rating: number;
-  views: number;
+  version?: string;
   isFavorited: boolean;
   tags?: string[];
   tools?: string[];
+  /** Installable configs derived from the registry packages/remotes */
+  configs?: ServerConfig[];
 };

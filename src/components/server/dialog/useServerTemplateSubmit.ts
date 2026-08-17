@@ -1,8 +1,4 @@
 import { useMcpRefresh } from "@/contexts/McpRefreshContext";
-import { useAuth } from "@/hooks/useAuth";
-import { useIsFreeUser } from "@/hooks/useTier";
-import { useGlobalDialogStore } from "@/stores/globalDialogStore";
-import { useStatsStore } from "@/stores/statsStore";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { transformConfig } from "../utils/transformConfig";
@@ -24,20 +20,9 @@ export function useServerTemplateSubmit({
   selectedPath: string | undefined;
 }) {
   const { refreshServerList } = useMcpRefresh();
-  const { isAuthenticated } = useAuth();
-  const isFreeUser = useIsFreeUser();
-  const personalStats = useStatsStore((s) => s.personalStats);
-  const showGlobalDialog = useGlobalDialogStore((s) => s.showDialog);
-
-  const FREE_SERVER_LIMIT = 3;
-  const isLimitedUser = !isAuthenticated || isFreeUser;
 
   // Handle submit (add to local config)
   const handleSubmit = async () => {
-    if (isLimitedUser && personalStats.total >= FREE_SERVER_LIMIT) {
-      showGlobalDialog(isAuthenticated ? "upgrade" : "login");
-      return;
-    }
     try {
       const finalConfig = transformConfig(serverType, config);
       await invoke("add_mcp_server", {

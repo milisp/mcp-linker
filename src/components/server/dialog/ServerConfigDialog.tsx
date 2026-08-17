@@ -1,11 +1,9 @@
 // ServerConfigDialog.tsx
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ServerConfig, ServerType, SseConfig } from "@/types";
-import { useQuery } from "@tanstack/react-query";
 import { forwardRef, useEffect } from "react";
 import { toast } from "sonner";
 
-import { fetchServerConfig } from "@/lib/api";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { ServerConfigForm } from "../form/ServerConfigForm";
 import {
@@ -28,32 +26,6 @@ export const ServerConfigDialog = forwardRef<
   const { selectedClient, selectedPath } = useClientPathStore();
   const { saveServerConfig } = useSaveServerConfig();
 
-  const queryResult = useQuery({
-    queryKey: ["configs", currentServer?.id],
-    queryFn: () => {
-      if (!currentServer?.id) throw new Error("No server ID");
-      return fetchServerConfig(currentServer.id);
-    },
-    enabled: isOpen && !!currentServer,
-    staleTime: 1000 * 60 * 60 * 24 * 7,
-    retry: 0,
-    refetchOnWindowFocus: false,
-  });
-
-  // Show toast on fetch error (404 or others)
-  useEffect(() => {
-    if (queryResult.error) {
-      const err = queryResult.error as Error;
-      if (err.message.includes("404") || err.message.includes("not found")) {
-        toast.error(
-          "Configuration not found: The server may not be set up yet.",
-        );
-      } else {
-        toast.error(`Failed to load configuration: ${err.message}`);
-      }
-    }
-  }, [queryResult.error]);
-
   const { clearDraft } = useLocalDraft();
 
   const {
@@ -69,7 +41,6 @@ export const ServerConfigDialog = forwardRef<
   } = useServerConfigDialog({
     isOpen,
     currentServer,
-    queryResult,
     clearDraft: () => clearDraft(),
   });
 

@@ -17,16 +17,15 @@
 ## 🚀 Why MCP Linker?
 
 - ⚡ **Instant** — Add MCP servers in seconds
-- 🧠 **Multi-Client Support(paid plan)** — Works with all major AI clients
+- 🧠 **Multi-Client Support** — Works with all major AI clients
 
 ## ✨ Features
 
 - **Local Sync** — Sync MCP server configs across multiple clients
-- **600+ Curated MCP Servers** — Built-in marketplace with sequential-thinking, desktop-commander, and more
+- **Official MCP Registry** — Browse and install servers straight from registry.modelcontextprotocol.io
 - **Multi-Client Support** — Claude Desktop/Code, Cursor, VS Code, Cline, Windsurf, Codex, Roo Code. [see Detail](./docs/clients.md)
 - **Cross-Platform** — macOS, Windows, Linux
 - **Smart Detection** — Auto-detect Python, Node.js, uv environments
-- **Cloud Sync** — Optional encrypted sync across devices (Pro)
 - **GUI for OpenAI Codex CLI** — based on [Codexia](https://github.com/milisp/codexia)
 
 ## 🚀 Quick Start
@@ -76,7 +75,6 @@ Model Context Protocol is like USB-C for AI — a standard way to connect AI mod
 
 - [💬 Join Discussions](https://github.com/milisp/mcp-linker/discussions)
 - [🐛 Report Issues](https://github.com/milisp/mcp-linker/issues)
-- [☁️ Pro Plans](https://mcp-linker.milisp.dev/pricing) — Cloud sync starting at coffee price/month
 
 ## 🛠️ Development
 

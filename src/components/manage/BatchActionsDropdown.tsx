@@ -5,8 +5,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useTier } from "@/hooks/useTier";
-import { useGlobalDialogStore } from "@/stores/globalDialogStore";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 
 interface BatchActionsDropdownProps {
@@ -24,28 +22,6 @@ export const BatchActionsDropdown = ({
   isDeleting,
   hasSelectedRows,
 }: BatchActionsDropdownProps) => {
-  const { hasMinimumTier } = useTier();
-  const showGlobalDialog = useGlobalDialogStore((s) => s.showDialog);
-
-  // Enable/disable servers instantly requires LIFETIME or higher
-  const canToggle = hasMinimumTier("LIFETIME") || import.meta.env.DEV;
-
-  const handleEnableClick = () => {
-    if (!canToggle) {
-      showGlobalDialog("upgrade");
-      return;
-    }
-    handleBatchEnable?.();
-  };
-
-  const handleDisableClick = () => {
-    if (!canToggle) {
-      showGlobalDialog("upgrade");
-      return;
-    }
-    handleBatchDisable?.();
-  };
-
   return (
     <>
       {hasSelectedRows && (
@@ -58,20 +34,16 @@ export const BatchActionsDropdown = ({
           <DropdownMenuContent>
             {handleBatchEnable && (
               <DropdownMenuItem
-                onClick={handleEnableClick}
-                disabled={!canToggle}
-                className={!canToggle ? "opacity-50" : ""}
+                onClick={() => handleBatchEnable()}
               >
-                Enable Selected {!canToggle && "🔒"}
+                Enable Selected
               </DropdownMenuItem>
             )}
             {handleBatchDisable && (
               <DropdownMenuItem
-                onClick={handleDisableClick}
-                disabled={!canToggle}
-                className={!canToggle ? "opacity-50" : ""}
+                onClick={() => handleBatchDisable()}
               >
-                Disable Selected {!canToggle && "🔒"}
+                Disable Selected
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={handleBatchDelete} disabled={isDeleting}>

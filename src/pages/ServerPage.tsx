@@ -1,17 +1,16 @@
 import { ContentLoadingFallback } from "@/components/common/LoadingConfig";
-import { Github } from "@/components/icons";
 import { ServerConfigForm } from "@/components/server/form/ServerConfigForm";
 import { useServerConfig } from "@/components/server/hooks/useServerConfig";
 import { ServerBadge, ServerMeta } from "@/components/server/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGithubReadmeJson } from "@/hooks/useGithubReadmeJson";
-import { api } from "@/lib/api";
+import { fetchRegistryServer } from "@/lib/registry";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useViewStore } from "@/stores/viewStore";
 import type { ServerType } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
-import { ChevronLeft, Download, Eye, Star, User } from "lucide-react";
+import { ChevronLeft, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -67,13 +66,12 @@ export function ServerPage() {
   const { fetchAllJsonBlocks } = useGithubReadmeJson();
 
   // Helper to safely set server and config state
-  function applyServerConfig(serverData: any) {
+  function applyServerConfig(serverData: ServerType) {
     setServer(serverData);
-    setServerName(serverData.name);
-    // Always use the first config item if available
-    const configItem = serverData.serverConfigs?.[0]?.configItems?.[0] || {};
+    // Registry names are reverse-DNS; clients expect the short last segment.
+    setServerName(serverData.id.split("/").pop() || serverData.name);
+    const configItem = (serverData.configs?.[0] as any) || {};
     setConfig(configItem);
-    // Ensure env is always an object
     setEnvValues(configItem.env || {});
   }
 
@@ -81,16 +79,13 @@ export function ServerPage() {
     const fetchServer = async () => {
       setIsLoading(true);
       try {
-        let serverData = null;
+        let serverData: ServerType | null = null;
         if (id) {
-          const res = await api.get(`/servers/${id}`);
-          serverData = res.data;
-          applyServerConfig(res.data);
+          serverData = await fetchRegistryServer(decodeURIComponent(id));
+          if (!serverData) throw new Error("Server not found in registry");
+          applyServerConfig(serverData);
         } else if (owner && repo) {
-          const serverRepoUrl = `/servers/@${owner}/${repo}`;
-          const res = await api.get(serverRepoUrl);
-          serverData = res.data;
-          applyServerConfig(res.data);
+          throw new Error("No registry id, falling back to GitHub README");
         }
 
         // Auto submit logic if needed
@@ -102,11 +97,10 @@ export function ServerPage() {
               await invoke("add_mcp_server", {
                 clientName: selectedClient,
                 path: selectedPath || undefined,
-                serverName: serverData.name,
-                serverConfig:
-                  serverData.serverConfigs?.[0]?.configItems?.[0] || {},
+                serverName: serverData!.id.split("/").pop() || serverData!.name,
+                serverConfig: serverData!.configs?.[0] || {},
               });
-              toast.success(`add server ${serverData.name}`);
+              toast.success(`add server ${serverData!.name}`);
             } catch (e: any) {
               console.error(e);
               toast.error(`add server Failed: ${JSON.stringify(e)}`);
@@ -142,13 +136,8 @@ export function ServerPage() {
                       developer: owner,
                       logoUrl: "",
                       description: "",
-                      category: "",
                       source: githubUrl,
                       isOfficial: false,
-                      githubStars: 0,
-                      downloads: 0,
-                      rating: 0,
-                      views: 0,
                       isFavorited: false,
                       tags: [],
                       tools: [],
@@ -217,10 +206,7 @@ export function ServerPage() {
 
           <div className="flex flex-wrap gap-6 text-sm text-gray-600">
             <ServerMeta icon={User} value={server.developer} />
-            <ServerMeta icon={Star} value={server.rating?.toFixed(1)} />
-            <ServerMeta icon={Github} value={server.githubStars} />
-            <ServerMeta icon={Download} value={server.downloads} />
-            <ServerMeta icon={Eye} value={server.views} />
+            {server.version && <span>v{server.version}</span>}
           </div>
         </CardContent>
       </Card>

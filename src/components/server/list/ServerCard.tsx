@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
 import { useFavoriteServers } from "@/stores/favoriteServers";
 import { useViewStore } from "@/stores/viewStore";
 import type { ServerType } from "@/types";
@@ -40,7 +39,6 @@ export function ServerCard({
   const { t } = useTranslation();
   const [isFavoriteLoading, setIiFavoriteLoading] = useState(false);
   const toggleFavorite = useFavoriteServers((state) => state.toggleFavorite);
-  const { user } = useAuth();
   const { navigate } = useViewStore();
 
   const showGithubIcon =
@@ -50,15 +48,9 @@ export function ServerCard({
     e.stopPropagation();
 
     // Check if user is authenticated
-    if (!user) {
-      toast.error("Please sign in to favorite servers");
-      navigate("/auth");
-      return;
-    }
-
     setIiFavoriteLoading(true);
     try {
-      await toggleFavorite(server);
+      toggleFavorite(server);
       toast.success(
         `Successfully ${isFavorited ? "removed from" : "added to"} favorites`,
       );
@@ -85,7 +77,7 @@ export function ServerCard({
                   className="w-12 h-12 rounded-full"
                 />
               ) : (
-                showGithubIcon && <Github size={24} />
+                showGithubIcon && <Github className="w-6 h-6" />
               )}
             </div>
             <div>
@@ -157,14 +149,12 @@ export function ServerCard({
       <CardFooter className="flex justify-between px-4 pb-4">
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
           {server.isOfficial && <span className="text-blue-600">🎖️</span>}
-          {server.githubStars !== undefined && (
-            <span>⭐ {server.githubStars}</span>
-          )}
+          {server.version && <span>v{server.version}</span>}
         </span>
         <span className="flex gap-2 ">
           <span className="group-hover:flex hidden group">
             <Button
-              onClick={() => navigate(`/servers/${server.id}`)}
+              onClick={() => navigate(`/servers/${encodeURIComponent(server.id)}`)}
               variant="default"
             >
               {t("viewDetail")}

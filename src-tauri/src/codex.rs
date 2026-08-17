@@ -17,7 +17,7 @@ fn is_enabled_true(enabled: &bool) -> bool {
     *enabled
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type")]
 pub enum McpServerConfig {
     #[serde(rename = "stdio")]
@@ -35,6 +35,53 @@ pub enum McpServerConfig {
         #[serde(default = "default_enabled", skip_serializing_if = "is_enabled_true")]
         enabled: bool,
     },
+}
+
+// Codex writes entries without a `type` field, so infer it from the shape.
+impl<'de> Deserialize<'de> for McpServerConfig {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Raw {
+            r#type: Option<String>,
+            command: Option<String>,
+            #[serde(default)]
+            args: Vec<String>,
+            env: Option<HashMap<String, String>>,
+            url: Option<String>,
+            #[serde(default = "default_enabled")]
+            enabled: bool,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+        let is_http = match raw.r#type.as_deref() {
+            Some("http") | Some("sse") | Some("streamable_http") => true,
+            Some("stdio") => false,
+            _ => raw.url.is_some() && raw.command.is_none(),
+        };
+
+        if is_http {
+            let url = raw
+                .url
+                .ok_or_else(|| serde::de::Error::missing_field("url"))?;
+            Ok(McpServerConfig::Http {
+                url,
+                enabled: raw.enabled,
+            })
+        } else {
+            let command = raw
+                .command
+                .ok_or_else(|| serde::de::Error::missing_field("command"))?;
+            Ok(McpServerConfig::Stdio {
+                command,
+                args: raw.args,
+                env: raw.env,
+                enabled: raw.enabled,
+            })
+        }
+    }
 }
 
 impl McpServerConfig {
