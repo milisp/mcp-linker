@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 - **Transport filter on Discover page** — filter MCP servers by Local (stdio) or Remote (HTTP/SSE) transport, with auto-pagination to keep filtered results filled
 - **Global error boundary** — wrapped the app root in an `ErrorBoundary` to catch rendering errors
 
+### Refactoring & Cleanup
+- Removed cloud sync and authentication services, transitioning to a local-first architecture
+- Removed unused note stores, utility modules, and components
+
 ### Infrastructure
 - Added a `typecheck` CI job (`bun run typecheck`) and corresponding `typecheck` script in `package.json`
 - Removed stale Supabase/auth env vars (`VITE_API_BASE_URL`, `VITE_REDIRECT_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) from CI and release workflows
