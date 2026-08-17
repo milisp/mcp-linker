@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.3] - 2026-08-16
+
+### New Features
+- **Transport filter on Discover page** — filter MCP servers by Local (stdio) or Remote (HTTP/SSE) transport, with auto-pagination to keep filtered results filled
+- **Global error boundary** — wrapped the app root in an `ErrorBoundary` to catch rendering errors
+
+### Infrastructure
+- Added a `typecheck` CI job (`bun run typecheck`) and corresponding `typecheck` script in `package.json`
+- Removed stale Supabase/auth env vars (`VITE_API_BASE_URL`, `VITE_REDIRECT_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) from CI and release workflows
+
 ## [2.1.0] - 2026-03-25
 
 ### New Features

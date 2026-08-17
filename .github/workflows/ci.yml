@@ -18,15 +18,28 @@ on:
       - "package.json"
 
 env:
-  VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-  VITE_REDIRECT_URL: ${{ secrets.VITE_REDIRECT_URL }}
-  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
   TAURI_BUNDLE: all
 
 jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    name: Typecheck
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Typecheck
+        run: bun run typecheck
+
   build-linux:
     runs-on: ubuntu-latest
     name: Build Linux x86_64

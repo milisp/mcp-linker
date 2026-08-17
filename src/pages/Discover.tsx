@@ -2,12 +2,27 @@ import { HeroBanner } from "@/components/banner";
 import { ServerList } from "@/components/server";
 import { useMcpServers } from "@/hooks/useMcpServers";
 import { Search } from "lucide-react";
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
+
+type TransportFilter = "all" | "local" | "remote";
+
+const TRANSPORT_FILTERS: { value: TransportFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "local", label: "Local (stdio)" },
+  { value: "remote", label: "Remote (HTTP/SSE)" },
+];
 
 export default function Discovery() {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
+  const [transport, setTransport] = useState<TransportFilter>("all");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -19,6 +34,36 @@ export default function Discovery() {
     isFetchingNextPage,
     fetchNextPage,
   } = useMcpServers({ keyword: deferredSearchTerm });
+
+  const filteredServers = useMemo(() => {
+    if (transport === "all") return servers;
+    return servers.filter((server) =>
+      server.configs?.some((config) =>
+        transport === "local"
+          ? config.type === "stdio"
+          : config.type === "http" || config.type === "sse",
+      ),
+    );
+  }, [servers, transport]);
+
+  // Filtering happens client-side, so a narrow filter can leave too few results
+  // to fill the viewport and trigger the scroll sentinel. Keep pulling pages.
+  useEffect(() => {
+    if (
+      transport !== "all" &&
+      hasNextPage &&
+      !isFetchingNextPage &&
+      filteredServers.length < 10
+    ) {
+      fetchNextPage();
+    }
+  }, [
+    transport,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    filteredServers.length,
+  ]);
 
   // Infinite scrolling
   useEffect(() => {
@@ -56,6 +101,23 @@ export default function Discovery() {
             />
           </div>
         </form>
+
+        <div className="flex gap-2 mt-3">
+          {TRANSPORT_FILTERS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setTransport(value)}
+              className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                transport === value
+                  ? "bg-blue-500 text-white border-blue-500"
+                  : "border-gray-300 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {!deferredSearchTerm && <HeroBanner onFeatureClick={() => {}} />}
@@ -81,9 +143,9 @@ export default function Discovery() {
           </div>
         ) : (
           <>
-            <ServerList mcpServers={servers} />
+            <ServerList mcpServers={filteredServers} />
 
-            {!error && servers.length === 0 && (
+            {!error && filteredServers.length === 0 && (
               <div className="text-center py-10 text-gray-500">
                 <p className="text-lg">No servers found</p>
                 {deferredSearchTerm && (
