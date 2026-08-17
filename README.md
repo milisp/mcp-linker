@@ -39,8 +39,7 @@ yay -S mcp-linker-bin
 
 **macOS (Homebrew)**
 ```bash
-brew tap milisp/mcp-linker
-brew install --cask mcp-linker
+brew install --cask milisp/mcp-linker/mcp-linker
 ```
 
 **Windows / Linux / macOS (Direct Download)**
