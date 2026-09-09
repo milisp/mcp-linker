@@ -34,6 +34,13 @@ const MCP_SERVERS: MCPServer[] = [
     type: "http",
     url: "https://mcp.socket.dev/"
   },
+  {
+    name: "parallel-search",
+    description: "Opt in by clicking Add. User-provided search objectives, search queries, and requested URLs are sent to Parallel.",
+    category: "Development & Testing",
+    type: "http",
+    url: "https://search.parallel.ai/mcp"
+  },
   
   // Project Management & Documentation
   {
