@@ -41,7 +41,14 @@ const MCP_SERVERS: MCPServer[] = [
     type: "http",
     url: "https://search.parallel.ai/mcp"
   },
-  
+  {
+    name: "you-search",
+    description: "Opt in by clicking Add. Keyless web search and URL content reading; search queries and requested URLs are sent to You.com. An API key can be added later for the full toolset (https://api.you.com/mcp).",
+    category: "Development & Testing",
+    type: "http",
+    url: "https://api.you.com/mcp?profile=free"
+  },
+
   // Project Management & Documentation
   {
     name: "asana",
