@@ -6,8 +6,6 @@
   <false/>
   <key>LSMinimumSystemVersion</key>
   <string>10.15</string>
-  <key>CFBundleShortVersionString</key>
-  <string>2.2.0</string>
   <key>CFBundleName</key>
   <string>MCPLinker</string>
   <key>CFBundleDisplayName</key>
