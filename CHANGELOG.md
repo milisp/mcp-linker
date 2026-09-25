@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.4] - 2026-09-25
+
+### New Features
+- Added an optional Parallel Search MCP preset (#37)
+
+### Infrastructure
+- macOS builds are now notarized by Apple (passes `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID` to tauri-action), so the app opens without Gatekeeper warnings
+
 ## [2.2.3] - 2026-08-16
 
 ### New Features
