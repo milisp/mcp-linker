@@ -88,25 +88,11 @@ export function ServerPage() {
           throw new Error("No registry id, falling back to GitHub README");
         }
 
-        // Auto submit logic if needed
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get("autoSubmit") === "true" && serverData) {
-          toast.loading("Auto-submitting in 3 seconds...");
-          setTimeout(async () => {
-            try {
-              await invoke("add_mcp_server", {
-                clientName: selectedClient,
-                path: selectedPath || undefined,
-                serverName: serverData!.id.split("/").pop() || serverData!.name,
-                serverConfig: serverData!.configs?.[0] || {},
-              });
-              toast.success(`add server ${serverData!.name}`);
-            } catch (e: any) {
-              console.error(e);
-              toast.error(`add server Failed: ${JSON.stringify(e)}`);
-            }
-          }, 3000);
-        }
+        // SECURITY: no auto-submit from the URL. This used to silently
+        // write a registry server's command into the client config on a
+        // 3-second timer with no user confirmation, reachable from a
+        // deep link exactly like the install-app page. Adding a server
+        // must always be an explicit click.
       } catch (e: any) {
         // If API fetch fails, try to fetch JSON blocks from GitHub README
         console.error("Failed to fetch data", e);

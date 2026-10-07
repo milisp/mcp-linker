@@ -29,24 +29,25 @@ export const useDeepLink = () => {
         setIsHandlingDeepLink(true);
         const urlObj = new URL(url);
 
-        if (url.includes("install-app")) {
-          const urlObj = new URL(url);
+        // Match on host exactly instead of substring `includes()` so an
+        // attacker-controlled URL can't smuggle extra path segments or
+        // query values that merely contain "install-app" / "servers".
+        if (urlObj.host === "install-app") {
           debugLog(`got ${urlObj.pathname + urlObj.search}`);
           navigate(`/install-app${urlObj.pathname + urlObj.search}`, {
             replace: true,
           });
         }
 
-        if (url.includes("/servers/")) {
+        if (urlObj.host === "servers") {
+          // pathname is everything after the host, e.g. "/foo/bar"
           const pathParts = urlObj.pathname.split("/").filter(Boolean);
-          const serversIndex = pathParts.indexOf("servers");
-          const afterServers = pathParts.slice(serversIndex + 1);
 
           let targetPath = "";
-          if (afterServers.length === 1) {
-            targetPath = `/servers/${afterServers[0]}`;
-          } else if (afterServers.length === 2) {
-            targetPath = `/servers/${afterServers[0]}/${afterServers[1]}`;
+          if (pathParts.length === 1) {
+            targetPath = `/servers/${pathParts[0]}`;
+          } else if (pathParts.length === 2) {
+            targetPath = `/servers/${pathParts[0]}/${pathParts[1]}`;
           }
 
           if (urlObj.search) {
