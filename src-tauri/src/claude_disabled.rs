@@ -4,133 +4,108 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::command;
 
-fn get_disabled_path() -> Result<PathBuf, String> {
+// Claude Code natively tracks disabled servers per project:
+// ~/.claude.json -> projects[working_dir].disabledMcpServers: ["name", ...]
+// The server config stays in `mcpServers`; only the name is added to / removed from the list.
+const DISABLED_KEY: &str = "disabledMcpServers";
+
+fn get_config_path() -> Result<PathBuf, String> {
     let home = home_dir().ok_or_else(|| "Failed to get home directory".to_string())?;
-    Ok(home.join(".claude.disabled.json"))
+    Ok(home.join(".claude.json"))
 }
 
-fn read_disabled_file() -> Result<Value, String> {
-    let path = get_disabled_path()?;
+fn read_config() -> Result<Value, String> {
+    let path = get_config_path()?;
     if !path.exists() {
         return Ok(json!({"projects": {}}));
     }
-    let content = fs::read_to_string(&path).map_err(|e| format!("Read disabled file: {}", e))?;
-    let v: Value =
-        serde_json::from_str(&content).map_err(|e| format!("Parse disabled file: {}", e))?;
-    Ok(v)
+    let content = fs::read_to_string(&path).map_err(|e| format!("Read Claude config: {}", e))?;
+    serde_json::from_str(&content).map_err(|e| format!("Parse Claude config: {}", e))
 }
 
-fn write_disabled_file(v: &Value) -> Result<(), String> {
-    let path = get_disabled_path()?;
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("Create dir failed: {}", e))?;
+fn write_config(v: &Value) -> Result<(), String> {
+    let path = get_config_path()?;
+    let content =
+        serde_json::to_string_pretty(v).map_err(|e| format!("Serialize Claude config: {}", e))?;
+    fs::write(&path, content).map_err(|e| format!("Write Claude config: {}", e))
+}
+
+/// Get the project entry, creating missing intermediate objects.
+fn project_mut<'a>(config: &'a mut Value, working_dir: &str) -> &'a mut Value {
+    if !config["projects"].is_object() {
+        config["projects"] = json!({});
     }
-    fs::write(&path, serde_json::to_string_pretty(v).unwrap())
-        .map_err(|e| format!("Write disabled file: {}", e))
+    if !config["projects"][working_dir].is_object() {
+        config["projects"][working_dir] = json!({});
+    }
+    &mut config["projects"][working_dir]
+}
+
+fn disabled_names(project: &Value) -> Vec<String> {
+    project
+        .get(DISABLED_KEY)
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(|s| s.to_string()))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn set_disabled_names(project: &mut Value, names: Vec<String>) {
+    project[DISABLED_KEY] = json!(names);
+}
+
+/// Build the `{ name: serverConfig }` view of disabled servers for the frontend.
+/// Names without a matching `mcpServers` entry are skipped since there is nothing to render.
+fn disabled_view(config: &Value, working_dir: &str) -> Value {
+    let Some(project) = config.get("projects").and_then(|p| p.get(working_dir)) else {
+        return json!({});
+    };
+    let mut out = serde_json::Map::new();
+    for name in disabled_names(project) {
+        if let Some(cfg) = project.get("mcpServers").and_then(|m| m.get(&name)) {
+            out.insert(name, cfg.clone());
+        }
+    }
+    Value::Object(out)
 }
 
 #[command]
 pub async fn claude_list_disabled(working_dir: String) -> Result<Value, String> {
-    let v = read_disabled_file()?;
-    Ok(v.get("projects")
-        .and_then(|p| p.get(&working_dir))
-        .cloned()
-        .unwrap_or(json!({})))
+    let config = read_config()?;
+    Ok(disabled_view(&config, &working_dir))
 }
 
 #[command]
 pub async fn claude_disable_server(working_dir: String, name: String) -> Result<Value, String> {
-    // Read current disabled and Claude config to fetch config for the named server
-    let mut disabled = read_disabled_file()?;
-    if !disabled["projects"].is_object() {
-        disabled["projects"] = json!({});
-    }
-    if !disabled["projects"][&working_dir].is_object() {
-        disabled["projects"][&working_dir] = json!({});
+    let mut config = read_config()?;
+    let project = project_mut(&mut config, &working_dir);
+
+    if project.get("mcpServers").and_then(|m| m.get(&name)).is_none() {
+        return Err(format!("Server '{}' not found", name));
     }
 
-    // Try to read from Claude config to copy server config
-    let servers = crate::claude_code_commands::claude_mcp_list(working_dir.clone()).await?;
-    if let Some(s) = servers.into_iter().find(|s| s.name == name) {
-        // Convert to JSON matching Manage shape
-        let mut cfg = json!({"type": s.r#type});
-        if let Some(url) = s.url {
-            cfg["url"] = json!(url);
-        }
-        if let Some(cmd) = s.command {
-            cfg["command"] = json!(cmd);
-        }
-        if let Some(args) = s.args {
-            cfg["args"] = json!(args);
-        }
-        if let Some(env) = s.env {
-            cfg["env"] = json!(env);
-        }
-        disabled["projects"][&working_dir][&name] = cfg;
-        write_disabled_file(&disabled)?;
-
-        // Remove from ~/.claude.json active list
-        let _ =
-            crate::claude_code_commands::claude_mcp_remove(name.clone(), working_dir.clone()).await;
+    let mut names = disabled_names(project);
+    if !names.contains(&name) {
+        names.push(name);
+        set_disabled_names(project, names);
+        write_config(&config)?;
     }
-    Ok(disabled["projects"][&working_dir].clone())
+    Ok(disabled_view(&config, &working_dir))
 }
 
 #[command]
 pub async fn claude_enable_server(working_dir: String, name: String) -> Result<Value, String> {
-    let mut disabled = read_disabled_file()?;
+    let mut config = read_config()?;
+    let project = project_mut(&mut config, &working_dir);
 
-    // Read config from disabled store to re-add
-    let maybe_cfg = disabled
-        .get("projects")
-        .and_then(|p| p.get(&working_dir))
-        .and_then(|m| m.get(&name))
-        .cloned();
-
-    if let Some(cfg) = maybe_cfg {
-        // Map disabled config back to ClaudeCodeServer and add
-        let server = crate::claude_code_commands::ClaudeCodeServer {
-            name: name.clone(),
-            r#type: cfg
-                .get("type")
-                .and_then(|v| v.as_str())
-                .unwrap_or("http")
-                .to_string(),
-            url: cfg
-                .get("url")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-            command: cfg
-                .get("command")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-            args: cfg.get("args").and_then(|v| v.as_array()).map(|arr| {
-                arr.iter()
-                    .filter_map(|x| x.as_str().map(|s| s.to_string()))
-                    .collect()
-            }),
-            env: cfg.get("env").and_then(|v| v.as_object()).map(|m| {
-                m.iter()
-                    .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
-                    .collect()
-            }),
-        };
-        let _ = crate::claude_code_commands::claude_mcp_add(server, working_dir.clone()).await;
-    }
-
-    // Remove from disabled store
-    if disabled["projects"].is_object() && disabled["projects"][&working_dir].is_object() {
-        if let Some(map) = disabled["projects"][&working_dir].as_object_mut() {
-            map.remove(&name);
-        }
-    }
-    write_disabled_file(&disabled)?;
-
-    Ok(disabled
-        .get("projects")
-        .and_then(|p| p.get(&working_dir))
-        .cloned()
-        .unwrap_or(json!({})))
+    let mut names = disabled_names(project);
+    names.retain(|n| n != &name);
+    set_disabled_names(project, names);
+    write_config(&config)?;
+    Ok(disabled_view(&config, &working_dir))
 }
 
 #[command]
@@ -139,14 +114,20 @@ pub async fn claude_update_disabled(
     name: String,
     server_config: Value,
 ) -> Result<Value, String> {
-    let mut disabled = read_disabled_file()?;
-    if !disabled["projects"].is_object() {
-        disabled["projects"] = json!({});
+    let mut config = read_config()?;
+    let project = project_mut(&mut config, &working_dir);
+
+    // Update the config in place and keep the server marked as disabled.
+    if !project["mcpServers"].is_object() {
+        project["mcpServers"] = json!({});
     }
-    if !disabled["projects"][&working_dir].is_object() {
-        disabled["projects"][&working_dir] = json!({});
+    project["mcpServers"][&name] = server_config;
+
+    let mut names = disabled_names(project);
+    if !names.contains(&name) {
+        names.push(name);
     }
-    disabled["projects"][&working_dir][&name] = server_config;
-    write_disabled_file(&disabled)?;
-    Ok(disabled["projects"][&working_dir].clone())
+    set_disabled_names(project, names);
+    write_config(&config)?;
+    Ok(disabled_view(&config, &working_dir))
 }
