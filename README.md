@@ -32,14 +32,14 @@
 
 ### Installation
 
-**Arch Linux (AUR)**
-```bash
-yay -S mcp-linker-bin
-```
-
 **macOS (Homebrew)**
 ```bash
 brew install mcplinker
+```
+
+**Arch Linux (AUR)**
+```bash
+yay -S mcp-linker-bin
 ```
 
 **Windows / Linux / macOS (Direct Download)**
