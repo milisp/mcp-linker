@@ -23,13 +23,13 @@ env:
   TAURI_BUNDLE: all
 
 jobs:
-  typecheck:
+  build-linux:
     runs-on: ubuntu-latest
-    name: Typecheck
+    name: Build Linux x86_64
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
@@ -39,14 +39,6 @@ jobs:
 
       - name: Typecheck
         run: bun run typecheck
-
-  build-linux:
-    runs-on: ubuntu-latest
-    name: Build Linux x86_64
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Install Linux dependencies
         run: |
@@ -61,19 +53,5 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Check Tauri version
-        run: bun tauri --version
-
       - name: Build Tauri App
-        run: bun tauri build --target x86_64-unknown-linux-gnu --bundles deb
+        run: bun tauri build --bundles deb
