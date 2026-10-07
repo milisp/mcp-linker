@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.0] - 2026-10-07
+
+### Security
+- **Deep link & auto-submit safeguards** — removed auto-submit triggers (`autoSubmit` query parameter) in `InstallAppPage` and `ServerPage` to prevent unauthorized automated server additions; tightened host matching in `useDeepLink` to mitigate parameter injection
+
+### Improvements & Fixes
+- **Claude Code disabled servers** — updated disabled server handling to manage `disabledMcpServers` in the project configuration in place and filter disabled servers from the active list
+- **Homebrew installation shorthand** — simplified brew installation instructions to `brew install mcplinker`
+
+### Infrastructure & Packaging
+- Upgraded `tauri-action` to v1 and streamlined GitHub Actions CI/release workflows
+- Removed redundant custom `Info.plist` and unnecessary signing `entitlements.plist`
+- Cleaned up obsolete Homebrew tap update script in favor of direct workflow automation
+- Updated dependencies across the workspace (Vite 8, TypeScript 7, Tailwind CSS 4.3, Lucide React, etc.)
+
 ## [2.2.4] - 2026-09-25
 
 ### New Features
