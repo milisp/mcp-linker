@@ -13,19 +13,18 @@ on:
     branches:
       - main
     paths:
+      - ".github/workflows/ci.yml"
       - "src/**"
       - "src-tauri/**"
       - "package.json"
 
-env:
-  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-  TAURI_BUNDLE: all
+permissions:
+  contents: read
 
 jobs:
-  build-linux:
+  checks:
     runs-on: ubuntu-latest
-    name: Build Linux x86_64
+    name: Typecheck & cargo check
 
     steps:
       - name: Checkout code
@@ -53,5 +52,10 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Build Tauri App
-        run: bun tauri build --bundles deb
+      # tauri::generate_context! expects frontendDist to exist; cargo check does not need real assets.
+      - name: Create placeholder frontend dist
+        run: mkdir -p dist
+
+      - name: Cargo check
+        working-directory: src-tauri
+        run: cargo check
