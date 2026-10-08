@@ -1,7 +1,7 @@
 # MCP Linker
 
 [![Stars](https://img.shields.io/github/stars/milisp/mcp-linker?style=flat)](https://github.com/milisp/mcp-linker/stargazers)
-[![Downloads](https://img.shields.io/github/downloads/milisp/mcp-linker/total.svg)](https://https://milisp.github.io/modern-github-release/#/repo/milisp/mcp-linker)
+[![Downloads](https://img.shields.io/github/downloads/milisp/mcp-linker/total.svg)](https://milisp.github.io/modern-github-release/#/repo/milisp/mcp-linker)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -43,7 +43,7 @@ yay -S mcp-linker-bin
 ```
 
 **Windows / Linux / macOS (Direct Download)**
-Download the: [📥latest Releases](https://https://milisp.github.io/modern-github-release/#/repo/milisp/mcp-linker)
+Download the: [📥latest Releases](https://milisp.github.io/modern-github-release/#/repo/milisp/mcp-linker)
 
 > [!Note]
 > If you have subscribed, please relaunch the app after logging in for the first time.
