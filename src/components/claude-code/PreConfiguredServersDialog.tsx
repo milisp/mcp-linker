@@ -158,6 +158,13 @@ const MCP_SERVERS: MCPServer[] = [
     type: "http",
     url: "https://mcp.cloudflare.com/mcp"
   },
+  {
+    name: "cohesivity",
+    description: "Set up Postgres, hosting, email, storage and more for your project, no account needed",
+    category: "Infrastructure & DevOps",
+    type: "http",
+    url: "https://cohesivity.ai/mcp"
+  },
 
   // Automation & Integration
   {
