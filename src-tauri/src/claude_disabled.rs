@@ -66,6 +66,9 @@ pub async fn claude_disable_server(working_dir: String, name: String) -> Result<
         if let Some(env) = s.env {
             cfg["env"] = json!(env);
         }
+        if let Some(headers) = s.headers {
+            cfg["headers"] = json!(headers);
+        }
         disabled["projects"][&working_dir][&name] = cfg;
         write_disabled_file(&disabled)?;
 
@@ -110,6 +113,11 @@ pub async fn claude_enable_server(working_dir: String, name: String) -> Result<V
                     .collect()
             }),
             env: cfg.get("env").and_then(|v| v.as_object()).map(|m| {
+                m.iter()
+                    .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                    .collect()
+            }),
+            headers: cfg.get("headers").and_then(|v| v.as_object()).map(|m| {
                 m.iter()
                     .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
                     .collect()

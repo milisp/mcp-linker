@@ -10,6 +10,7 @@ interface ClaudeCodeServer {
   command?: string;
   args?: string[];
   env?: Record<string, string>;
+  headers?: Record<string, string>;
 }
 
 interface AddServerRequest {

@@ -169,6 +169,9 @@ async fn read_from_client(client: &str, path: Option<&str>) -> Result<JsonValue,
             if let Some(e) = s.env {
                 v.insert("env".into(), json!(e));
             }
+            if let Some(headers) = s.headers {
+                v.insert("headers".into(), json!(headers));
+            }
             mapped.insert(s.name, json!(v));
         }
         Ok(json!({"mcpServers": mapped}))
