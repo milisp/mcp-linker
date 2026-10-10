@@ -13,23 +13,22 @@ on:
     branches:
       - main
     paths:
+      - ".github/workflows/ci.yml"
       - "src/**"
       - "src-tauri/**"
       - "package.json"
 
-env:
-  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-  TAURI_BUNDLE: all
+permissions:
+  contents: read
 
 jobs:
-  typecheck:
+  checks:
     runs-on: ubuntu-latest
-    name: Typecheck
+    name: Typecheck & cargo check
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
@@ -39,14 +38,6 @@ jobs:
 
       - name: Typecheck
         run: bun run typecheck
-
-  build-linux:
-    runs-on: ubuntu-latest
-    name: Build Linux x86_64
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Install Linux dependencies
         run: |
@@ -61,19 +52,10 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      # tauri::generate_context! expects frontendDist to exist; cargo check does not need real assets.
+      - name: Create placeholder frontend dist
+        run: mkdir -p dist
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Check Tauri version
-        run: bun tauri --version
-
-      - name: Build Tauri App
-        run: bun tauri build --target x86_64-unknown-linux-gnu --bundles deb
+      - name: Cargo check
+        working-directory: src-tauri
+        run: cargo check

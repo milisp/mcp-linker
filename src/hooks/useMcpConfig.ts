@@ -110,6 +110,10 @@ export function useMcpConfig(
           false,
         );
         setDisabledServers(disabledData || {});
+        // Disabled servers stay in mcpServers natively; keep them out of the active list
+        for (const name of Object.keys(disabledData || {})) {
+          delete mapped.mcpServers[name];
+        }
       } else {
         data = await executeMcpOperation(
           invoke("read_json_file", {

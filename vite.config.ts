@@ -13,15 +13,17 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core React chunks
-          "react-core": ["react", "react-dom"],
-
-          // State management
-          zustand: ["zustand"],
-
-          // Data fetching
-          "react-query": ["@tanstack/react-query"],
+        manualChunks: (id) => {
+          if (id.includes("node_modules/react")) {
+            return "react-core";
+          }
+          if (id.includes("zustand")) {
+            return "zustand";
+          }
+          if (id.includes("@tanstack")) {
+            return "react-query";
+          }
+          return undefined;
         },
       },
     },
@@ -52,7 +54,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });

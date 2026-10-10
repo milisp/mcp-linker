@@ -37,7 +37,6 @@ export function InstallAppPage() {
   const config =
     search.config ||
     "eyJibGVuZGVyLW1jcCI6eyJjb21tYW5kIjoidXZ4IGJsZW5kZXItbWNwIn19";
-  const autoSubmit = search.autoSubmit;
   const repo = search.repo;
   const { selectedClient, selectedPath } = useClientPathStore();
 
@@ -84,12 +83,10 @@ export function InstallAppPage() {
     setEditableConfig(value);
   }, []);
 
-  // Auto-submit if requested
-  useEffect(() => {
-    if (autoSubmit === "true") {
-      addServer();
-    }
-  }, [autoSubmit, addServer]);
+  // SECURITY: do not auto-submit from a deep link. The `autoSubmit` query
+  // param used to trigger addServer() on mount with zero user confirmation,
+  // letting any webpage silently write an arbitrary command into the user's
+  // MCP client config. Adding a server must always be an explicit click.
 
   return (
     <div className="p-4 space-y-4">
