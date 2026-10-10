@@ -14,7 +14,7 @@ export function ClientSelector() {
   return (
     <div className="z-50">
       <Select value={selectedClient} onValueChange={setSelectedClient}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="h-8 w-full text-xs" aria-label="Target client">
           <SelectValue placeholder="Select a client" />
         </SelectTrigger>
         <SelectContent>

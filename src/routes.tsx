@@ -1,19 +1,15 @@
 import ClaudeCodeManage from "@/pages/ClaudeCodeManage";
 import Discover from "@/pages/Discover";
-import Favorites from "@/pages/favorites";
 import Manage from "@/pages/manage";
 import NotesPage from "@/pages/NotesPage";
-import Recently from "@/pages/recently";
 import { ServerPage } from "@/pages/ServerPage";
 import SettingsPage from "@/pages/SettingsPage";
 import {
-  Clock,
   Code,
   LayoutDashboard,
   NotebookPen,
-  PlusCircle,
+  FileInput,
   Search,
-  Star
 } from "lucide-react";
 import About from "./pages/About";
 import { InstallAppPage } from "./pages/InstallApp";
@@ -30,7 +26,7 @@ export const AppRoutes = () => {
     case "claude-code-manage":
       return <ClaudeCodeManage />;
     case "recently":
-      return <Recently />;
+      return <Manage />;
     case "settings":
       return <SettingsPage />;
     case "about":
@@ -42,7 +38,7 @@ export const AppRoutes = () => {
     case "notes":
       return <NotesPage />;
     case "favorites":
-      return <Favorites />;
+      return <Discover />;
     default:
       return <Discover />;
   }
@@ -74,19 +70,9 @@ export const getNavigationRoutes = (
       icon: <Code />,
     },
     {
-      id: "recently",
-      name: t("nav.recentlyAdded"),
-      icon: <Clock />,
-    },
-    {
-      id: "favorites",
-      name: t("nav.favs"),
-      icon: <Star />,
-    },
-    {
       id: "install-app",
-      name: t("nav.installapp"),
-      icon: <PlusCircle />,
+      name: "Import Configuration",
+      icon: <FileInput />,
     },
   ];
 };

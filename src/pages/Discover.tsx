@@ -10,6 +10,9 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { useViewStore } from "@/stores/viewStore";
+import Favorites from "./favorites";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type TransportFilter = "all" | "local" | "remote";
 
@@ -21,6 +24,8 @@ const TRANSPORT_FILTERS: { value: TransportFilter; label: string }[] = [
 
 export default function Discovery() {
   const { t } = useTranslation();
+  const { view, search, navigate } = useViewStore();
+  const favorites = view === "favorites" || search.tab === "favorites";
   const [searchTerm, setSearchTerm] = useState("");
   const [transport, setTransport] = useState<TransportFilter>("all");
   const deferredSearchTerm = useDeferredValue(searchTerm);
@@ -36,15 +41,16 @@ export default function Discovery() {
   } = useMcpServers({ keyword: deferredSearchTerm });
 
   const filteredServers = useMemo(() => {
-    if (transport === "all") return servers;
-    return servers.filter((server) =>
+    const categorized = search.category ? servers.filter(server => server.tags?.includes(search.category)) : servers;
+    if (transport === "all") return categorized;
+    return categorized.filter((server) =>
       server.configs?.some((config) =>
         transport === "local"
           ? config.type === "stdio"
           : config.type === "http" || config.type === "sse",
       ),
     );
-  }, [servers, transport]);
+  }, [servers, transport, search.category]);
 
   const featuredServers = filteredServers.filter(server => FEATURED_SERVER_IDS.has(server.id));
   const registryServers = filteredServers.filter(server => !CURATED_SERVER_IDS.has(server.id));
@@ -61,6 +67,7 @@ export default function Discovery() {
   // to fill the viewport and trigger the scroll sentinel. Keep pulling pages.
   useEffect(() => {
     if (
+      !favorites &&
       transport !== "all" &&
       hasNextPage &&
       !isFetchingNextPage &&
@@ -69,6 +76,7 @@ export default function Discovery() {
       fetchNextPage();
     }
   }, [
+    favorites,
     transport,
     hasNextPage,
     isFetchingNextPage,
@@ -92,14 +100,21 @@ export default function Discovery() {
 
     observer.observe(target);
     return () => observer.unobserve(target);
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [favorites, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="p-8 space-y-4">
+      <div className="flex justify-center">
+        <Tabs value={favorites ? "favorites" : "browse"} onValueChange={value => navigate(value === "favorites" ? "/discover?tab=favorites" : "/discover")}>
+          <TabsList><TabsTrigger value="browse">Browse</TabsTrigger><TabsTrigger value="favorites">{t("nav.favs")}</TabsTrigger></TabsList>
+        </Tabs>
+      </div>
+      {favorites ? <Favorites embedded /> : <>
+      {search.category && <div className="flex flex-wrap items-center gap-3 text-sm"><span>Category: {search.category}</span><button type="button" className="text-muted-foreground underline hover:text-foreground" onClick={() => navigate("/discover", { replace: true })}>Clear filter</button></div>}
       <div className="mb-6">
         <form
           onSubmit={(e) => e.preventDefault()}
-          className="relative max-w-2xl"
+          className="relative mx-auto w-full max-w-2xl"
         >
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -113,7 +128,7 @@ export default function Discovery() {
           </div>
         </form>
 
-        <div className="flex gap-2 mt-3">
+        <div className="flex justify-center gap-2 mt-3">
           {TRANSPORT_FILTERS.map(({ value, label }) => (
             <button
               key={value}
@@ -189,6 +204,7 @@ export default function Discovery() {
           </>
         )}
       </div>
+      </>}
     </div>
   );
 }

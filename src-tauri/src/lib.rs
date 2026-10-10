@@ -7,6 +7,7 @@ use std::env;
 use std::sync::{Arc, Mutex};
 
 mod adapter;
+mod app_settings;
 mod claude_code_commands;
 mod claude_tools;
 mod claude_disabled;
@@ -46,6 +47,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
+            app_settings::read_app_settings,
+            app_settings::save_project_preferences,
             cmd::read_json_file,
             cmd::write_json_file,
             cmd::get_app_path,

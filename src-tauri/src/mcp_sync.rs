@@ -152,7 +152,7 @@ async fn read_from_client(client: &str, path: Option<&str>) -> Result<JsonValue,
         Ok(j)
     } else if client == "claude_code" {
         let workdir = path.ok_or_else(|| "Claude Code workingDir is required".to_string())?;
-        let list = claude_code_commands::claude_mcp_list(workdir.to_string()).await?;
+        let list = claude_code_commands::claude_mcp_list(workdir.to_string(), None).await?;
         let mut mapped = serde_json::Map::new();
         for s in list {
             let mut v = serde_json::Map::new();
@@ -229,14 +229,14 @@ async fn write_to_client(
         let from_servers = content.get("mcpServers").cloned().unwrap_or(json!({}));
         let from_map = from_servers.as_object().cloned().unwrap_or_default();
         // Load current
-        let current = claude_code_commands::claude_mcp_list(workdir.to_string()).await?;
+        let current = claude_code_commands::claude_mcp_list(workdir.to_string(), None).await?;
         let current_names: std::collections::HashSet<String> =
             current.iter().map(|s| s.name.clone()).collect();
         if override_all {
             for name in current_names.iter() {
                 if !from_map.contains_key(name) {
                     let _ =
-                        claude_code_commands::claude_mcp_remove(name.clone(), workdir.to_string())
+                        claude_code_commands::claude_mcp_remove(name.clone(), workdir.to_string(), None)
                             .await;
                 }
             }
@@ -286,7 +286,7 @@ async fn write_to_client(
                         .collect()
                 }),
             };
-            let _ = claude_code_commands::claude_mcp_add(server, workdir.to_string()).await;
+            let _ = claude_code_commands::claude_mcp_add(server, workdir.to_string(), None).await;
         }
         Ok(())
     } else {

@@ -1,7 +1,7 @@
 import { mustHavePathClients } from "@/lib/data";
 // useSaveServerConfig.ts
 import { useMcpRefresh } from "@/contexts/McpRefreshContext";
-import { useCCProjectStore } from "@/stores/ccProject";
+import { requireLocalClaudeScope, useCCProjectStore } from "@/stores/ccProject";
 import type { ServerConfig, ServerType } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
@@ -22,7 +22,7 @@ interface SaveServerConfigParams {
 
 export function useSaveServerConfig() {
   const { refreshServerList } = useMcpRefresh();
-  const { selectedProject } = useCCProjectStore();
+  const { selectedProject, selectedScope } = useCCProjectStore();
   
   async function updateConfig(
     selectedClient: string,
@@ -36,8 +36,8 @@ export function useSaveServerConfig() {
       // Save to selected client
       if (selectedClient === "claude_code") {
         // Map to Claude Code add request
-        if (!selectedProject) {
-          toast.error("Please select a Claude Code project in header");
+        if (selectedScope !== "user" && !selectedProject) {
+          toast.error("Please select a Claude Code project in the installation target selector");
           throw new Error("Claude Code project not selected");
         }
         const req: any = { name: selectedServer };
@@ -53,10 +53,14 @@ export function useSaveServerConfig() {
         } else {
           throw new Error("Unsupported config for Claude Code");
         }
-        if (disabled) await invoke("claude_update_disabled", { workingDir: selectedProject, name: selectedServer, serverConfig: value });
+        if (disabled) {
+          requireLocalClaudeScope(selectedScope);
+          await invoke("claude_update_disabled", { workingDir: selectedProject, scope: selectedScope, name: selectedServer, serverConfig: value });
+        }
         else await invoke("claude_mcp_add", {
           request: req,
-          workingDir: selectedProject,
+          workingDir: selectedProject || "",
+          scope: selectedScope,
         });
       } else {
         await invoke(disabled ? "update_disabled_mcp_server" : mode === "update" ? "update_mcp_server" : "add_mcp_server", {

@@ -19,9 +19,6 @@ export function PathSelector() {
 
       if (selectedPath) {
         setSelectedPath(selectedPath);
-      } else {
-        // If user cancels, set path to null to reflect no path selected
-        setSelectedPath(null);
       }
     } catch (error) {
       console.error("Failed to select directory:", error);

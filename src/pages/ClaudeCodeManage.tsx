@@ -5,11 +5,10 @@ import { useViewStore } from "@/stores/viewStore";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import ServerTable from "@/components/claude-code/ServerTable";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { InstallationTarget } from "@/components/settings/InstallationTarget";
 import { useClaudeCodeManagement } from "@/hooks/useClaudeCodeManagement";
 import { useCCProjectStore } from "@/stores/ccProject";
-import { AlertCircle, Globe, RefreshCcw, Settings } from "lucide-react";
+import { AlertCircle, RefreshCcw, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function ClaudeCodeManage() {
@@ -24,7 +23,7 @@ export default function ClaudeCodeManage() {
     listProjects
   } = useClaudeCodeManagement();
 
-  const { projects, selectedProject, setSelectedProject } = useCCProjectStore();
+  const { projects, selectedProject, selectedScope } = useCCProjectStore();
 
   const [addServerDialogOpen, setAddServerDialogOpen] = useState(false);
 
@@ -76,7 +75,7 @@ export default function ClaudeCodeManage() {
     );
   }
 
-  if (!selectedProject && projects.length === 0) {
+  if (selectedScope !== "user" && !selectedProject && projects.length === 0) {
     return (
       <div className="p-4 sm:p-6 bg-background text-foreground min-h-screen">
         <div className="max-w-7xl mx-auto">
@@ -86,6 +85,7 @@ export default function ClaudeCodeManage() {
             <p className="text-muted-foreground mb-6 text-sm sm:text-base">
               No Claude Code projects found. Please create a project first.
             </p>
+            <InstallationTarget allowClientChange={false} />
           </div>
         </div>
       </div>
@@ -107,34 +107,7 @@ export default function ClaudeCodeManage() {
           </div>
 
           {/* Working Directory row */}
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium shrink-0">Working Directory:</Label>
-            <Select
-              value={selectedProject || undefined}
-              onValueChange={setSelectedProject}
-            >
-              <SelectTrigger className="flex-1 min-w-0">
-                <SelectValue placeholder="Select a project">
-                  {selectedProject && (
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 shrink-0" />
-                      <span>{selectedProject.split("/").filter(Boolean).slice(-2).join("/")}</span>
-                    </div>
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map(project => (
-                <SelectItem key={project} value={project}>
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 shrink-0" />
-                    <span>{project}</span>
-                  </div>
-                </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <InstallationTarget allowClientChange={false} />
 
           {/* Actions row */}
           <div className="flex items-center gap-2">

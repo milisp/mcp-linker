@@ -33,6 +33,8 @@ export function entryToServerType(entry: RegistryServerEntry): ServerType {
     logoUrl: server.icons?.[0]?.src,
     description: server.description,
     source: server.repository?.url ?? server.websiteUrl ?? "",
+    websiteUrl: server.websiteUrl,
+    repositoryUrl: server.repository?.url,
     isOfficial: server.name.startsWith(`${OFFICIAL_NAMESPACE}/`),
     version: server.version,
     isFavorited: false,

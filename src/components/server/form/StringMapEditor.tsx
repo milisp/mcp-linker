@@ -10,12 +10,14 @@ export function StringMapEditor({ title, values, onChange, secret = false }: {
   const [newKey, setNewKey] = useState("");
   return (
     <fieldset className="space-y-2">
-      <legend className="text-sm font-medium">{title}</legend>
-      <div className="flex items-center justify-end gap-2">
-        {secret && <Button type="button" variant="ghost" size="sm" onClick={() => setVisible(value => !value)} aria-label={`${visible ? "Hide" : "Show"} ${title}`}>
+      <legend className="w-full text-sm font-medium">
+        <span className="flex items-center justify-between gap-2">
+        {title}
+        {secret && <Button type="button" variant="ghost" size="sm" onClick={() => setVisible(value => !value)} aria-pressed={visible} aria-label={`${visible ? "Hide" : "Show"} ${title}`}>
           {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
         </Button>}
-      </div>
+        </span>
+      </legend>
       {Object.entries(values).map(([key, value], index) => (
         <div key={key} className="flex items-center gap-2">
           <label htmlFor={`${id}-${index}`} className="w-1/3 shrink-0 break-all text-xs font-medium">{key}</label>

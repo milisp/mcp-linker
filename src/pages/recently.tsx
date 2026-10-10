@@ -9,7 +9,7 @@ import { toast } from "sonner";
 // Type for server list item
 type ServerListItem = { name: string; config: ServerConfig };
 
-export default function Recently() {
+export default function Recently({ embedded = false }: { embedded?: boolean }) {
   const [serverList, setServerList] = useState<ServerListItem[]>([]);
   const { selectedClient, selectedPath } = useClientPathStore();
 
@@ -108,10 +108,10 @@ export default function Recently() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold p-2">
-        Recently Used – Remembers Your Configurations
-      </h1>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 p-2">
+      {!embedded && <h1 className="text-2xl font-semibold p-2">
+        Saved Configurations
+      </h1>}
+      <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 ${embedded ? "" : "p-2"}`}>
         {serverList.map((server) => (
           <ServerCard
             key={server.name}

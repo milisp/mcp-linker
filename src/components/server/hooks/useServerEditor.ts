@@ -4,13 +4,14 @@ import { useClientPathStore } from "@/stores/clientPathStore";
 import { useServerEditorStore, type ServerEditorDraft } from "@/stores/serverEditorStore";
 import type { ServerConfig, ServerType } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export function useServerEditor(server: ServerType) {
   const [loadRevision, setLoadRevision] = useState(0);
   const { selectedClient, selectedPath } = useClientPathStore();
   const selectedProject = useCCProjectStore(state => state.selectedProject);
-  const key = JSON.stringify([server.id || server.name, selectedClient, selectedPath, selectedClient === "claude_code" ? selectedProject : null]);
+  const selectedScope = useCCProjectStore(state => state.selectedScope);
+  const key = JSON.stringify([server.id || server.name, selectedClient, selectedPath, selectedClient === "claude_code" ? [selectedProject, selectedScope] : null]);
   const initial = useMemo<ServerEditorDraft>(() => ({
     name: server.installed?.name ?? (server.id.split("/").pop() || server.name),
     configs: structuredClone(server.configs?.some(config => config.type !== "encrypted") ? server.configs.filter(config => config.type !== "encrypted") : [{ type: "stdio", command: "", args: [], env: {} }]),
@@ -21,17 +22,23 @@ export function useServerEditor(server: ServerType) {
   }), [server]);
   const stored = useServerEditorStore(state => state.drafts[key]);
   const draft = stored ?? initial;
+  const previous = useRef({ key, draft });
   const update = (change: (draft: ServerEditorDraft) => ServerEditorDraft) => useServerEditorStore.getState().update(key, initial, change);
 
   useEffect(() => {
+    // Carry unsaved inputs to a new destination, but never its installed identity.
+    const old = previous.current;
+    if (old.key !== key && !server.installed && old.draft.dirty && !useServerEditorStore.getState().drafts[key]) {
+      useServerEditorStore.getState().update(key, initial, () => ({ ...old.draft, loaded: false, persistedName: undefined, loadError: undefined }));
+    }
     useServerEditorStore.getState().update(key, initial, draft => server.installed && !draft.dirty ? initial : draft);
     if (useServerEditorStore.getState().drafts[key]?.loaded) return;
     const load = async () => {
       try {
         let existing: ServerConfig | null = null;
         if (selectedClient === "claude_code") {
-          if (selectedProject) {
-            const list = await invoke<Record<string, unknown>[]>("claude_mcp_list", { workingDir: selectedProject });
+          if (selectedProject || selectedScope === "user") {
+            const list = await invoke<Record<string, unknown>[]>("claude_mcp_list", { workingDir: selectedProject || "", scope: selectedScope });
             const entry = list.find(entry => entry.name === initial.name);
             if (entry) existing = normalizeServerConfig(entry);
           }
@@ -53,12 +60,13 @@ export function useServerEditor(server: ServerType) {
       }
     };
     void load();
-  }, [key, initial, selectedClient, selectedPath, selectedProject, loadRevision, server.installed]);
+  }, [key, initial, selectedClient, selectedPath, selectedProject, selectedScope, loadRevision, server.installed]);
+  useEffect(() => { previous.current = { key, draft }; }, [key, draft]);
 
   const config = draft.configs[draft.index];
   const setConfig = (config: ServerConfig) => update(draft => ({ ...draft, dirty: true, configs: draft.configs.map((current, index) => index === draft.index ? config : current) }));
   return {
-    key, draft, config, selectedClient, selectedPath, selectedProject,
+    key, draft, config, selectedClient, selectedPath, selectedProject, selectedScope,
     setName: (name: string) => update(draft => ({ ...draft, name, dirty: true })),
     selectConfig: (index: number) => update(draft => ({ ...draft, index })),
     setConfig,

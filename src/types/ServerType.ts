@@ -8,6 +8,8 @@ export type ServerType = {
   logoUrl?: string;
   description: string;
   source: string;
+  websiteUrl?: string;
+  repositoryUrl?: string;
   isOfficial: boolean;
   version?: string;
   isFavorited: boolean;

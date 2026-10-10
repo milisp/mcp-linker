@@ -35,7 +35,7 @@ interface ServerFormData {
 
 export function useClaudeCodeManagement() {
   const { toast } = useToast();
-  const { selectedProject, setProjects, setSelectedProject } = useCCProjectStore();
+  const { selectedProject, selectedScope, setProjects } = useCCProjectStore();
   const [servers, setServers] = useState<ClaudeCodeServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [claudeCliAvailable, setClaudeCliAvailable] = useState(false);
@@ -58,7 +58,8 @@ export function useClaudeCodeManagement() {
   }, [toast]);
 
   const loadServers = useCallback(async () => {
-    if (!claudeCliAvailable || !selectedProject) {
+    if (selectedScope !== "user" && !selectedProject) {
+      setServers([]);
       setLoading(false);
       return;
     }
@@ -66,7 +67,7 @@ export function useClaudeCodeManagement() {
     setLoading(true);
     try {
       const serverList = await invoke<ClaudeCodeServer[]>("claude_mcp_list", { 
-        workingDir: selectedProject 
+        workingDir: selectedProject || "", scope: selectedScope
       });
       setServers(serverList);
     } catch (error) {
@@ -79,7 +80,7 @@ export function useClaudeCodeManagement() {
     } finally {
       setLoading(false);
     }
-  }, [claudeCliAvailable, selectedProject, toast]);
+  }, [selectedScope, selectedProject, toast]);
 
   const addServer = async (formData: ServerFormData) => {
     try {
@@ -134,7 +135,7 @@ export function useClaudeCodeManagement() {
 
       const response = await invoke<{success: boolean, message: string}>("claude_mcp_add", { 
         request, 
-        workingDir: selectedProject 
+        workingDir: selectedProject || "", scope: selectedScope
       });
       
       if (response.success) {
@@ -167,7 +168,7 @@ export function useClaudeCodeManagement() {
     try {
       const response = await invoke<{success: boolean, message: string}>("claude_mcp_remove", { 
         name: serverName,
-        workingDir: selectedProject
+        workingDir: selectedProject || "", scope: selectedScope
       });
       
       if (response.success) {
@@ -197,7 +198,7 @@ export function useClaudeCodeManagement() {
     try {
       const server = await invoke<ClaudeCodeServer>("claude_mcp_get", { 
         name: serverName,
-        workingDir: selectedProject
+        workingDir: selectedProject || "", scope: selectedScope
       });
       return server;
     } catch (error) {
@@ -214,9 +215,6 @@ export function useClaudeCodeManagement() {
   const listProjects = useCallback(async () => {
     const projectList = await invoke<string[]>("claude_list_projects");
     setProjects(projectList);
-    if (projectList.length > 0 && !selectedProject) {
-      setSelectedProject(projectList[0]);
-    }
   }, [selectedProject]);
 
   return {

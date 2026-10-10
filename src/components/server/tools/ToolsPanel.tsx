@@ -1,4 +1,5 @@
 import { ClaudeCodeToolsPanel } from "./ClaudeCodeToolsPanel";
+import { useCCProjectStore } from "@/stores/ccProject";
 import { Button } from "@/components/ui/button";
 import type { ServerConfig } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
@@ -94,7 +95,7 @@ function InspectorToolsPanel({ config, serverName, selectedClient, workingDir, c
           <h4 className="text-sm font-medium">Tool access in {selectedClient === "codex" ? "Codex" : "your client"}</h4>
           {selectedClient === "codex" ? <>
             <p className="text-xs text-muted-foreground">Choose which tools Codex can use. Changes take effect after saving and reloading Codex, and do not restrict this inspection session.</p>
-            {policyLoaded && !policy.serverExists && <p className="text-xs">Add this server to Codex in the Connection tab before saving tool access.</p>}
+            {policyLoaded && !policy.serverExists && <p className="text-xs">Add this server to Codex in the Configure tab before saving tool access.</p>}
             <Button type="button" variant="outline" size="sm" disabled={!policyLoaded || !policy.serverExists || !policyDirty || policyBusy} onClick={savePolicy}>{policyBusy && <Loader2 className="size-3.5 animate-spin" />} Save tool access</Button>
             {policyMessage && <p role="status" className="text-xs">{policyMessage}</p>}
           </> : <p className="text-xs text-muted-foreground">Tool availability and approval are controlled in this client. MCP Linker can inspect and test tools here; it does not change that client's tool permissions.</p>}
@@ -134,6 +135,8 @@ function InspectorToolsPanel({ config, serverName, selectedClient, workingDir, c
 }
 
 export function ToolsPanel(props: Parameters<typeof InspectorToolsPanel>[0]) {
+  const scope = useCCProjectStore(state => state.selectedScope);
+  if (props.selectedClient === "claude_code" && scope !== "local") return <p className="text-sm text-muted-foreground">Claude Code tool inspection currently supports Local scope only. Project and User configurations can be saved, but cannot be inspected here yet.</p>;
   return props.selectedClient === "claude_code"
     ? <ClaudeCodeToolsPanel serverName={props.serverName} workingDir={props.workingDir} saveRevision={props.saveRevision} />
     : <InspectorToolsPanel {...props} />;

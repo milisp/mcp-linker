@@ -1,8 +1,18 @@
+use crate::claude_code_commands::ClaudeMcpScope;
 use dirs::home_dir;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::PathBuf;
 use tauri::command;
+
+fn require_local(scope: Option<ClaudeMcpScope>) -> Result<(), String> {
+    if scope.unwrap_or_default() != ClaudeMcpScope::Local {
+        return Err(
+            "Claude Code disabled-server operations are only supported in local scope".into(),
+        );
+    }
+    Ok(())
+}
 
 // Claude Code natively tracks disabled servers per project:
 // ~/.claude.json -> projects[working_dir].disabledMcpServers: ["name", ...]
@@ -73,17 +83,30 @@ fn disabled_view(config: &Value, working_dir: &str) -> Value {
 }
 
 #[command]
-pub async fn claude_list_disabled(working_dir: String) -> Result<Value, String> {
+pub async fn claude_list_disabled(
+    working_dir: String,
+    scope: Option<ClaudeMcpScope>,
+) -> Result<Value, String> {
+    require_local(scope)?;
     let config = read_config()?;
     Ok(disabled_view(&config, &working_dir))
 }
 
 #[command]
-pub async fn claude_disable_server(working_dir: String, name: String) -> Result<Value, String> {
+pub async fn claude_disable_server(
+    working_dir: String,
+    name: String,
+    scope: Option<ClaudeMcpScope>,
+) -> Result<Value, String> {
+    require_local(scope)?;
     let mut config = read_config()?;
     let project = project_mut(&mut config, &working_dir);
 
-    if project.get("mcpServers").and_then(|m| m.get(&name)).is_none() {
+    if project
+        .get("mcpServers")
+        .and_then(|m| m.get(&name))
+        .is_none()
+    {
         return Err(format!("Server '{}' not found", name));
     }
 
@@ -97,7 +120,12 @@ pub async fn claude_disable_server(working_dir: String, name: String) -> Result<
 }
 
 #[command]
-pub async fn claude_enable_server(working_dir: String, name: String) -> Result<Value, String> {
+pub async fn claude_enable_server(
+    working_dir: String,
+    name: String,
+    scope: Option<ClaudeMcpScope>,
+) -> Result<Value, String> {
+    require_local(scope)?;
     let mut config = read_config()?;
     let project = project_mut(&mut config, &working_dir);
 
@@ -113,7 +141,9 @@ pub async fn claude_update_disabled(
     working_dir: String,
     name: String,
     server_config: Value,
+    scope: Option<ClaudeMcpScope>,
 ) -> Result<Value, String> {
+    require_local(scope)?;
     let mut config = read_config()?;
     let project = project_mut(&mut config, &working_dir);
 

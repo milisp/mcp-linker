@@ -13,7 +13,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
@@ -23,6 +22,7 @@ import { openUrl } from '@tauri-apps/plugin-opener'
 import { platform } from "@tauri-apps/plugin-os"
 import { Info, MessageCircle, Settings, User } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { InstallationTarget } from "@/components/settings/InstallationTarget"
 
 export const AppSidebar = () => {
   const { t } = useTranslation<"translation">()
@@ -33,23 +33,32 @@ export const AppSidebar = () => {
   const { open } = useSidebar()
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-sidebar-border/50">
       <SidebarHeader
         data-tauri-drag-region
         className={cn(isMacOS && "min-h-11 pt-3")}
       >
-        {!isMacOS && <SidebarTrigger />}
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="gap-1 px-2">
         <SidebarMenu>
-          {navs.map((nav) => (
+          {navs.filter(nav => ["discover", "manage"].includes(nav.id)).map((nav) => (
             <SidebarMenuItem key={nav.id}>
               <SidebarMenuButton
-                isActive={view === nav.id}
+                isActive={view === nav.id || (nav.id === "discover" && view === "favorites") || (nav.id === "manage" && view === "recently")}
                 onClick={() => navigate(`/${nav.id}`)}
               >
-                {open ? nav.icon : <span className="text-xl">{nav.icon}</span>}
+                {nav.icon}
                 <span>{nav.name}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+        {open && <InstallationTarget sidebar allowClientChange={false} />}
+        <SidebarMenu>
+          {navs.filter(nav => !["discover", "manage"].includes(nav.id)).map(nav => (
+            <SidebarMenuItem key={nav.id}>
+              <SidebarMenuButton isActive={view === nav.id} onClick={() => navigate(`/${nav.id}`)}>
+                {nav.icon}<span>{nav.name}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

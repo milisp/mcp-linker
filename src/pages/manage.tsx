@@ -7,12 +7,15 @@ import { useViewStore } from "@/stores/viewStore";
 import { RefreshCcw } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import Recently from "./recently";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function McpManage() {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { personalStats } = useStatsStore();
-  const { navigate } = useViewStore();
+  const { view, search, navigate } = useViewStore();
+  const saved = view === "recently" || search.tab === "saved";
 
   const handleAddServer = () => {
     setIsDialogOpen(true);
@@ -36,12 +39,17 @@ export default function McpManage() {
           </span>
         </div>
 
+        <Tabs value={saved ? "saved" : "installed"} onValueChange={value => navigate(value === "saved" ? "/manage?tab=saved" : "/manage")} className="mb-4">
+          <TabsList><TabsTrigger value="installed">Installed</TabsTrigger><TabsTrigger value="saved">Saved Configurations</TabsTrigger></TabsList>
+        </Tabs>
+        {saved ? <Recently embedded /> : <>
         {/* Dashboard */}
         <Dashboard personalStats={personalStats} />
 
         <div className="flex-1 min-h-0">
           <LocalTable />
         </div>
+        </>}
       </div>
 
       <ServerTemplateDialog

@@ -27,10 +27,74 @@ pub struct ClaudeCodeResponse {
     pub message: String,
 }
 
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum ClaudeMcpScope {
+    #[default]
+    Local,
+    Project,
+    User,
+}
+
+fn scope_target(
+    working_dir: &str,
+    scope: ClaudeMcpScope,
+) -> Result<(PathBuf, Vec<String>), String> {
+    if scope != ClaudeMcpScope::User && working_dir.trim().is_empty() {
+        return Err("A working directory is required for local/project scope".into());
+    }
+    if scope != ClaudeMcpScope::User && !Path::new(working_dir).is_absolute() {
+        return Err("The project directory must be an absolute path".into());
+    }
+    match scope {
+        ClaudeMcpScope::Project => Ok((
+            Path::new(working_dir).join(".mcp.json"),
+            vec!["mcpServers".into()],
+        )),
+        ClaudeMcpScope::User => Ok((get_claude_config_path(None)?, vec!["mcpServers".into()])),
+        ClaudeMcpScope::Local => Ok((
+            get_claude_config_path(None)?,
+            vec!["projects".into(), working_dir.into(), "mcpServers".into()],
+        )),
+    }
+}
+
+fn servers_at<'a>(
+    config: &'a serde_json::Value,
+    keys: &[String],
+) -> Option<&'a serde_json::Map<String, serde_json::Value>> {
+    let mut value = config;
+    for key in keys {
+        value = value.get(key)?;
+    }
+    value.as_object()
+}
+
+fn servers_at_mut<'a>(
+    config: &'a mut serde_json::Value,
+    keys: &[String],
+) -> Result<&'a mut serde_json::Map<String, serde_json::Value>, String> {
+    let mut value = config;
+    for key in keys {
+        let object = value
+            .as_object_mut()
+            .ok_or("Claude config contains a non-object scope container")?;
+        value = object
+            .entry(key.clone())
+            .or_insert_with(|| serde_json::json!({}));
+    }
+    value
+        .as_object_mut()
+        .ok_or_else(|| "mcpServers must be an object".into())
+}
+
 /// List all MCP servers configured in Claude Code
 #[command]
-pub async fn claude_mcp_list(working_dir: String) -> Result<Vec<ClaudeCodeServer>, String> {
-    let claude_config_path = get_claude_config_path(Some(working_dir.clone()))?;
+pub async fn claude_mcp_list(
+    working_dir: String,
+    scope: Option<ClaudeMcpScope>,
+) -> Result<Vec<ClaudeCodeServer>, String> {
+    let (claude_config_path, keys) = scope_target(&working_dir, scope.unwrap_or_default())?;
 
     if !claude_config_path.exists() {
         return Ok(Vec::new());
@@ -44,16 +108,10 @@ pub async fn claude_mcp_list(working_dir: String) -> Result<Vec<ClaudeCodeServer
 
     let mut servers = Vec::new();
 
-    if let Some(projects) = config.get("projects") {
-        if let Some(project_config) = projects.get(&working_dir) {
-            if let Some(mcp_servers) = project_config.get("mcpServers") {
-                if let Some(servers_obj) = mcp_servers.as_object() {
-                    for (name, server_config) in servers_obj {
-                        if let Ok(server) = parse_server_config(name, server_config) {
-                            servers.push(server);
-                        }
-                    }
-                }
+    if let Some(servers_obj) = servers_at(&config, &keys) {
+        for (name, server_config) in servers_obj {
+            if let Ok(server) = parse_server_config(name, server_config) {
+                servers.push(server);
             }
         }
     }
@@ -63,8 +121,12 @@ pub async fn claude_mcp_list(working_dir: String) -> Result<Vec<ClaudeCodeServer
 
 /// Get details for a specific MCP server
 #[command]
-pub async fn claude_mcp_get(name: String, working_dir: String) -> Result<ClaudeCodeServer, String> {
-    let servers = claude_mcp_list(working_dir).await?;
+pub async fn claude_mcp_get(
+    name: String,
+    working_dir: String,
+    scope: Option<ClaudeMcpScope>,
+) -> Result<ClaudeCodeServer, String> {
+    let servers = claude_mcp_list(working_dir, scope).await?;
 
     servers
         .into_iter()
@@ -77,8 +139,9 @@ pub async fn claude_mcp_get(name: String, working_dir: String) -> Result<ClaudeC
 pub async fn claude_mcp_add(
     request: ClaudeCodeServer,
     working_dir: String,
+    scope: Option<ClaudeMcpScope>,
 ) -> Result<ClaudeCodeResponse, String> {
-    let claude_config_path = get_claude_config_path(Some(working_dir.clone()))?;
+    let (claude_config_path, keys) = scope_target(&working_dir, scope.unwrap_or_default())?;
 
     // Create backup if config file exists
     let backup_path = if claude_config_path.exists() {
@@ -94,27 +157,12 @@ pub async fn claude_mcp_add(
         serde_json::from_str(&config_content)
             .map_err(|e| format!("Failed to parse Claude config: {}", e))?
     } else {
-        serde_json::json!({"projects": {}})
+        serde_json::json!({})
     };
-
-    // Get or create the current working directory entry
-    let current_dir = working_dir;
-
-    if !config["projects"].is_object() {
-        config["projects"] = serde_json::json!({});
-    }
-
-    if !config["projects"][&current_dir].is_object() {
-        config["projects"][&current_dir] = serde_json::json!({"mcpServers": {}});
-    }
-
-    if !config["projects"][&current_dir]["mcpServers"].is_object() {
-        config["projects"][&current_dir]["mcpServers"] = serde_json::json!({});
-    }
 
     // Convert server to JSON format
     let server_json = server_to_json(&request)?;
-    config["projects"][&current_dir]["mcpServers"][&request.name] = server_json;
+    servers_at_mut(&mut config, &keys)?.insert(request.name.clone(), server_json);
 
     // Write back to file
     if let Err(e) = fs::write(
@@ -144,8 +192,9 @@ pub async fn claude_mcp_add(
 pub async fn claude_mcp_remove(
     name: String,
     working_dir: String,
+    scope: Option<ClaudeMcpScope>,
 ) -> Result<ClaudeCodeResponse, String> {
-    let claude_config_path = get_claude_config_path(Some(working_dir.clone()))?;
+    let (claude_config_path, keys) = scope_target(&working_dir, scope.unwrap_or_default())?;
 
     if !claude_config_path.exists() {
         return Err("Claude config file not found".to_string());
@@ -161,18 +210,7 @@ pub async fn claude_mcp_remove(
         .map_err(|e| format!("Failed to parse Claude config: {}", e))?;
 
     // Check if server exists in the specified working directory
-    let mut found = false;
-    if let Some(projects) = config.get_mut("projects") {
-        if let Some(project) = projects.get_mut(&working_dir) {
-            if let Some(mcp_servers) = project.get_mut("mcpServers") {
-                if let Some(servers_obj) = mcp_servers.as_object_mut() {
-                    if servers_obj.remove(&name).is_some() {
-                        found = true;
-                    }
-                }
-            }
-        }
-    }
+    let found = servers_at_mut(&mut config, &keys)?.remove(&name).is_some();
 
     if found {
         // Write back to file
@@ -369,6 +407,40 @@ fn restore_backup(config_path: &PathBuf, backup_path: &PathBuf) -> Result<(), St
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scopes_preserve_other_servers_and_fields() {
+        let mut config = serde_json::json!({
+            "preferences": {"theme": "dark"},
+            "mcpServers": {"user": {"command": "user"}},
+            "projects": {"/test": {"allowedTools": ["Read"], "mcpServers": {"local": {"command": "local"}}}}
+        });
+        let (_, local) = scope_target("/test", ClaudeMcpScope::Local).unwrap();
+        let (_, user) = scope_target("", ClaudeMcpScope::User).unwrap();
+        servers_at_mut(&mut config, &local)
+            .unwrap()
+            .insert("new".into(), serde_json::json!({"command": "new"}));
+        assert_eq!(servers_at(&config, &user).unwrap().len(), 1);
+        assert_eq!(
+            config["projects"]["/test"]["allowedTools"],
+            serde_json::json!(["Read"])
+        );
+        assert_eq!(config["preferences"]["theme"], "dark");
+        servers_at_mut(&mut config, &local).unwrap().remove("new");
+        assert_eq!(servers_at(&config, &local).unwrap().len(), 1);
+        let (path, keys) = scope_target("/test", ClaudeMcpScope::Project).unwrap();
+        assert_eq!(path, PathBuf::from("/test/.mcp.json"));
+        assert_eq!(keys, vec!["mcpServers"]);
+        assert!(scope_target("", ClaudeMcpScope::Local).is_err());
+        assert!(scope_target("", ClaudeMcpScope::Project).is_err());
+    }
+
+    #[test]
+    fn malformed_containers_are_not_overwritten() {
+        let mut config = serde_json::json!({"mcpServers": ["keep"]});
+        assert!(servers_at_mut(&mut config, &["mcpServers".into()]).is_err());
+        assert_eq!(config["mcpServers"], serde_json::json!(["keep"]));
+    }
 
     #[test]
     fn remote_server_headers_survive_config_round_trip() {

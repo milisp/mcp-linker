@@ -1,6 +1,6 @@
 import { mustHavePathClients } from "@/lib/data";
 import { useClientPathStore } from "@/stores/clientPathStore";
-import { useCCProjectStore } from "@/stores/ccProject";
+import { requireLocalClaudeScope, useCCProjectStore } from "@/stores/ccProject";
 import { ConfigType } from "@/types/mcpConfig";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
@@ -17,7 +17,7 @@ export function useMcpConfig(
     {},
   );
   const { getClientPath } = useClientPathStore();
-  const { selectedProject } = useCCProjectStore();
+  const { selectedProject, selectedScope } = useCCProjectStore();
 
   // Helper to centralize common operation logic
   const executeMcpOperation = useCallback(
@@ -72,11 +72,11 @@ export function useMcpConfig(
 
       let data: any;
       if (selectedClient === "claude_code") {
-        if (!selectedProject) {
+        if (selectedScope !== "user" && !selectedProject) {
           throw new Error("Please select a Claude Code project");
         }
         const list = await executeMcpOperation(
-          invoke<any[]>("claude_mcp_list", { workingDir: selectedProject }),
+          invoke<any[]>("claude_mcp_list", { workingDir: selectedProject || "", scope: selectedScope }),
           "Configuration loaded successfully",
           "Failed to load configuration",
           15000,
@@ -95,20 +95,22 @@ export function useMcpConfig(
             mapped.mcpServers[s.name] = {
               type: s.type || "http",
               url: s.url || "",
+              headers: s.headers || {},
             };
           }
         }
         data = mapped;
         // Load disabled for Claude Code from separate store
-        const disabledData = await executeMcpOperation(
+        const disabledData = selectedScope === "local" ? await executeMcpOperation(
           invoke<Record<string, any>>("claude_list_disabled", {
             workingDir: selectedProject,
+            scope: selectedScope,
           }),
           "Disabled servers loaded successfully",
           "Failed to load disabled servers",
           15000,
           false,
-        );
+        ) : {};
         setDisabledServers(disabledData || {});
         // Disabled servers stay in mcpServers natively; keep them out of the active list
         for (const name of Object.keys(disabledData || {})) {
@@ -151,7 +153,7 @@ export function useMcpConfig(
     } finally {
       setIsLoading(false);
     }
-  }, [selectedClient, selectedPath, executeMcpOperation]);
+  }, [selectedClient, selectedPath, selectedProject, selectedScope, executeMcpOperation]);
 
   const updateConfig = useCallback(
     async (
@@ -161,10 +163,12 @@ export function useMcpConfig(
     ) => {
       try {
         if (selectedClient === "claude_code" && isDisabled) {
+          requireLocalClaudeScope(selectedScope);
           if (!selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
             invoke("claude_update_disabled", {
               workingDir: selectedProject,
+              scope: selectedScope,
               name: key,
               serverConfig: updatedConfig,
             }),
@@ -172,7 +176,7 @@ export function useMcpConfig(
             "Failed to update configuration",
           );
         } else if (selectedClient === "claude_code") {
-          if (!selectedProject) throw new Error("Please select a Claude Code project");
+          if (selectedScope !== "user" && !selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
             invoke("claude_mcp_add", {
               request: {
@@ -187,9 +191,11 @@ export function useMcpConfig(
                   : {
                       type: (updatedConfig as any).type || "http",
                       url: (updatedConfig as any).url || "",
+                      headers: (updatedConfig as any).headers || {},
                     },
               },
-              workingDir: selectedProject,
+              workingDir: selectedProject || "",
+              scope: selectedScope,
             }),
             "Configuration updated successfully",
             "Failed to update configuration",
@@ -226,7 +232,7 @@ export function useMcpConfig(
         toast.error(errorMessage);
       }
     },
-    [selectedClient, selectedPath, executeMcpOperation, loadConfig],
+    [selectedClient, selectedPath, selectedProject, selectedScope, executeMcpOperation, loadConfig],
   );
 
   const deleteConfig = useCallback(
@@ -239,11 +245,12 @@ export function useMcpConfig(
       }
       try {
         if (selectedClient === "claude_code") {
-          if (!selectedProject) throw new Error("Please select a Claude Code project");
+          if (selectedScope !== "user" && !selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
             invoke("claude_mcp_remove", {
               name: key,
-              workingDir: selectedProject,
+              workingDir: selectedProject || "",
+              scope: selectedScope,
             }),
             "Configuration deleted successfully",
             "Failed to delete configuration",
@@ -268,17 +275,19 @@ export function useMcpConfig(
         toast.error(errorMessage);
       }
     },
-    [selectedClient, selectedPath, executeMcpOperation, loadConfig],
+    [selectedClient, selectedPath, selectedProject, selectedScope, executeMcpOperation, loadConfig],
   );
 
   const enableServer = useCallback(
     async (key: string): Promise<void> => {
       try {
         if (selectedClient === "claude_code") {
+          requireLocalClaudeScope(selectedScope);
           if (!selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
             invoke("claude_enable_server", {
               workingDir: selectedProject,
+              scope: selectedScope,
               name: key,
             }),
             "Server enabled successfully",
@@ -302,17 +311,19 @@ export function useMcpConfig(
         toast.error(errorMessage);
       }
     },
-    [selectedClient, selectedPath, selectedProject, executeMcpOperation, loadConfig],
+    [selectedClient, selectedPath, selectedProject, selectedScope, executeMcpOperation, loadConfig],
   );
 
   const disableServer = useCallback(
     async (key: string): Promise<void> => {
       try {
         if (selectedClient === "claude_code") {
+          requireLocalClaudeScope(selectedScope);
           if (!selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
             invoke("claude_disable_server", {
               workingDir: selectedProject,
+              scope: selectedScope,
               name: key,
             }),
             "Server disabled successfully",
@@ -336,7 +347,7 @@ export function useMcpConfig(
         toast.error(errorMessage);
       }
     },
-    [selectedClient, selectedPath, selectedProject, executeMcpOperation, loadConfig],
+    [selectedClient, selectedPath, selectedProject, selectedScope, executeMcpOperation, loadConfig],
   );
 
   const syncConfig = useCallback(
@@ -346,8 +357,14 @@ export function useMcpConfig(
         setError(null);
 
         // Get paths for both clients
-        const fromPath = getClientPath(fromClient);
-        const toPath = getClientPath(toClient);
+        if (fromClient === "claude_code" || toClient === "claude_code") {
+          requireLocalClaudeScope(selectedScope);
+        }
+        if ((fromClient === "claude_code" || toClient === "claude_code") && !selectedProject) {
+          throw new Error("Please select a Claude Code project");
+        }
+        const fromPath = fromClient === "claude_code" ? selectedProject : getClientPath(fromClient);
+        const toPath = toClient === "claude_code" ? selectedProject : getClientPath(toClient);
 
         await executeMcpOperation(
           invoke("sync_mcp_config", {
@@ -378,6 +395,8 @@ export function useMcpConfig(
       executeMcpOperation,
       loadConfig,
       getClientPath,
+      selectedScope,
+      selectedProject,
     ],
   );
 
@@ -395,7 +414,9 @@ export function useMcpConfig(
 
       try {
         await executeMcpOperation(
-          invoke("batch_delete_mcp_servers", {
+          selectedClient === "claude_code" ? Promise.all(keys.map(name => invoke("claude_mcp_remove", {
+            name, workingDir: selectedProject || "", scope: selectedScope,
+          }))) : invoke("batch_delete_mcp_servers", {
             clientName: selectedClient,
             path: selectedPath || undefined,
             serverNames: keys,
@@ -414,7 +435,7 @@ export function useMcpConfig(
         throw error; // Re-throw to allow UI to handle
       }
     },
-    [selectedClient, selectedPath, executeMcpOperation, loadConfig],
+    [selectedClient, selectedPath, selectedProject, selectedScope, executeMcpOperation, loadConfig],
   );
 
   useEffect(() => {
