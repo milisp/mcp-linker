@@ -25,7 +25,7 @@ export function InstallationScope() {
 }
 
 /** Shared by management navigation, detail editing and the catalog add dialog. */
-export function InstallationTarget({ allowClientChange = true, sidebar = false }: { allowClientChange?: boolean; sidebar?: boolean }) {
+export function InstallationTarget({ allowClientChange = true, sidebar = false, compact = false }: { allowClientChange?: boolean; sidebar?: boolean; compact?: boolean }) {
   const { selectedClient, selectedPath, setSelectedPath, setClientPath } = useClientPathStore();
   const { projects, selectedProject, selectedScope, setProjects, setSelectedProject } = useCCProjectStore();
   const { preferences, loaded, error, load, setVisibleProjects } = useProjectPreferences();
@@ -62,10 +62,10 @@ export function InstallationTarget({ allowClientChange = true, sidebar = false }
       setOperationError(null);
     } catch (error) { setOperationError(String(error)); }
   };
-  return <div className="min-w-0 space-y-2">
+  return <div className={compact ? "min-w-0 [&_button[role=combobox]]:h-8 [&_button[role=combobox]]:text-xs [&_.space-y-1>span]:hidden" : "min-w-0 space-y-2"}>
     {(allowClientChange || !sidebar) && <div className="flex flex-wrap items-end gap-2">
       {allowClientChange && <ClientSelector />}
-      {!sidebar && <InstallationScope />}
+      {!sidebar && !compact && <InstallationScope />}
       {!sidebar && supportsProject && (!claude || needsProject) && <>
         <div className="min-w-0 space-y-1"><span className="text-xs text-muted-foreground">{selectedClient === "custom" ? "Config directory" : "Project"}</span><Select value={path || "__user__"} onValueChange={value => choose(value === "__user__" ? "" : value)}><SelectTrigger className="w-44" aria-label="Target project"><SelectValue><span className="block max-w-32 truncate">{path ? basename(path) : needsProject || ["custom", "vscode"].includes(selectedClient) ? "Select a directory" : "User configuration"}</span></SelectValue></SelectTrigger><SelectContent><SelectItem value="__user__">{needsProject || ["custom", "vscode"].includes(selectedClient) ? "Select a directory" : "User configuration"}</SelectItem>{choices.map(item => <SelectItem key={item} value={item}><span className="block">{basename(item)}</span><span className="block max-w-sm break-all text-xs text-muted-foreground">{item}</span></SelectItem>)}</SelectContent></Select></div>
       </>}

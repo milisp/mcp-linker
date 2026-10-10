@@ -10,7 +10,7 @@ import { platform } from "@tauri-apps/plugin-os";
 import { useState } from "react";
 import { Toaster } from "sonner";
 import { ClientSelector } from "../settings/client-selector";
-import { InstallationScope } from "../settings/InstallationTarget";
+import { InstallationScope, InstallationTarget } from "../settings/InstallationTarget";
 
 const Layout = () => {
   const isMacOS = platform() === "macos";
@@ -31,7 +31,7 @@ const Layout = () => {
                 <SidebarTrigger
                   className={isMacOS && !sidebarOpen ? "ml-8 shrink-0" : "shrink-0"}
                 />
-              {!["auth", "notes", "about", "settings"].includes(view) && <><ClientSelector /><InstallationScope /></>}
+              {!["auth", "notes", "about", "settings"].includes(view) && <><ClientSelector /><InstallationScope /><InstallationTarget allowClientChange={false} compact /></>}
             </header>
 
           <main className="flex-1 overflow-auto">
