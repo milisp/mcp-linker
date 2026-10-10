@@ -169,6 +169,9 @@ async fn read_from_client(client: &str, path: Option<&str>) -> Result<JsonValue,
             if let Some(e) = s.env {
                 v.insert("env".into(), json!(e));
             }
+            if let Some(headers) = s.headers {
+                v.insert("headers".into(), json!(headers));
+            }
             mapped.insert(s.name, json!(v));
         }
         Ok(json!({"mcpServers": mapped}))
@@ -273,6 +276,11 @@ async fn write_to_client(
                         .collect()
                 }),
                 env: cfg_val.get("env").and_then(|v| v.as_object()).map(|m| {
+                    m.iter()
+                        .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                        .collect()
+                }),
+                headers: cfg_val.get("headers").and_then(|v| v.as_object()).map(|m| {
                     m.iter()
                         .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
                         .collect()

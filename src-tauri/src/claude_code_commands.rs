@@ -18,6 +18,7 @@ pub struct ClaudeCodeServer {
     pub command: Option<String>,
     pub args: Option<Vec<String>>,
     pub env: Option<HashMap<String, String>>,
+    pub headers: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -286,6 +287,14 @@ fn parse_server_config(name: &str, config: &serde_json::Value) -> Result<ClaudeC
         command,
         args,
         env,
+        headers: config
+            .get("headers")
+            .and_then(|v| v.as_object())
+            .map(|obj| {
+                obj.iter()
+                    .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                    .collect()
+            }),
     })
 }
 
@@ -313,6 +322,15 @@ fn server_to_json(server: &ClaudeCodeServer) -> Result<serde_json::Value, String
     if let Some(env) = &server.env {
         json["env"] = serde_json::Value::Object(
             env.iter()
+                .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                .collect(),
+        );
+    }
+
+    if let Some(headers) = &server.headers {
+        json["headers"] = serde_json::Value::Object(
+            headers
+                .iter()
                 .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
                 .collect(),
         );
@@ -346,4 +364,28 @@ fn restore_backup(config_path: &PathBuf, backup_path: &PathBuf) -> Result<(), St
     fs::copy(backup_path, config_path).map_err(|e| format!("Failed to restore backup: {}", e))?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn remote_server_headers_survive_config_round_trip() {
+        let config = serde_json::json!({
+            "type": "http",
+            "url": "https://search.parallel.ai/mcp",
+            "headers": { "User-Agent": "mcp-linker", "Authorization": "Bearer test" }
+        });
+        let server = parse_server_config("parallel-search", &config).unwrap();
+        assert_eq!(server_to_json(&server).unwrap(), config);
+    }
+
+    #[test]
+    fn server_without_headers_remains_compatible() {
+        let config = serde_json::json!({ "type": "stdio", "command": "test-server" });
+        let server = parse_server_config("test", &config).unwrap();
+        assert!(server.headers.is_none());
+        assert_eq!(server_to_json(&server).unwrap(), config);
+    }
 }
