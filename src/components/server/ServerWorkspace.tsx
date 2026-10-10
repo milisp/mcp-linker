@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ServerType } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,8 +18,10 @@ export function ServerWorkspace({ server, onSaved, onOpenDetails, initialTab = "
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
+  const [argumentsValid, setArgumentsValid] = useState(true);
+  useEffect(() => { setArgumentsValid(true); }, [editor.key, editor.draft.index, editor.config.type]);
   const lock = useRef(false);
-  const config = useMemo(() => editor.config.type === "stdio" ? { ...editor.config, args: editor.config.args.filter(arg => arg.length > 0) } : editor.config, [editor.config]);
+  const config = useMemo(() => editor.config, [editor.config]);
   const complete = !!quickInstallConfig({ ...server, requiresConfiguration: false, configs: [config] });
   const installed = editor.draft.persistedName === editor.draft.name;
   const clientLabel = clientOptions.find(client => client.value === editor.selectedClient)?.label ?? editor.selectedClient;
@@ -29,7 +31,7 @@ export function ServerWorkspace({ server, onSaved, onOpenDetails, initialTab = "
     ? `${clientLabel} · ${editor.selectedScope === "user" ? "User" : `${editor.selectedScope === "local" ? "Local" : "Project"} · ${projectName || "Select project"}`}`
     : `${clientLabel}${projectName ? ` · ${projectName}` : ""}`;
   const save = async () => {
-    if (lock.current) return;
+    if (lock.current || !argumentsValid) return;
     if (!editor.draft.name.trim()) { setError("Enter a server name."); return; }
     if (editor.draft.name !== editor.draft.name.trim()) { setError("Remove leading or trailing spaces from the server name."); return; }
     if (!complete) {
@@ -68,11 +70,11 @@ export function ServerWorkspace({ server, onSaved, onOpenDetails, initialTab = "
       <TabsContent value="connection" className="space-y-4">
         <label className="block space-y-2"><span className="text-sm font-medium">Server name</span><input className="w-full rounded-md border bg-transparent px-3 py-2 text-sm" readOnly={!!server.installed} value={editor.draft.name} onChange={event => editor.setName(event.target.value)} /></label>
         {editor.draft.configs.length > 1 && <div className="flex flex-wrap gap-2" aria-label="Connection options">{editor.draft.configs.map((option, index) => <Button key={index} size="sm" variant={index === editor.draft.index ? "default" : "outline"} onClick={() => editor.selectConfig(index)}>{(option.type === "http" || option.type === "sse") && <Cloud className="size-3.5" />}{option.type === "stdio" ? "Local" : "Remote"} · {option.type} {index + 1}</Button>)}</div>}
-        <ConnectionFields config={editor.config} onChange={editor.setConfig} />
+        <ConnectionFields key={`${editor.key}:${editor.draft.index}:${editor.config.type}`} config={editor.config} onChange={editor.setConfig} onValidityChange={setArgumentsValid} />
         {editor.draft.loadError && <p role="alert" className="text-sm text-destructive">Could not read the installed configuration: {editor.draft.loadError} <Button variant="outline" size="sm" onClick={editor.retryLoad}>Retry</Button></p>}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <Button className="shrink-0" disabled={saving || !editor.draft.loaded || !!editor.draft.loadError} onClick={save}>{saving ? "Saving..." : installed ? "Save configuration" : "Add server"}</Button>
+          <Button className="shrink-0" disabled={saving || !argumentsValid || !editor.draft.loaded || !!editor.draft.loadError} onClick={save}>{saving ? "Saving..." : installed ? "Save configuration" : "Add server"}</Button>
           {!server.installed && <Popover>
             <PopoverTrigger asChild><Button type="button" variant="outline" disabled={saving} className="min-w-0 max-w-full gap-2" aria-label={`Installation target: ${targetLabel}. Click to change`}><span className="truncate">{targetLabel}</span><ChevronDown className="size-3.5 shrink-0" /></Button></PopoverTrigger>
             <PopoverContent align="start" side="top" className="w-96 max-w-[calc(100vw-2rem)]"><InstallationTarget /></PopoverContent>

@@ -17,7 +17,7 @@ This document records installation behavior, persistence and implementation limi
 - Saved Configurations replaces the misleading Recently Added label. The current collection has no addition timestamps or chronological sorting and must not be described as recent catalog additions.
 - Manage retains its existing custom-server configuration dialog. Favorites, saved configurations and custom-server creation are not separate sidebar navigation entries.
 - Legacy `/favorites` and `/recently` routes remain supported and show their respective views within Discover and Manage. Import Configuration opens `/install-app` and is distinct from Manage's custom-server dialog. The same page handles incoming installation deep links; opening a link must not automatically submit the configuration.
-- Known limitation: Saved Configurations retains legacy browser-storage migration and direct add/delete commands. Migration can write configurations when the view loads; these commands do not implement Claude Code scope-aware routing. This legacy flow is not covered by the explicit-save and scope guarantees of the shared editor and must not be treated as scope-safe.
+- Saved Configurations **Get** uses the shared editor and installation target selector, including Claude Code Local/Project/User save routing. Known limitation: legacy browser-storage migration and direct delete commands remain. Migration can write configurations when the view loads; deletion does not implement Claude Code scope-aware routing. These legacy operations are not covered by the shared editor's explicit-save and scope guarantees.
 
 ## Claude Code scopes
 

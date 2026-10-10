@@ -1,4 +1,4 @@
-import { ServerForm } from "@/components/manage/forms";
+import { ServerWorkspace } from "@/components/server/ServerWorkspace";
 import { ServerCard as SharedServerCard } from "@/components/shared/ServerCard";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,14 +16,12 @@ import { useTranslation } from "react-i18next";
 interface ServerCardProps {
   serverKey: string;
   config: ConfigType["mcpServers"][string];
-  onAdd: (key: string, config: ConfigType["mcpServers"][string]) => void;
   onDelete: (key: string) => void;
 }
 
 export function ServerCard({
   serverKey,
   config,
-  onAdd,
   onDelete,
 }: ServerCardProps) {
   const [open, setOpen] = useState(false);
@@ -46,19 +44,23 @@ export function ServerCard({
               <span>{t("get")}</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md bg-background dark:bg-gray-800">
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-background dark:bg-gray-800">
             <DialogHeader>
               <DialogTitle className="dark:text-white">
                 {t("get")} {serverKey}
               </DialogTitle>
             </DialogHeader>
-            <ServerForm
-              config={config}
-              onSubmit={(values) => {
-                onAdd(serverKey, values);
-                setOpen(false);
+            <ServerWorkspace
+              server={{
+                id: `saved:${serverKey}`,
+                name: serverKey,
+                description: "",
+                source: "saved",
+                isOfficial: false,
+                isFavorited: false,
+                configs: [config],
               }}
-              buttonName={"add"}
+              onSaved={() => setOpen(false)}
             />
           </DialogContent>
         </Dialog>

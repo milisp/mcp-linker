@@ -64,45 +64,22 @@ export default function Recently({ embedded = false }: { embedded?: boolean }) {
   }, []);
 
   // Handle server operations
-  const handleServerOperation = async (
-    operation: "add" | "delete",
-    key: string,
-    config?: ServerConfig,
-  ) => {
+  const handleDelete = async (key: string) => {
     try {
-      const action =
-        operation === "add" ? "add_mcp_server" : "remove_mcp_server";
       const params = {
         clientName: selectedClient,
         path: selectedPath,
         serverName: key,
-        ...(config && { serverConfig: config }),
       };
       await Promise.allSettled([
-        invoke(action, params),
-        invoke(action, { ...params, clientName: "mcplinker" }),
+        invoke("remove_mcp_server", params),
+        invoke("remove_mcp_server", { ...params, clientName: "mcplinker" }),
       ]);
 
-      setServerList((prev) => {
-        if (operation === "delete") {
-          return prev.filter((s) => s.name !== key);
-        }
-        const index = prev.findIndex((s) => s.name === key);
-        const newServer = { name: key, config: config! };
-        return index !== -1
-          ? prev.map((s, i) => (i === index ? newServer : s))
-          : [...prev, newServer];
-      });
-
-      toast.success(
-        operation === "add" ? "Update configuration success" : "Server deleted",
-      );
+      setServerList((prev) => prev.filter((s) => s.name !== key));
+      toast.success("Server deleted");
     } catch (error) {
-      toast.error(
-        operation === "add"
-          ? "Failed to update configuration"
-          : "Failed to delete server",
-      );
+      toast.error("Failed to delete server");
     }
   };
 
@@ -117,8 +94,7 @@ export default function Recently({ embedded = false }: { embedded?: boolean }) {
             key={server.name}
             serverKey={server.name}
             config={server.config}
-            onAdd={(key, config) => handleServerOperation("add", key, config)}
-            onDelete={(key) => handleServerOperation("delete", key)}
+            onDelete={handleDelete}
           />
         ))}
       </div>

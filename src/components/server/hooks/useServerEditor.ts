@@ -11,10 +11,11 @@ export function useServerEditor(server: ServerType) {
   const { selectedClient, selectedPath } = useClientPathStore();
   const selectedProject = useCCProjectStore(state => state.selectedProject);
   const selectedScope = useCCProjectStore(state => state.selectedScope);
-  const key = JSON.stringify([server.id || server.name, selectedClient, selectedPath, selectedClient === "claude_code" ? [selectedProject, selectedScope] : null]);
+  const identity = server.source === "saved" ? ["normalized", server.id, server.name] : server.id || server.name;
+  const key = JSON.stringify([identity, selectedClient, selectedPath, selectedClient === "claude_code" ? [selectedProject, selectedScope] : null]);
   const initial = useMemo<ServerEditorDraft>(() => ({
-    name: server.installed?.name ?? (server.id.split("/").pop() || server.name),
-    configs: structuredClone(server.configs?.some(config => config.type !== "encrypted") ? server.configs.filter(config => config.type !== "encrypted") : [{ type: "stdio", command: "", args: [], env: {} }]),
+    name: server.installed?.name ?? (server.source === "saved" ? server.name : server.id.split("/").pop() || server.name),
+    configs: structuredClone(server.configs?.some(config => config.type !== "encrypted") ? server.configs.filter(config => config.type !== "encrypted").map(config => normalizeServerConfig(config) ?? config) : [{ type: "stdio", command: "", args: [], env: {} }]),
     index: 0,
     dirty: false,
     loaded: !!server.installed,
