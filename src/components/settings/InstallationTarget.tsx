@@ -14,7 +14,7 @@ import { useCCProjectStore } from "@/stores/ccProject";
 import { useProjectPreferences } from "@/stores/projectPreferences";
 import { ClientSelector } from "./client-selector";
 
-const projectClients = ["claude_code", "cursor", "roo_code", "copilot", "custom", "vscode"];
+const projectClients = ["claude_code", "cursor", "copilot", "custom", "vscode"];
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() || path;
 
 export function InstallationScope() {

@@ -5,8 +5,8 @@ This document records installation behavior, persistence and implementation limi
 ## Installation behavior
 
 - Catalog **Add** opens the configuration dialog; it never writes immediately. The dialog and server detail page provide independent destination selection using the shared target selector.
-- Choose the client first. Only clients supported by the existing directory-based backend expose a project/config-directory selector (Claude Code, Cursor, Roo Code, Copilot, Custom and the legacy VS Code target).
-- Claude Desktop, Cline, Windsurf, Codex and MCPHub use their existing user configuration routes. Do not infer project support just because a client accepts a path elsewhere.
+- Choose the client first. Only clients supported by the existing directory-based backend expose a project/config-directory selector (Claude Code, Cursor, Copilot, Custom and the legacy VS Code target).
+- Claude Desktop, Cline, Codex and MCPHub use their existing user configuration routes. Do not infer project support just because a client accepts a path elsewhere.
 - Installation targets include client, supported scope and project/config directory. Projects with the same name must remain distinguishable by full path.
 - **Browse** adds a directory and selects it. Cancelling preserves the previous target.
 

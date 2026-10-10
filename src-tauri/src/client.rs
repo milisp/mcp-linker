@@ -12,10 +12,6 @@ impl ClientConfig {
         let path = match (name, path) {
             ("claude", _) => Self::claude_config_path(&home),
             ("cline", _) => Self::cline_config_path(&home),
-            ("roo_code", Some(base_path)) if !base_path.is_empty() => {
-                PathBuf::from(base_path).join(".roo/mcp.json")
-            }
-            ("roo_code", _) => Self::roo_config_path(&home),
             ("copilot", Some(base_path)) if !base_path.is_empty() => {
                 PathBuf::from(base_path).join(".vscode/mcp.json")
             }
@@ -25,8 +21,7 @@ impl ClientConfig {
             }
             ("cursor", _) => home.join(".cursor/mcp.json"),
             ("mcphub", _) => home.join(".config/mcphub/servers.json"),
-            ("windsurf", _) => home.join(".codeium/windsurf/mcp_config.json"),
-("mcplinker", _) => home.join(".config/mcplinker/mcp.json"),
+            ("mcplinker", _) => home.join(".config/mcplinker/mcp.json"),
             (_, Some(path_str)) if !path_str.is_empty() => {
                 let given_path = PathBuf::from(path_str);
                 if given_path.is_file() || given_path.extension().map_or(false, |ext| ext == "json")
@@ -68,10 +63,6 @@ impl ClientConfig {
 
     fn cline_config_path(home: &Path) -> PathBuf {
         Self::vscode_global_storage_path(home, "saoudrizwan.claude-dev", "cline_mcp_settings.json")
-    }
-
-    fn roo_config_path(home: &Path) -> PathBuf {
-        Self::vscode_global_storage_path(home, "rooveterinaryinc.roo-cline", "mcp_settings.json")
     }
 
     pub fn get_path(&self) -> &Path {

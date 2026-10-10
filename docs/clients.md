@@ -15,15 +15,6 @@ This document describes the supported MCP clients and their configuration file p
 
 ---
 
-## Claude Desktop
-
-- **Scope**: Global
-- **Supported Platforms**:
-  - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-  - Windows: `~/AppData/Roaming/Claude/claude_desktop_config.json`
-
----
-
 ## Cline
 
 - **Scope**: Global
@@ -66,28 +57,12 @@ This document describes the supported MCP clients and their configuration file p
 
 ---
 
-## Windsurf
+## Claude Desktop
 
 - **Scope**: Global
-- **Supported Platforms**: Cross-platform
-- **Path**:
-  ```
-  ~/.codeium/windsurf/mcp_config.json
-  ```
----
-
-## Roo Code
-
-- **Scope**: Project-level (preferred) or Global fallback (macOS only)
 - **Supported Platforms**:
-  - macOS (global fallback supported)
-  - Cross-platform (project-based only)
-- **Paths**:
-  - Project: `<base_path>/.roo/mcp.json`
-  - Global (macOS only):
-    ```
-    ~/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/mcp_settings.json
-    ```
+  - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+  - Windows: `~/AppData/Roaming/Claude/claude_desktop_config.json`
 
 ---
 

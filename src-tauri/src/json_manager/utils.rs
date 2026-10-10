@@ -30,6 +30,6 @@ pub fn get_key_by_client(client: &str) -> &str {
 
 /// Returns true if the client uses per-server 'disabled' key instead of global __disabled section
 pub fn is_per_server_disabled_client(client: &str) -> bool {
-    matches!(client, "cline" | "roo_code")
+    client == "cline"
 }
 

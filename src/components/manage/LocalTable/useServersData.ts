@@ -16,7 +16,7 @@ export function useServersData(
       .filter(([_, serverConfig]) => {
         if (typeof serverConfig !== "object" || serverConfig === null)
           return false;
-        if (["cline", "roo_code"].includes(selectedClient)) {
+        if (selectedClient === "cline") {
           return !(
             "disabled" in serverConfig && (serverConfig as any).disabled
           );

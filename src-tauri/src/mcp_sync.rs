@@ -87,8 +87,8 @@ pub async fn sync_mcp_config(
         }
     }
 
-    // --- Special handling for cline/roo_code clients: convert between __disabled and "disabled": true ---
-    // If to_client is cline/roo_code, move all __disabled servers to mcpServers with "disabled": true
+    // --- Special handling for cline: convert between __disabled and "disabled": true ---
+    // If to_client is cline, move all __disabled servers to mcpServers with "disabled": true
     if is_per_server_disabled_client(&to_client) {
         // English comment: Move all servers from __disabled to mcpServers with "disabled": true, then clear __disabled
         if let Some(disabled_map) = to_json["__disabled"].as_object() {
@@ -108,7 +108,7 @@ pub async fn sync_mcp_config(
         // Clear __disabled
         to_json["__disabled"] = json!({});
     }
-    // If from_client is cline/roo_code, move all mcpServers with "disabled": true to __disabled and remove from mcpServers
+    // If from_client is cline, move all mcpServers with "disabled": true to __disabled and remove from mcpServers
     if is_per_server_disabled_client(&from_client) {
         // English comment: Move all servers with "disabled": true from mcpServers to __disabled, then remove them from mcpServers
         let mut to_move = vec![];
