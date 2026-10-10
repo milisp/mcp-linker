@@ -1,0 +1,27 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/datacircle",
+  "title": "datacircle",
+  "description": "Query your favorite B2B data APIs through us. Same request, same price, no markup.",
+  "version": "1.0.0",
+  "websiteUrl": "https://docs.datacircle.dev/mcp-server",
+  "repository": {
+    "url": "https://github.com/waynehamadi/datacircle-plugin",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.datacircle.dev/mcp"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "datacircle",
+        "category": "Database & Data",
+        "fullDescription": "Datacircle is a data co-op. Query your favorite B2B data APIs through us. Same request, same price, no markup. Right now we have 3 live LinkedIn profile APIs that we trust: Up2Data, HarvestAPI and Fetchin. The first time, your client signs you in with your Datacircle email (OAuth). Or send your API key as a Bearer token."
+      }
+    }
+  }
+}

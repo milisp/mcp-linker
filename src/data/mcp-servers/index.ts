@@ -19,6 +19,7 @@ import cloudflare from "./cloudflare.json";
 import cohesivity from "./cohesivity.json";
 import workato from "./workato.json";
 import zapier from "./zapier.json";
+import datacircle from "./datacircle.json";
 
 export type { RegistryServer } from "@/lib/registry/types";
 
@@ -43,4 +44,5 @@ export const MCP_REGISTRY_SERVERS = [
   cohesivity,
   workato,
   zapier,
+  datacircle,
 ] as RegistryServer[];
