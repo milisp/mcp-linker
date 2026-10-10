@@ -8,6 +8,8 @@ export function StringMapEditor({ title, values, onChange, secret = false }: {
   const id = useId();
   const [visible, setVisible] = useState(false);
   const [newKey, setNewKey] = useState("");
+  const [newValue, setNewValue] = useState("");
+  const keyLabel = title === "Environment variables" ? "Environment variable key" : title === "Headers" ? "Header key" : `${title} key`;
   return (
     <fieldset className="space-y-2">
       <legend className="w-full text-sm font-medium">
@@ -28,8 +30,9 @@ export function StringMapEditor({ title, values, onChange, secret = false }: {
         </div>
       ))}
       <div className="flex items-center gap-2">
-        <input value={newKey} onChange={event => setNewKey(event.target.value)} aria-label={`New ${title} name`} placeholder="Name" className="min-w-0 flex-1 rounded-md border bg-transparent px-3 py-2 text-sm" />
-        <Button type="button" variant="outline" size="sm" disabled={!newKey.trim() || newKey.trim() in values} onClick={() => { onChange({ ...values, [newKey.trim()]: "" }); setNewKey(""); }}><Plus className="size-3" /> Add</Button>
+        <input value={newKey} onChange={event => setNewKey(event.target.value)} aria-label={`New ${keyLabel}`} placeholder={keyLabel} className="min-w-0 flex-1 rounded-md border bg-transparent px-3 py-2 text-sm" />
+        <input value={newValue} onChange={event => setNewValue(event.target.value)} type={secret && !visible ? "password" : "text"} autoComplete="off" aria-label={`New ${title} value`} placeholder="Value" className="min-w-0 flex-1 rounded-md border bg-transparent px-3 py-2 text-sm" />
+        <Button type="button" variant="outline" size="sm" disabled={!newKey.trim() || newKey.trim() in values} onClick={() => { onChange({ ...values, [newKey.trim()]: newValue }); setNewKey(""); setNewValue(""); }}><Plus className="size-3" /> Add</Button>
       </div>
     </fieldset>
   );

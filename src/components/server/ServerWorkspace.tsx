@@ -30,7 +30,16 @@ export function ServerWorkspace({ server, onSaved, onOpenDetails, initialTab = "
     : `${clientLabel}${projectName ? ` · ${projectName}` : ""}`;
   const save = async () => {
     if (lock.current) return;
-    if (!editor.draft.name.trim() || editor.draft.name !== editor.draft.name.trim() || !complete) { setError("Enter a server name and complete all connection fields and credentials."); return; }
+    if (!editor.draft.name.trim()) { setError("Enter a server name."); return; }
+    if (editor.draft.name !== editor.draft.name.trim()) { setError("Remove leading or trailing spaces from the server name."); return; }
+    if (!complete) {
+      setError(config.type === "stdio"
+        ? "Complete the command, arguments and environment variable values. Replace any placeholders, including credentials."
+        : config.type === "encrypted"
+          ? "Decrypt this configuration before saving."
+          : "Enter a valid HTTP or HTTPS URL and complete all header values. Replace any placeholders, including credentials.");
+      return;
+    }
     lock.current = true; setSaving(true); setError(null);
     try {
       const saved = await saveServerConfig({ selectedClient: editor.selectedClient, selectedPath: editor.selectedPath || "", currentServer: server, serverName: editor.draft.name, config, mode: installed ? "update" : "add", disabled: !!server.installed?.disabled, clearDraftOnSuccess: false, setIsDialogOpen: () => {} });
