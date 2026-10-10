@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] - 2026-10-10
+
+### New Features
+- **Claude Code scopes** — added Local, Project and User configuration support with an explicit installation target selector
+- **Project management** — added a project path selector in the header, searchable project visibility controls and per-client preferences
+- **Live MCP tool inspection** — added tool inspection to server management and a dedicated Claude Code tools panel; Claude-specific tool inspection, disabled-server operations and sync remain Local-only
+- **Curated discovery** — added compact catalog cards and an Add flow that opens configuration and destination selection before saving
+- Added the Cohesivity MCP preset (#40)
+
+### Improvements & Fixes
+- Unified Discover and Manage navigation with Browse/Favorites and Installed/Saved Configurations views
+- Fixed Claude Code installation from saved configurations and improved argument editing
+- Preserved Claude Code MCP headers across the configuration lifecycle
+- Improved server validation messages, remote URL display and adding key-value pairs together
+- Added client icons to the header selector and improved history navigation and detail-page back behavior
+- Simplified server detail links and removed redundant navigation controls
+- Identified MCP Linker in Parallel Search requests
+
+### Compatibility
+- Removed Windsurf and Roo Code from the supported client list
+- Documented requirements for OpenCode and Pi support
+
+### Infrastructure & Packaging
+- Migrated MCP presets to the Registry `server.json` catalog format
+- Updated CI to skip Tauri bundling on pull requests
+- Resolved workspace Clippy warnings
+- Enabled automatically generated GitHub release notes in the release workflow
+
 ## [2.3.0] - 2026-10-07
 
 ### Security
