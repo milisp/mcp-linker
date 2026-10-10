@@ -28,10 +28,12 @@ export interface RegistryTransport {
   type: "stdio" | "sse" | "streamable-http";
   url?: string;
   headers?: RegistryKeyValueInput[];
+  variables?: Record<string, RegistryInput>;
 }
 
 export interface RegistryPackage {
   registryType: string;
+  fileSha256?: string;
   registryBaseUrl?: string;
   identifier: string;
   version?: string;
@@ -43,13 +45,15 @@ export interface RegistryPackage {
 }
 
 export interface RegistryServer {
+  $schema?: string;
+  _meta?: Record<string, unknown>;
   name: string;
   title?: string;
   description: string;
   version: string;
   websiteUrl?: string;
-  repository?: { url: string; source?: string; subfolder?: string };
-  icons?: { src: string; sizes?: string; mimeType?: string }[];
+  repository?: { url: string; source?: string; subfolder?: string; id?: string };
+  icons?: { src: string; sizes?: string[]; mimeType?: string; theme?: "light" | "dark" }[];
   packages?: RegistryPackage[];
   remotes?: RegistryTransport[];
 }

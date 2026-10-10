@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/parallel-search",
+  "title": "parallel-search",
+  "description": "Opt in by clicking Add. User-provided search objectives, search queries, and requested URLs are s...",
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://search.parallel.ai/mcp",
+      "headers": [
+        {
+          "name": "User-Agent",
+          "value": "mcp-linker"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "parallel-search",
+        "category": "Development & Testing",
+        "fullDescription": "Opt in by clicking Add. User-provided search objectives, search queries, and requested URLs are sent to Parallel."
+      }
+    }
+  }
+}

@@ -1,3 +1,5 @@
+import { MCP_REGISTRY_SERVERS } from "@/data/mcp-servers";
+import { registryServerToPresets, type MCPServerPreset } from "@/data/mcp-servers/toPresets";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -7,183 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Sparkles, Plus, ExternalLink, Settings } from "lucide-react";
 import { useState } from "react";
 
-interface MCPServer {
-  name: string;
-  description: string;
-  category: string;
-  type: "http" | "sse" | "stdio";
-  url?: string;
-  command?: string;
-  args?: string;
-  envVars?: { key: string; placeholder: string }[];
-  headers?: Record<string, string>;
-}
 
-const MCP_SERVERS: MCPServer[] = [
-  // Development & Testing Tools
-  {
-    name: "sentry",
-    description: "Monitor errors, debug production issues",
-    category: "Development & Testing",
-    type: "http",
-    url: "https://mcp.sentry.dev/mcp"
-  },
-  {
-    name: "socket",
-    description: "Security analysis for dependencies",
-    category: "Development & Testing",
-    type: "http",
-    url: "https://mcp.socket.dev/"
-  },
-  {
-    name: "parallel-search",
-    description: "Opt in by clicking Add. User-provided search objectives, search queries, and requested URLs are sent to Parallel.",
-    category: "Development & Testing",
-    type: "http",
-    url: "https://search.parallel.ai/mcp",
-    headers: { "User-Agent": "mcp-linker" }
-  },
-  
-  // Project Management & Documentation
-  {
-    name: "asana",
-    description: "Interact with your Asana workspace to keep projects on track",
-    category: "Project Management",
-    type: "sse",
-    url: "https://mcp.asana.com/sse"
-  },
-  {
-    name: "atlassian",
-    description: "Manage your Jira tickets and Confluence docs",
-    category: "Project Management",
-    type: "sse",
-    url: "https://mcp.atlassian.com/v1/sse"
-  },
-  {
-    name: "clickup",
-    description: "Task management, project tracking",
-    category: "Project Management",
-    type: "stdio",
-    command: "npx",
-    args: "-y @hauptsache.net/clickup-mcp",
-    envVars: [
-      { key: "CLICKUP_API_KEY", placeholder: "YOUR_CLICKUP_API_KEY" },
-      { key: "CLICKUP_TEAM_ID", placeholder: "YOUR_TEAM_ID" }
-    ]
-  },
-  {
-    name: "intercom",
-    description: "Access real-time customer conversations, tickets, and user data",
-    category: "Project Management",
-    type: "http",
-    url: "https://mcp.intercom.com/mcp"
-  },
-  {
-    name: "linear",
-    description: "Integrate with Linear's issue tracking and project management",
-    category: "Project Management",
-    type: "sse",
-    url: "https://mcp.linear.app/sse"
-  },
-  {
-    name: "notion",
-    description: "Read docs, update pages, manage tasks",
-    category: "Project Management",
-    type: "http",
-    url: "https://mcp.notion.com/mcp"
-  },
-  
-  // Database & Data Management
-  {
-    name: "airtable",
-    description: "Read/write records, manage bases and tables",
-    category: "Database & Data",
-    type: "stdio",
-    command: "npx",
-    args: "-y airtable-mcp-server",
-    envVars: [
-      { key: "AIRTABLE_API_KEY", placeholder: "YOUR_AIRTABLE_API_KEY" }
-    ]
-  },
-
-  // Payments & Commerce
-  {
-    name: "paypal",
-    description: "Integrate PayPal commerce capabilities, payment processing, transaction management",
-    category: "Payments & Commerce",
-    type: "http",
-    url: "https://mcp.paypal.com/mcp"
-  },
-  {
-    name: "stripe",
-    description: "Payment processing, subscription management, and financial transactions",
-    category: "Payments & Commerce",
-    type: "http",
-    url: "https://mcp.stripe.com"
-  },
-  {
-    name: "square",
-    description: "Use an agent to build on Square APIs. Payments, inventory, orders, and more",
-    category: "Payments & Commerce",
-    type: "sse",
-    url: "https://mcp.squareup.com/sse"
-  },
-  {
-    name: "plaid",
-    description: "Analyze, troubleshoot, and optimize Plaid integrations. Banking data, financial account linking",
-    category: "Payments & Commerce",
-    type: "sse",
-    url: "https://api.dashboard.plaid.com/mcp/sse"
-  },
-
-  // Design & Media
-  {
-    name: "figma",
-    description: "Access designs, export assets (Requires Figma Desktop with Dev Mode MCP Server)",
-    category: "Design & Media",
-    type: "sse",
-    url: "http://127.0.0.1:3845/sse"
-  },
-  {
-    name: "invideo",
-    description: "Build video creation capabilities into your applications",
-    category: "Design & Media",
-    type: "sse",
-    url: "https://mcp.invideo.io/sse"
-  },
-
-  // Infrastructure & DevOps
-  {
-    name: "cloudflare",
-    description: "Build applications, analyze traffic, monitor performance, and manage security settings",
-    category: "Infrastructure & DevOps",
-    type: "http",
-    url: "https://mcp.cloudflare.com/mcp"
-  },
-  {
-    name: "cohesivity",
-    description: "Set up Postgres, hosting, email, storage and more for your project, no account needed",
-    category: "Infrastructure & DevOps",
-    type: "http",
-    url: "https://cohesivity.ai/mcp"
-  },
-
-  // Automation & Integration
-  {
-    name: "workato",
-    description: "Access any application, workflows or data via Workato, made accessible for AI",
-    category: "Automation & Integration",
-    type: "sse",
-    url: "https://mcp.workato.com/sse"
-  },
-  {
-    name: "zapier",
-    description: "Connect to nearly 8,000 apps through Zapier's automation platform",
-    category: "Automation & Integration",
-    type: "http",
-    url: "https://mcp.zapier.com/mcp"
-  }
-];
+const MCP_SERVER_PRESETS = MCP_REGISTRY_SERVERS.flatMap(registryServerToPresets);
 
 interface PreConfiguredServersDialogProps {
   onAddServer: (formData: any) => Promise<boolean>;
@@ -195,9 +22,9 @@ export default function PreConfiguredServersDialog({ onAddServer }: PreConfigure
   const [configuring, setConfiguring] = useState<string | null>(null);
   const [envValues, setEnvValues] = useState<Record<string, string>>({});
 
-  const categories = Array.from(new Set(MCP_SERVERS.map(server => server.category)));
+  const categories = Array.from(new Set(MCP_SERVER_PRESETS.map(server => server.category)));
 
-  const handleInstallServer = async (server: MCPServer) => {
+  const handleInstallServer = async (server: MCPServerPreset) => {
     if (installing) return;
     
     if (server.envVars && server.envVars.length > 0) {
@@ -227,7 +54,7 @@ export default function PreConfiguredServersDialog({ onAddServer }: PreConfigure
     }
   };
 
-  const handleConfigureAndInstall = async (server: MCPServer) => {
+  const handleConfigureAndInstall = async (server: MCPServerPreset) => {
     if (installing) return;
     
     setInstalling(server.name);
@@ -273,7 +100,7 @@ export default function PreConfiguredServersDialog({ onAddServer }: PreConfigure
             Pre-configured MCP Servers
           </DialogTitle>
           <DialogDescription>
-            Choose from official MCP servers to add to your Claude Code configuration.
+            Choose from curated MCP servers to add to your Claude Code configuration.
             <a 
               href="https://docs.anthropic.com/en/docs/claude-code/mcp" 
               target="_blank" 
@@ -288,7 +115,7 @@ export default function PreConfiguredServersDialog({ onAddServer }: PreConfigure
         {configuring ? (
           <div className="space-y-4 py-4">
             {(() => {
-              const server = MCP_SERVERS.find(s => s.name === configuring);
+              const server = MCP_SERVER_PRESETS.find(s => s.name === configuring);
               if (!server) return null;
               
               return (
@@ -306,6 +133,7 @@ export default function PreConfiguredServersDialog({ onAddServer }: PreConfigure
                         <Label htmlFor={envVar.key}>{envVar.key}</Label>
                         <Input
                           id={envVar.key}
+                          type={envVar.isSecret ? "password" : "text"}
                           placeholder={envVar.placeholder}
                           value={envValues[envVar.key] || ""}
                           onChange={(e) => setEnvValues(prev => ({ 
@@ -345,7 +173,7 @@ export default function PreConfiguredServersDialog({ onAddServer }: PreConfigure
               <div key={category}>
                 <h3 className="text-lg font-semibold mb-3">{category}</h3>
                 <div className="grid gap-3">
-                  {MCP_SERVERS
+                  {MCP_SERVER_PRESETS
                     .filter(server => server.category === category)
                     .map(server => (
                       <Card key={server.name} className="hover:shadow-md transition-shadow">

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/cloudflare",
+  "title": "cloudflare",
+  "description": "Build applications, analyze traffic, monitor performance, and manage security settings",
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.cloudflare.com/mcp"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "cloudflare",
+        "category": "Infrastructure & DevOps"
+      }
+    }
+  }
+}

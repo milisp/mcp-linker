@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/cohesivity",
+  "title": "cohesivity",
+  "description": "Set up Postgres, hosting, email, storage and more for your project, no account needed",
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://cohesivity.ai/mcp"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "cohesivity",
+        "category": "Infrastructure & DevOps"
+      }
+    }
+  }
+}

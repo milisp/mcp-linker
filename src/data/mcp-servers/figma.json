@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/figma",
+  "title": "figma",
+  "description": "Access designs, export assets (Requires Figma Desktop with Dev Mode MCP Server)",
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "sse",
+      "url": "http://127.0.0.1:3845/sse"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "figma",
+        "category": "Design & Media"
+      }
+    }
+  }
+}
