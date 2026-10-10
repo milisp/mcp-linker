@@ -14,7 +14,8 @@
     "io.modelcontextprotocol.registry/publisher-provided": {
       "io.github.milisp.mcp-linker": {
         "configName": "linear",
-        "category": "Project Management"
+        "category": "Project Management",
+        "featured": true
       }
     }
   }

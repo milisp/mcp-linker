@@ -14,7 +14,8 @@
     "io.modelcontextprotocol.registry/publisher-provided": {
       "io.github.milisp.mcp-linker": {
         "configName": "stripe",
-        "category": "Payments & Commerce"
+        "category": "Payments & Commerce",
+        "featured": true
       }
     }
   }

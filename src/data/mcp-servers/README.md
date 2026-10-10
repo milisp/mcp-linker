@@ -19,7 +19,7 @@ client configuration fields are not stored in the JSON catalog.
 Catalog-specific metadata lives at
 `_meta["io.modelcontextprotocol.registry/publisher-provided"]["io.github.milisp.mcp-linker"]`:
 `configName` preserves the existing client configuration key, `category` controls
-grouping, and `fullDescription` preserves details beyond the schema's 100-character
+grouping, `featured: true` places an entry in the Featured section, and `fullDescription` preserves details beyond the schema's 100-character
 description limit.
 
 These are locally curated definitions, not claims of official registry publication
@@ -31,3 +31,7 @@ installation behavior; pin verified package versions before official publication
 The dialog currently offers each derived connection as a separate choice and
 prompts for package environment variables. URL variables, header inputs, and other
 Registry input forms require configuration in the full server editor.
+
+Discover displays featured entries first, then the remaining catalog grouped by
+category, followed by additional Registry results. Search and transport filters
+apply to all sections. Local detail pages and installation forms use these same entries.

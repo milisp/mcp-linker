@@ -1,3 +1,4 @@
+import { mustHavePathClients } from "@/lib/data";
 // useSaveServerConfig.ts
 import { useMcpRefresh } from "@/contexts/McpRefreshContext";
 import { useCCProjectStore } from "@/stores/ccProject";
@@ -14,6 +15,7 @@ interface SaveServerConfigParams {
   config: ServerConfig | null;
   setIsDialogOpen: (open: boolean) => void;
   onSuccess?: () => void;
+  clearDraftOnSuccess?: boolean;
 }
 
 export function useSaveServerConfig() {
@@ -44,6 +46,7 @@ export function useSaveServerConfig() {
         } else if ((value as any).url) {
           req.type = (value as any).type || "http";
           req.url = (value as any).url;
+          if ((value as any).headers) req.headers = (value as any).headers;
         } else {
           throw new Error("Unsupported config for Claude Code");
         }
@@ -85,14 +88,15 @@ export function useSaveServerConfig() {
     config,
     setIsDialogOpen,
     onSuccess,
-  }: SaveServerConfigParams) => {
-    if (selectedClient === "custom" && !selectedPath) {
+    clearDraftOnSuccess = true,
+  }: SaveServerConfigParams): Promise<boolean> => {
+    if (mustHavePathClients.includes(selectedClient) && !selectedPath) {
       toast.error("Path is required");
-      return;
+      return false;
     }
     if (!currentServer) {
       toast.error("Please select a server");
-      return;
+      return false;
     }
 
     if (config) {
@@ -100,7 +104,7 @@ export function useSaveServerConfig() {
         await updateConfig(
           selectedClient,
           selectedPath,
-          currentServer.name,
+          serverName,
           currentServer,
           config,
         );
@@ -139,16 +143,19 @@ export function useSaveServerConfig() {
         
         setIsDialogOpen(false);
         toast.success("Configuration updated successfully");
-        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        if (clearDraftOnSuccess) localStorage.removeItem(LOCAL_STORAGE_KEY);
         
         // Call custom success callback if provided
         onSuccess?.();
+        return true;
       } catch (error) {
         console.error("Failed to update config:", error);
         const message = error instanceof Error ? error.message : String(error);
         toast.error(`Failed to update configuration: ${message}`);
+        return false;
       }
     }
+    return false;
   };
 
   return { saveServerConfig };

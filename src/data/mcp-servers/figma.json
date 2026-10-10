@@ -14,7 +14,8 @@
     "io.modelcontextprotocol.registry/publisher-provided": {
       "io.github.milisp.mcp-linker": {
         "configName": "figma",
-        "category": "Design & Media"
+        "category": "Design & Media",
+        "featured": true
       }
     }
   }

@@ -1,6 +1,6 @@
 import type { ServerType } from "@/types";
 import { registryServerToConfigs } from "./toConfigs";
-import type { RegistryListResponse, RegistryServerEntry } from "./types";
+import type { RegistryInput, RegistryListResponse, RegistryServerEntry } from "./types";
 
 export * from "./types";
 export { registryServerToConfigs } from "./toConfigs";
@@ -19,6 +19,11 @@ function toDeveloper(name: string): string {
     : namespace;
 }
 
+function needsInput(input: RegistryInput): boolean {
+  if (Object.values(input.variables ?? {}).some(needsInput)) return true;
+  return input.isRequired === true && input.value === undefined && input.default === undefined;
+}
+
 export function entryToServerType(entry: RegistryServerEntry): ServerType {
   const { server } = entry;
   return {
@@ -32,6 +37,11 @@ export function entryToServerType(entry: RegistryServerEntry): ServerType {
     version: server.version,
     isFavorited: false,
     configs: registryServerToConfigs(server),
+    requiresConfiguration: (server.packages ?? []).some(pkg =>
+      [...(pkg.environmentVariables ?? []), ...(pkg.runtimeArguments ?? []), ...(pkg.packageArguments ?? []), ...(pkg.transport?.headers ?? [])].some(needsInput),
+    ) || (server.remotes ?? []).some(remote =>
+      [...(remote.headers ?? []), ...Object.values(remote.variables ?? {})].some(needsInput),
+    ),
   };
 }
 

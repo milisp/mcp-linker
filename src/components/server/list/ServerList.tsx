@@ -1,78 +1,84 @@
-import { useFavoriteServers } from "@/stores/favoriteServers";
+import { availableClients } from "@/constants/clients";
+import { useCCProjectStore } from "@/stores/ccProject";
+import { useClientPathStore } from "@/stores/clientPathStore";
 import { useRepoUrlStore } from "@/stores/repoUrl";
 import type { ServerType } from "@/types";
-import { useRef, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
+import { toast } from "sonner";
 import { ServerConfigDialog } from "../dialog";
+import { useSaveServerConfig } from "../hooks/useSaveServerConfig";
+import { quickInstallConfig } from "../utils/quickInstall";
 import { ServerCard } from "./ServerCard";
+
 interface ServerListProps {
   mcpServers: ServerType[];
-  onDelete?: (id: string) => void;
 }
 
-/**
- * Optimized Server List Component
- * - Added virtualization for better performance with large lists
- * - Improved responsive layout
- * - Better handling of favorites using global store
- */
-export function ServerList({ mcpServers, onDelete }: ServerListProps) {
-  // Stable key reference for consistent rendering
-  const stableKeyRef = useRef(Math.random().toString(36));
+export function ServerList({ mcpServers }: ServerListProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentServer, setCurrentServer] = useState<ServerType | null>(null);
+  const setRepoUrl = useRepoUrlStore(state => state.setRepoUrl);
+  const { selectedClient, selectedPath } = useClientPathStore();
+  const selectedProject = useCCProjectStore(state => state.selectedProject);
+  const { saveServerConfig } = useSaveServerConfig();
+  const targetLabel = availableClients.find(client => client.value === selectedClient)?.label ?? selectedClient;
+  const targetKey = JSON.stringify([selectedClient, selectedPath, selectedClient === "claude_code" ? selectedProject : null]);
 
-  // Get favorite servers from store
-  const favoriteServers = useFavoriteServers((state) => state.favoriteServers);
-
-  const setRepoUrl = useRepoUrlStore((state) => state.setRepoUrl);
-
-  // Container reference for virtualization
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Open server config dialog
   const openDialog = (server: ServerType) => {
     setCurrentServer(server);
     setRepoUrl(server.source);
     setIsDialogOpen(true);
   };
 
-  // Check if server is favorited
-  const isServerFavorited = (serverId: string) => {
-    return favoriteServers.some((favServer) => favServer.id === serverId);
+  const quickAdd = async (server: ServerType): Promise<boolean> => {
+    const config = quickInstallConfig(server);
+    if (!config) {
+      openDialog(server);
+      return false;
+    }
+    const serverName = server.id.split("/").pop() || server.name;
+    if (selectedClient === "claude_code") {
+      if (!selectedProject) {
+        toast.error("Please select a Claude Code project in the header");
+        return false;
+      }
+      // The Claude Code add command overwrites existing entries. Let the user
+      // review an existing name in the editor instead of replacing it on one click.
+      try {
+        const existing = await invoke<{ name: string }[]>("claude_mcp_list", { workingDir: selectedProject });
+        if (existing.some(entry => entry.name === serverName)) {
+          toast.info("This server already exists. Review its configuration before saving.");
+          openDialog(server);
+          return false;
+        }
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : String(error));
+        return false;
+      }
+    }
+    return saveServerConfig({
+      selectedClient,
+      selectedPath: selectedPath || "",
+      currentServer: server,
+      serverName,
+      config,
+      setIsDialogOpen: () => {},
+      clearDraftOnSuccess: false,
+    });
   };
 
-  // Handle empty state
-  if (mcpServers.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center text-gray-500">
-        <p>No servers match your criteria, Editor updating</p>
-      </div>
-    );
-  }
+  if (mcpServers.length === 0) return <p className="text-sm text-muted-foreground">No servers match your criteria.</p>;
 
   return (
-    <div ref={containerRef} className="h-full" key={stableKeyRef.current}>
-      <div
-        className="grid gap-4 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 w-full"
-        id="server-grid"
-      >
-        {mcpServers.map((server) => (
-          <ServerCard
-            key={`${server.id}`}
-            server={server}
-            onOpenDialog={openDialog}
-            isFavorited={isServerFavorited(server.id)}
-            onDelete={onDelete}
-          />
+    <div>
+      <div className="grid w-full grid-cols-1 gap-2 xl:grid-cols-2">
+        {mcpServers.map(server => (
+          <ServerCard key={server.id} server={server} onOpenDialog={openDialog} onQuickAdd={quickAdd} targetLabel={targetLabel} targetKey={targetKey} />
         ))}
       </div>
-
       {currentServer && (
-        <ServerConfigDialog
-          isOpen={isDialogOpen}
-          setIsDialogOpen={setIsDialogOpen}
-          currentServer={currentServer}
-        />
+        <ServerConfigDialog isOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} currentServer={currentServer} />
       )}
     </div>
   );

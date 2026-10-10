@@ -1,3 +1,4 @@
+import { mergeCatalogServers } from "@/data/mcp-servers/catalog";
 import { fetchRegistryServers } from "@/lib/registry";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
@@ -27,6 +28,6 @@ export function useMcpServers({
 
   return {
     ...query,
-    servers: query.data?.pages.flatMap((p) => p.servers) ?? [],
+    servers: mergeCatalogServers(query.data?.pages.flatMap((p) => p.servers) ?? [], keyword),
   };
 }

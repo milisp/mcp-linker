@@ -15,4 +15,6 @@ export type ServerType = {
   tools?: string[];
   /** Installable configs derived from the registry packages/remotes */
   configs?: ServerConfig[];
+  /** Registry inputs that must be configured before adding this server. */
+  requiresConfiguration?: boolean;
 };

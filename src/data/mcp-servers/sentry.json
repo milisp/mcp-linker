@@ -14,7 +14,8 @@
     "io.modelcontextprotocol.registry/publisher-provided": {
       "io.github.milisp.mcp-linker": {
         "configName": "sentry",
-        "category": "Development & Testing"
+        "category": "Development & Testing",
+        "featured": true
       }
     }
   }

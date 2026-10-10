@@ -1,3 +1,4 @@
+import { findCatalogServer } from "@/data/mcp-servers/catalog";
 import { ContentLoadingFallback } from "@/components/common/LoadingConfig";
 import { ServerConfigForm } from "@/components/server/form/ServerConfigForm";
 import { useServerConfig } from "@/components/server/hooks/useServerConfig";
@@ -8,19 +9,26 @@ import { useGithubReadmeJson } from "@/hooks/useGithubReadmeJson";
 import { fetchRegistryServer } from "@/lib/registry";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useViewStore } from "@/stores/viewStore";
-import type { ServerType } from "@/types";
-import { invoke } from "@tauri-apps/api/core";
-import { ChevronLeft, User } from "lucide-react";
+import { useFavoriteServers } from "@/stores/favoriteServers";
+import { openUrl } from "@/utils/urlHelper";
+import { serverTransportLabels } from "@/components/server/utils/quickInstall";
+import type { ServerConfig, ServerType } from "@/types";
+import { useSaveServerConfig } from "@/components/server/hooks/useSaveServerConfig";
+import { ChevronLeft, ExternalLink, Star, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function ServerPage() {
   const [server, setServer] = useState<ServerType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [curIndex, setCurIndex] = useState(0);
+  const favoriteServers = useFavoriteServers(state => state.favoriteServers);
+  const toggleFavorite = useFavoriteServers(state => state.toggleFavorite);
   const { id, owner, repo } = useViewStore((s) => s.params);
   const { navigate } = useViewStore();
 
   const { selectedClient, selectedPath } = useClientPathStore();
+  const { saveServerConfig } = useSaveServerConfig();
 
   // Always call hooks at the top level
   const {
@@ -35,31 +43,28 @@ export function ServerPage() {
     handleEnvChange,
   } = useServerConfig(true, selectedClient);
 
-  // For demo, configs/curIndex/onConfigChange are single config only
-  const configs = [config];
-  const curIndex = 0;
-  const onConfigChange = (c: any, _i: number) => setConfig(c);
-  const onSseConfigChange = (c: any) => setConfig(c);
+  const configs = server?.configs?.length ? server.configs : [config];
+  const onConfigChange = (nextConfig: ServerConfig, index: number) => {
+    setCurIndex(index);
+    setConfig(nextConfig);
+    setEnvValues(nextConfig.type === "stdio" ? nextConfig.env ?? {} : {});
+  };
+  const onSseConfigChange = (nextConfig: ServerConfig) => setConfig(nextConfig);
 
   const onSubmit = async () => {
-    try {
-      if (serverName) {
-        await invoke("add_mcp_server", {
-          clientName: selectedClient,
-          path: selectedPath || undefined,
-          serverName: serverName,
-          serverConfig: config,
-        });
-        toast.success(`add server ${serverName}`);
-      } else {
-        toast.error("no server name");
-      }
-    } catch (e: any) {
-      console.error(e);
-      toast.error(
-        `add server Failed: ${e instanceof Error ? e.message : "Unknown error"}`,
-      );
+    if (!server) return;
+    if (!serverName.trim()) {
+      toast.error("Please enter a server name");
+      return;
     }
+    await saveServerConfig({
+      selectedClient,
+      selectedPath: selectedPath || "",
+      currentServer: server,
+      serverName,
+      config,
+      setIsDialogOpen: () => {},
+    });
   };
 
   // Add the useGithubReadmeJson hook
@@ -68,6 +73,7 @@ export function ServerPage() {
   // Helper to safely set server and config state
   function applyServerConfig(serverData: ServerType) {
     setServer(serverData);
+    setCurIndex(0);
     // Registry names are reverse-DNS; clients expect the short last segment.
     setServerName(serverData.id.split("/").pop() || serverData.name);
     const configItem = (serverData.configs?.[0] as any) || {};
@@ -78,10 +84,14 @@ export function ServerPage() {
   useEffect(() => {
     const fetchServer = async () => {
       setIsLoading(true);
+      setServer(null);
       try {
         let serverData: ServerType | null = null;
         if (id) {
-          serverData = await fetchRegistryServer(decodeURIComponent(id));
+          const serverId = decodeURIComponent(id);
+          serverData = findCatalogServer(serverId)
+            ?? useFavoriteServers.getState().favoriteServers.find(item => item.id === serverId)
+            ?? await fetchRegistryServer(serverId);
           if (!serverData) throw new Error("Server not found in registry");
           applyServerConfig(serverData);
         } else if (owner && repo) {
@@ -188,7 +198,28 @@ export function ServerPage() {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {serverTransportLabels(server).map(label => (
+              <span key={label} className="rounded bg-muted px-2 py-1 text-xs font-medium">{label}</span>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toggleFavorite(server)}
+              aria-pressed={favoriteServers.some(item => item.id === server.id)}
+            >
+              <Star className={favoriteServers.some(item => item.id === server.id) ? "fill-yellow-400 text-yellow-500" : ""} />
+              {favoriteServers.some(item => item.id === server.id) ? "Remove favorite" : "Favorite"}
+            </Button>
+            {server.source && (
+              <Button variant="outline" size="sm" onClick={() => openUrl(server.source)}>
+                <ExternalLink /> Website
+              </Button>
+            )}
+          </div>
           <p className="text-muted-foreground">{server.description}</p>
+          {server.tags?.length ? <p className="text-sm text-muted-foreground">{server.tags.join(" · ")}</p> : null}
+          {server.tools?.length ? <p className="text-sm text-muted-foreground">Tools: {server.tools.join(", ")}</p> : null}
 
           <div className="flex flex-wrap gap-6 text-sm text-gray-600">
             <ServerMeta icon={User} value={server.developer} />

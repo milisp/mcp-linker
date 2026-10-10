@@ -1,4 +1,4 @@
-import { HeroBanner } from "@/components/banner";
+import { CURATED_SERVER_IDS, FEATURED_SERVER_IDS } from "@/data/mcp-servers/catalog";
 import { ServerList } from "@/components/server";
 import { useMcpServers } from "@/hooks/useMcpServers";
 import { Search } from "lucide-react";
@@ -46,6 +46,17 @@ export default function Discovery() {
     );
   }, [servers, transport]);
 
+  const featuredServers = filteredServers.filter(server => FEATURED_SERVER_IDS.has(server.id));
+  const registryServers = filteredServers.filter(server => !CURATED_SERVER_IDS.has(server.id));
+  const categoryGroups = new Map<string, typeof filteredServers>();
+  for (const server of filteredServers) {
+    if (!CURATED_SERVER_IDS.has(server.id) || FEATURED_SERVER_IDS.has(server.id)) continue;
+    const category = server.tags?.[0] ?? "Other";
+    const group = categoryGroups.get(category) ?? [];
+    group.push(server);
+    categoryGroups.set(category, group);
+  }
+
   // Filtering happens client-side, so a narrow filter can leave too few results
   // to fill the viewport and trigger the scroll sentinel. Keep pulling pages.
   useEffect(() => {
@@ -53,7 +64,7 @@ export default function Discovery() {
       transport !== "all" &&
       hasNextPage &&
       !isFetchingNextPage &&
-      filteredServers.length < 10
+      registryServers.length < 10
     ) {
       fetchNextPage();
     }
@@ -62,7 +73,7 @@ export default function Discovery() {
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-    filteredServers.length,
+    registryServers.length,
   ]);
 
   // Infinite scrolling
@@ -120,18 +131,30 @@ export default function Discovery() {
         </div>
       </div>
 
-      {!deferredSearchTerm && <HeroBanner onFeatureClick={() => {}} />}
+      {featuredServers.length > 0 && (
+        <section className="space-y-4" aria-labelledby="featured-servers-title">
+          <h2 id="featured-servers-title" className="text-2xl font-bold">{t("featuredServers")}</h2>
+          <ServerList mcpServers={featuredServers} />
+        </section>
+      )}
+
+      {Array.from(categoryGroups, ([category, categoryServers]) => (
+        <section key={category} className="space-y-4" aria-label={category}>
+          <h2 className="text-2xl font-bold">{category}</h2>
+          <ServerList mcpServers={categoryServers} />
+        </section>
+      ))}
 
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">
           {deferredSearchTerm
-            ? `Search results for "${deferredSearchTerm}"`
-            : "MCP Registry"}
+            ? `More results for "${deferredSearchTerm}"`
+            : "More from MCP Registry"}
         </h2>
 
         {error && (
           <div className="text-center text-red-600 py-4">
-            <p>Failed to load servers from the MCP registry.</p>
+            <p>Failed to load servers from the MCP registry. The local catalog is still available.</p>
             <p className="text-sm mt-1">{(error as Error).message}</p>
           </div>
         )}
@@ -143,11 +166,11 @@ export default function Discovery() {
           </div>
         ) : (
           <>
-            <ServerList mcpServers={filteredServers} />
+            {registryServers.length > 0 && <ServerList mcpServers={registryServers} />}
 
-            {!error && filteredServers.length === 0 && (
+            {!error && registryServers.length === 0 && (
               <div className="text-center py-10 text-gray-500">
-                <p className="text-lg">No servers found</p>
+                <p className="text-lg">No registry servers found</p>
                 {deferredSearchTerm && (
                   <p className="text-sm mt-2">Try a different search term</p>
                 )}
