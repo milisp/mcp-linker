@@ -157,19 +157,17 @@ export function ServerPage() {
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
             <ServerMeta icon={User} value={server.developer} />
             {server.version && <span>v{server.version}</span>}
+            {server.websiteUrl && <Button variant="link" className="h-auto p-0 text-xs" onClick={() => openUrl(server.websiteUrl!)}><ExternalLink className="size-3" /> Website</Button>}
+            {(server.repositoryUrl || (server.source && server.source !== server.websiteUrl)) && (
+              <Button variant="link" className="h-auto p-0 text-xs" onClick={() => openUrl(server.repositoryUrl || server.source)}>
+                <ExternalLink className="size-3" /> {server.repositoryUrl ? "Source code" : "Project page"}
+              </Button>
+            )}
           </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {server.websiteUrl && <Button variant="outline" size="sm" onClick={() => openUrl(server.websiteUrl!)}><ExternalLink /> Website</Button>}
-            {(server.repositoryUrl || (server.source && server.source !== server.websiteUrl)) && (
-              <Button variant="outline" size="sm" onClick={() => openUrl(server.repositoryUrl || server.source)}>
-                <ExternalLink /> {server.repositoryUrl ? "Source code" : "Project page"}
-              </Button>
-            )}
-          </div>
-          <p className="text-muted-foreground">{server.description}</p>
+          {server.description && <p className="text-muted-foreground">{server.description}</p>}
           {server.tags?.length ? <div className="flex flex-wrap items-center gap-2 text-sm"><span className="text-muted-foreground">Category:</span>{server.tags.map(tag => <Button key={tag} variant="outline" size="sm" onClick={() => navigate(`/discover?category=${encodeURIComponent(tag)}`)}>{tag}</Button>)}</div> : null}
           {server.tools?.length ? <p className="text-sm text-muted-foreground">Tools: {server.tools.join(", ")}</p> : null}
         </CardContent>

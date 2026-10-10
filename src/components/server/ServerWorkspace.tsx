@@ -33,6 +33,19 @@ export function ServerWorkspace({ server, onSaved, onOpenDetails, initialTab = "
     if (!editor.draft.name.trim()) { setError("Enter a server name."); return; }
     if (editor.draft.name !== editor.draft.name.trim()) { setError("Remove leading or trailing spaces from the server name."); return; }
     if (!complete) {
+      if (config.type === "http" || config.type === "sse") {
+        try {
+          if (!["http:", "https:"].includes(new URL(config.url).protocol)) throw new Error("Invalid protocol");
+        } catch {
+          setError("Enter a valid HTTP or HTTPS server URL.");
+          return;
+        }
+        const incompleteHeaders = Object.entries(config.headers ?? {}).filter(([, value]) => !value.trim() || /<[^>]+>|\{[^}]+\}|\b(?:YOUR_|REPLACE_|CHANGE_ME|TODO)/i.test(value)).map(([key]) => key);
+        setError(incompleteHeaders.length
+          ? `Complete the values for these headers: ${incompleteHeaders.join(", ")}. Replace placeholders or remove headers you do not need.`
+          : "Replace unresolved placeholders in the server URL.");
+        return;
+      }
       setError(config.type === "stdio"
         ? "Complete the command, arguments and environment variable values. Replace any placeholders, including credentials."
         : config.type === "encrypted"
