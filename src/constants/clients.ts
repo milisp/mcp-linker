@@ -19,6 +19,12 @@ const clients: ClientInfo[] = [
     desc: "Codex CLI is a coding agent from OpenAI that runs locally on your computer."
   },
   {
+    value: "claude",
+    label: "Claude Desktop",
+    url: "https://claude.ai/",
+    desc: "Anthropic's official desktop app with native MCP support for enhanced AI capabilities"
+  },
+  {
     value: "cursor",
     label: "Cursor",
     url: "https://cursor.com/",
@@ -41,12 +47,6 @@ const clients: ClientInfo[] = [
     label: "mcphub.nvim",
     url: "https://github.com/robitx/mcphub.nvim",
     desc: "Neovim plugin for Model Context Protocol integration and server management"
-  },
-  {
-    value: "claude",
-    label: "Claude Desktop",
-    url: "https://claude.ai/",
-    desc: "Anthropic's official desktop app with native MCP support for enhanced AI capabilities"
   },
 ];
 
