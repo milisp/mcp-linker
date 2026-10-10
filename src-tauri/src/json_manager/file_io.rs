@@ -31,12 +31,12 @@ pub async fn write_json_file(path: &Path, content: &Value) -> Result<(), String>
     let content_cloned = content.clone(); // Clone for the blocking task
 
     // Ensure directory exists
-    if let Some(parent) = path_buf.parent() {
-        if !parent.exists() {
-            fs::create_dir_all(parent)
-                .await
-                .map_err(|e| format!("Failed to create directory: {}", e))?;
-        }
+    if let Some(parent) = path_buf.parent()
+        && !parent.exists()
+    {
+        fs::create_dir_all(parent)
+            .await
+            .map_err(|e| format!("Failed to create directory: {}", e))?;
     }
 
     // Serialize JSON in a blocking task

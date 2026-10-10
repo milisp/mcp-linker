@@ -24,8 +24,7 @@ impl ClientConfig {
             ("mcplinker", _) => home.join(".config/mcplinker/mcp.json"),
             (_, Some(path_str)) if !path_str.is_empty() => {
                 let given_path = PathBuf::from(path_str);
-                if given_path.is_file() || given_path.extension().map_or(false, |ext| ext == "json")
-                {
+                if given_path.is_file() || given_path.extension().is_some_and(|ext| ext == "json") {
                     given_path
                 } else {
                     given_path.join("mcp.json")

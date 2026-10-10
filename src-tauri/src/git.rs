@@ -44,11 +44,10 @@ pub async fn git_clone(url: String) -> Result<String, String> {
         }
 
         // Create parent directory ~/.cache/mcp-linker/owner
-        if let Some(parent) = target_dir.parent() {
-            if !parent.exists() {
-                fs::create_dir_all(parent)
-                    .map_err(|e| format!("Failed to create directory: {}", e))?;
-            }
+        if let Some(parent) = target_dir.parent()
+            && !parent.exists()
+        {
+            fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
         }
 
         // Clone the repository (append .git if not already present)

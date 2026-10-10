@@ -177,16 +177,17 @@ pub async fn list_disabled_servers(path: &Path, client: &str) -> Result<Value, S
     if is_per_server_disabled_client(client) {
         // For clients like 'cline', collect all servers with disabled: true
         let mut disabled = serde_json::Map::new();
-        if json.is_object() && json.as_object().unwrap().contains_key(key) {
-            if let Some(servers_obj) = json[key].as_object() {
-                for (name, server) in servers_obj {
-                    if server
-                        .get("disabled")
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(false)
-                    {
-                        disabled.insert(name.clone(), server.clone());
-                    }
+        if json.is_object()
+            && json.as_object().unwrap().contains_key(key)
+            && let Some(servers_obj) = json[key].as_object()
+        {
+            for (name, server) in servers_obj {
+                if server
+                    .get("disabled")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false)
+                {
+                    disabled.insert(name.clone(), server.clone());
                 }
             }
         }

@@ -254,11 +254,11 @@ pub async fn claude_list_projects() -> Result<Vec<String>, String> {
 
     let mut projects = Vec::new();
 
-    if let Some(projects_obj) = config.get("projects") {
-        if let Some(projects_map) = projects_obj.as_object() {
-            for project_name in projects_map.keys() {
-                projects.push(project_name.clone());
-            }
+    if let Some(projects_obj) = config.get("projects")
+        && let Some(projects_map) = projects_obj.as_object()
+    {
+        for project_name in projects_map.keys() {
+            projects.push(project_name.clone());
         }
     }
 
@@ -269,7 +269,7 @@ pub async fn claude_list_projects() -> Result<Vec<String>, String> {
 /// Check if Claude Code CLI is available
 #[command]
 pub async fn check_claude_cli_available() -> Result<bool, String> {
-    let output = Command::new("claude").args(&["--version"]).output();
+    let output = Command::new("claude").args(["--version"]).output();
 
     match output {
         Ok(output) => Ok(output.status.success()),

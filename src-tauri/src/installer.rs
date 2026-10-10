@@ -9,7 +9,7 @@ pub async fn install_command(
     package_manager: Option<String>, // Fixed: Changed from package_manage to package_manager
 ) -> Result<String, String> {
     println!("Starting installation of package: {}", package_name);
-    let manager = package_manager.unwrap_or_else(|| get_default_package_manager());
+    let manager = package_manager.unwrap_or_else(get_default_package_manager);
     println!("Using package manager: {}", manager);
 
     match std::env::consts::OS {
@@ -80,7 +80,7 @@ async fn execute_brew_install(package_name: &str) -> Result<String, String> {
 
     // Fixed: Better command execution with proper error handling
     let result = tokio::process::Command::new("brew")
-        .args(&["install", package_name])
+        .args(["install", package_name])
         .output()
         .await;
 
@@ -124,7 +124,7 @@ async fn install_on_windows(package_name: &str, _manager: &str) -> Result<String
     };
 
     match tokio::process::Command::new("powershell")
-        .args(&["-Command", &install_cmd])
+        .args(["-Command", &install_cmd])
         .output()
         .await
     {
@@ -249,7 +249,7 @@ pub async fn check_command_exists(command: String) -> Result<bool, String> {
             #[cfg(not(windows))]
             {
                 tokio::process::Command::new("cmd")
-                    .args(&["/C", "where", &command])
+                    .args(["/C", "where", &command])
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
                     .stdin(Stdio::null())

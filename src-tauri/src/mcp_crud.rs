@@ -3,7 +3,7 @@ use serde_json::Value;
 
 pub(crate) fn normalize_codex_config(mut server_config: Value) -> Result<Value, String> {
     // Ensure a "type" discriminator exists for serde(tag="type") enum
-    if !server_config.get("type").and_then(|v| v.as_str()).is_some() {
+    if server_config.get("type").and_then(|v| v.as_str()).is_none() {
         if server_config.get("command").is_some() {
             // stdio style
             if let Some(obj) = server_config.as_object_mut() {
@@ -19,56 +19,50 @@ pub(crate) fn normalize_codex_config(mut server_config: Value) -> Result<Value, 
         }
     } else if let Some(t) = server_config.get("type").and_then(|v| v.as_str()) {
         // Map unsupported variants
-        if t == "sse" {
-            if let Some(obj) = server_config.as_object_mut() {
-                obj.insert("type".into(), Value::from("http"));
-            }
+        if t == "sse"
+            && let Some(obj) = server_config.as_object_mut()
+        {
+            obj.insert("type".into(), Value::from("http"));
         }
     }
 
     // Coerce env values to strings if present under stdio
-    if let Some(env) = server_config.get_mut("env") {
-        if let Some(map) = env.as_object_mut() {
-            let keys: Vec<String> = map.keys().cloned().collect();
-            for k in keys {
-                if let Some(v) = map.get(&k) {
-                    let s = if v.is_string() {
-                        v.as_str().unwrap().to_string()
-                    } else {
-                        v.to_string()
-                    };
-                    map.insert(k, Value::from(s));
-                }
+    if let Some(env) = server_config.get_mut("env")
+        && let Some(map) = env.as_object_mut()
+    {
+        let keys: Vec<String> = map.keys().cloned().collect();
+        for k in keys {
+            if let Some(v) = map.get(&k) {
+                let s = if v.is_string() {
+                    v.as_str().unwrap().to_string()
+                } else {
+                    v.to_string()
+                };
+                map.insert(k, Value::from(s));
             }
         }
     }
 
     // Normalize disabled/isActive flags into enabled boolean
-    if let Some(disabled_flag) = server_config
-        .get("disabled")
-        .and_then(|v| v.as_bool())
+    if let Some(disabled_flag) = server_config.get("disabled").and_then(|v| v.as_bool())
+        && let Some(obj) = server_config.as_object_mut()
     {
-        if let Some(obj) = server_config.as_object_mut() {
-            if disabled_flag {
-                obj.insert("enabled".into(), Value::from(false));
-            } else {
-                obj.remove("enabled");
-            }
-            obj.remove("disabled");
+        if disabled_flag {
+            obj.insert("enabled".into(), Value::from(false));
+        } else {
+            obj.remove("enabled");
         }
+        obj.remove("disabled");
     }
-    if let Some(is_active_flag) = server_config
-        .get("isActive")
-        .and_then(|v| v.as_bool())
+    if let Some(is_active_flag) = server_config.get("isActive").and_then(|v| v.as_bool())
+        && let Some(obj) = server_config.as_object_mut()
     {
-        if let Some(obj) = server_config.as_object_mut() {
-            if !is_active_flag {
-                obj.insert("enabled".into(), Value::from(false));
-            } else {
-                obj.remove("enabled");
-            }
-            obj.remove("isActive");
+        if !is_active_flag {
+            obj.insert("enabled".into(), Value::from(false));
+        } else {
+            obj.remove("enabled");
         }
+        obj.remove("isActive");
     }
 
     println!("[Codex] normalize output: {}", server_config);

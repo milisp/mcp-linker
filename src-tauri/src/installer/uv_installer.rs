@@ -6,7 +6,7 @@ pub fn install_uv_network() -> Result<String, String> {
         "windows" => {
             // For Windows, use PowerShell to install UV
             let result = Command::new("powershell")
-                .args(&[
+                .args([
                     "-Command",
                     "iwr https://astral.sh/uv/install.ps1 -useb | iex",
                 ])
@@ -31,7 +31,7 @@ pub fn install_uv_network() -> Result<String, String> {
         "linux" | "macos" => {
             // Install UV using curl for macOS and Linux
             let result = Command::new("curl")
-                .args(&["-LsSf", "https://astral.sh/uv/install.sh"])
+                .args(["-LsSf", "https://astral.sh/uv/install.sh"])
                 .stdout(std::process::Stdio::piped())
                 .spawn()
                 .and_then(|child| Command::new("sh").stdin(child.stdout.unwrap()).output());

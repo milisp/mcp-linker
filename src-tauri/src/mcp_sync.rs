@@ -24,12 +24,11 @@ pub async fn sync_mcp_config(
     let from_disabled = from_json.get("__disabled").cloned().unwrap_or(json!({}));
 
     // If syncing to codex (no disabled concept), filter out disabled servers from source
-    if to_client == "codex" {
-        if is_per_server_disabled_client(&from_client) {
-            if let Some(obj) = from_servers.as_object_mut() {
-                obj.retain(|_, v| !v.get("disabled").and_then(|d| d.as_bool()).unwrap_or(false));
-            }
-        }
+    if to_client == "codex"
+        && is_per_server_disabled_client(&from_client)
+        && let Some(obj) = from_servers.as_object_mut()
+    {
+        obj.retain(|_, v| !v.get("disabled").and_then(|d| d.as_bool()).unwrap_or(false));
     }
 
     if override_all {
@@ -57,10 +56,11 @@ pub async fn sync_mcp_config(
                     .map(|obj| obj.contains_key(k))
                     .unwrap_or(false);
 
-                if !exists_in_servers && !exists_in_disabled {
-                    if let Some(to_servers) = to_json["mcpServers"].as_object_mut() {
-                        to_servers.insert(k.clone(), v.clone());
-                    }
+                if !exists_in_servers
+                    && !exists_in_disabled
+                    && let Some(to_servers) = to_json["mcpServers"].as_object_mut()
+                {
+                    to_servers.insert(k.clone(), v.clone());
                 }
             }
         }
@@ -78,10 +78,11 @@ pub async fn sync_mcp_config(
                     .map(|obj| obj.contains_key(k))
                     .unwrap_or(false);
 
-                if !exists_in_servers && !exists_in_disabled {
-                    if let Some(to_disabled) = to_json["__disabled"].as_object_mut() {
-                        to_disabled.insert(k.clone(), v.clone());
-                    }
+                if !exists_in_servers
+                    && !exists_in_disabled
+                    && let Some(to_disabled) = to_json["__disabled"].as_object_mut()
+                {
+                    to_disabled.insert(k.clone(), v.clone());
                 }
             }
         }

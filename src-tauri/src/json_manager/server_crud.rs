@@ -43,10 +43,12 @@ pub async fn remove_mcp_server(path: &Path, client: &str, name: &str) -> Result<
     let mut json = read_json_file(path).await?;
     let key = get_key_by_client(client);
 
-    if json.is_object() && json.as_object().unwrap().contains_key(key) {
-        if json[key].is_object() && json[key].as_object().unwrap().contains_key(name) {
-            json[key].as_object_mut().unwrap().remove(name);
-        }
+    if json.is_object()
+        && json.as_object().unwrap().contains_key(key)
+        && json[key].is_object()
+        && json[key].as_object().unwrap().contains_key(name)
+    {
+        json[key].as_object_mut().unwrap().remove(name);
     }
 
     write_json_file(path, &json).await?;
@@ -123,11 +125,11 @@ pub async fn batch_delete_mcp_servers(
 
     if is_per_server_disabled_client(client) {
         // For clients like 'cline', just remove the servers from mcpServers
-        if json.as_object().unwrap().contains_key(key) {
-            if let Some(servers_obj) = json[key].as_object_mut() {
-                for server_name in &server_names {
-                    servers_obj.remove(server_name);
-                }
+        if json.as_object().unwrap().contains_key(key)
+            && let Some(servers_obj) = json[key].as_object_mut()
+        {
+            for server_name in &server_names {
+                servers_obj.remove(server_name);
             }
         }
         write_json_file(path, &json).await?;
@@ -137,12 +139,12 @@ pub async fn batch_delete_mcp_servers(
     // Default: move from __disabled to active, then delete from active
     // First, enable all disabled servers that are in the list
     let mut servers_to_enable = Vec::new();
-    if json.as_object().unwrap().contains_key("__disabled") {
-        if let Some(disabled_obj) = json["__disabled"].as_object() {
-            for server_name in &server_names {
-                if disabled_obj.contains_key(server_name) {
-                    servers_to_enable.push(server_name.clone());
-                }
+    if json.as_object().unwrap().contains_key("__disabled")
+        && let Some(disabled_obj) = json["__disabled"].as_object()
+    {
+        for server_name in &server_names {
+            if disabled_obj.contains_key(server_name) {
+                servers_to_enable.push(server_name.clone());
             }
         }
     }
@@ -163,18 +165,18 @@ pub async fn batch_delete_mcp_servers(
     }
 
     // Clean up empty __disabled section
-    if let Some(disabled_obj) = json["__disabled"].as_object() {
-        if disabled_obj.is_empty() {
-            json.as_object_mut().unwrap().remove("__disabled");
-        }
+    if let Some(disabled_obj) = json["__disabled"].as_object()
+        && disabled_obj.is_empty()
+    {
+        json.as_object_mut().unwrap().remove("__disabled");
     }
 
     // Now delete all servers from active section
-    if json.as_object().unwrap().contains_key(key) {
-        if let Some(servers_obj) = json[key].as_object_mut() {
-            for server_name in &server_names {
-                servers_obj.remove(server_name);
-            }
+    if json.as_object().unwrap().contains_key(key)
+        && let Some(servers_obj) = json[key].as_object_mut()
+    {
+        for server_name in &server_names {
+            servers_obj.remove(server_name);
         }
     }
 

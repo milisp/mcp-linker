@@ -78,17 +78,14 @@ async fn inspect(project: String, name: String) -> Result<ClaudeToolsResponse, S
                 .mcp_servers
                 .into_iter()
                 .find(|server| server.name == name)
+                && server.status != McpServerConnectionStatus::Pending
+                && (server.status != McpServerConnectionStatus::Connected || server.tools.is_some())
             {
-                if server.status != McpServerConnectionStatus::Pending
-                    && (server.status != McpServerConnectionStatus::Connected
-                        || server.tools.is_some())
-                {
-                    return Ok(ClaudeToolsResponse {
-                        name: server.name,
-                        status: server.status,
-                        tools: server.tools.unwrap_or_default(),
-                    });
-                }
+                return Ok(ClaudeToolsResponse {
+                    name: server.name,
+                    status: server.status,
+                    tools: server.tools.unwrap_or_default(),
+                });
             }
             sleep(Duration::from_millis(500)).await;
         }

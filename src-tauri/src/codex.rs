@@ -266,7 +266,6 @@ fn server_item_enabled(item: &Item) -> bool {
         .and_then(|table| table.get("enabled"))
         .and_then(Item::as_value)
         .and_then(|value| value.as_bool())
-        .map(|flag| flag)
         .unwrap_or(true)
 }
 
@@ -330,19 +329,19 @@ fn partition_config_states(servers: &HashMap<String, McpServerConfig>) -> (usize
 }
 
 fn inline_child_table(table: &mut Table, key: &str) {
-    if let Some(item) = table.get_mut(key) {
-        if let Item::Table(child) = item {
-            let mut inline = InlineTable::default();
-            for (k, v) in child.iter() {
-                if let Some(val) = v.as_value().cloned() {
-                    inline.insert(k, val);
-                } else {
-                    // Fallback: convert item to string for complex structures
-                    inline.insert(k, Value::from(v.to_string()));
-                }
+    if let Some(item) = table.get_mut(key)
+        && let Item::Table(child) = item
+    {
+        let mut inline = InlineTable::default();
+        for (k, v) in child.iter() {
+            if let Some(val) = v.as_value().cloned() {
+                inline.insert(k, val);
+            } else {
+                // Fallback: convert item to string for complex structures
+                inline.insert(k, Value::from(v.to_string()));
             }
-            *item = Item::Value(Value::InlineTable(inline));
         }
+        *item = Item::Value(Value::InlineTable(inline));
     }
 }
 
