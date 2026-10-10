@@ -17,4 +17,6 @@ export type ServerType = {
   configs?: ServerConfig[];
   /** Registry inputs that must be configured before adding this server. */
   requiresConfiguration?: boolean;
+  /** Local installed entry, loaded from the selected client rather than Registry. */
+  installed?: { name: string; disabled: boolean };
 };

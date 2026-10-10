@@ -68,7 +68,6 @@ export function useClaudeCodeManagement() {
       const serverList = await invoke<ClaudeCodeServer[]>("claude_mcp_list", { 
         workingDir: selectedProject 
       });
-      console.log(serverList);
       setServers(serverList);
     } catch (error) {
       console.error("Error loading servers:", error);

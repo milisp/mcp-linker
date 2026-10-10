@@ -2,7 +2,6 @@ use crate::adapter::ClientAdapter;
 use serde_json::Value;
 
 pub(crate) fn normalize_codex_config(mut server_config: Value) -> Result<Value, String> {
-    println!("[Codex] normalize input: {}", server_config);
     // Ensure a "type" discriminator exists for serde(tag="type") enum
     if !server_config.get("type").and_then(|v| v.as_str()).is_some() {
         if server_config.get("command").is_some() {

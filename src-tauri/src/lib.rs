@@ -19,6 +19,7 @@ mod installer;
 mod json_manager;
 mod mcp_commands;
 mod mcp_crud;
+mod mcp_inspector;
 mod mcp_sync;
 mod window;
 
@@ -49,6 +50,12 @@ pub fn run() {
             cmd::get_app_path,
             cmd::check_mcplinker_config_exists,
             mcp_crud::add_mcp_server,
+            mcp_inspector::mcp_inspector_connect,
+            mcp_inspector::mcp_inspector_list_tools,
+            mcp_inspector::mcp_inspector_call_tool,
+            mcp_inspector::mcp_inspector_disconnect,
+            codex::codex_get_tool_policy,
+            codex::codex_set_tool_policy,
             mcp_crud::remove_mcp_server,
             mcp_crud::update_mcp_server,
             mcp_crud::batch_delete_mcp_servers,
@@ -75,8 +82,15 @@ pub fn run() {
             claude_disabled::claude_enable_server,
             claude_disabled::claude_update_disabled,
         ])
+        .manage(mcp_inspector::InspectorState::default())
         .manage(Arc::new(Mutex::new(None::<String>)))
         .setup(|_app| {
+            use tauri::Manager;
+            let inspector = _app.state::<mcp_inspector::InspectorState>().inner().clone();
+            tauri::async_runtime::spawn(async move {
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+                loop { interval.tick().await; inspector.expire_idle().await; }
+            });
             #[cfg(any(windows, target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;

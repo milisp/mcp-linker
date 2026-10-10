@@ -1,19 +1,19 @@
+import { fetchInstalledServer } from "@/components/server/utils/installedServer";
+import { useClientPathStore } from "@/stores/clientPathStore";
+import { useCCProjectStore } from "@/stores/ccProject";
+import { ServerWorkspace } from "@/components/server/ServerWorkspace";
 import { findCatalogServer } from "@/data/mcp-servers/catalog";
 import { ContentLoadingFallback } from "@/components/common/LoadingConfig";
-import { ServerConfigForm } from "@/components/server/form/ServerConfigForm";
-import { useServerConfig } from "@/components/server/hooks/useServerConfig";
 import { ServerBadge, ServerMeta } from "@/components/server/ui";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGithubReadmeJson } from "@/hooks/useGithubReadmeJson";
 import { fetchRegistryServer } from "@/lib/registry";
-import { useClientPathStore } from "@/stores/clientPathStore";
 import { useViewStore } from "@/stores/viewStore";
 import { useFavoriteServers } from "@/stores/favoriteServers";
 import { openUrl } from "@/utils/urlHelper";
 import { serverTransportLabels } from "@/components/server/utils/quickInstall";
-import type { ServerConfig, ServerType } from "@/types";
-import { useSaveServerConfig } from "@/components/server/hooks/useSaveServerConfig";
+import type { ServerType } from "@/types";
 import { ChevronLeft, ExternalLink, Star, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,79 +21,35 @@ import { toast } from "sonner";
 export function ServerPage() {
   const [server, setServer] = useState<ServerType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [curIndex, setCurIndex] = useState(0);
   const favoriteServers = useFavoriteServers(state => state.favoriteServers);
   const toggleFavorite = useFavoriteServers(state => state.toggleFavorite);
   const { id, owner, repo } = useViewStore((s) => s.params);
-  const { navigate } = useViewStore();
-
+  const { navigate, search } = useViewStore();
   const { selectedClient, selectedPath } = useClientPathStore();
-  const { saveServerConfig } = useSaveServerConfig();
-
-  // Always call hooks at the top level
-  const {
-    serverName,
-    setServerName,
-    config,
-    setConfig,
-    envValues,
-    setEnvValues,
-    handleArgsChange,
-    handleCommandChange,
-    handleEnvChange,
-  } = useServerConfig(true, selectedClient);
-
-  const configs = server?.configs?.length ? server.configs : [config];
-  const onConfigChange = (nextConfig: ServerConfig, index: number) => {
-    setCurIndex(index);
-    setConfig(nextConfig);
-    setEnvValues(nextConfig.type === "stdio" ? nextConfig.env ?? {} : {});
-  };
-  const onSseConfigChange = (nextConfig: ServerConfig) => setConfig(nextConfig);
-
-  const onSubmit = async () => {
-    if (!server) return;
-    if (!serverName.trim()) {
-      toast.error("Please enter a server name");
-      return;
-    }
-    await saveServerConfig({
-      selectedClient,
-      selectedPath: selectedPath || "",
-      currentServer: server,
-      serverName,
-      config,
-      setIsDialogOpen: () => {},
-    });
-  };
-
-  // Add the useGithubReadmeJson hook
+  const selectedProject = useCCProjectStore(state => state.selectedProject);
+  const [error, setError] = useState<string | null>(null);
   const { fetchAllJsonBlocks } = useGithubReadmeJson();
 
-  // Helper to safely set server and config state
-  function applyServerConfig(serverData: ServerType) {
-    setServer(serverData);
-    setCurIndex(0);
-    // Registry names are reverse-DNS; clients expect the short last segment.
-    setServerName(serverData.id.split("/").pop() || serverData.name);
-    const configItem = (serverData.configs?.[0] as any) || {};
-    setConfig(configItem);
-    setEnvValues(configItem.env || {});
-  }
-
   useEffect(() => {
+    let cancelled = false;
     const fetchServer = async () => {
       setIsLoading(true);
       setServer(null);
+      setError(null);
       try {
         let serverData: ServerType | null = null;
         if (id) {
           const serverId = decodeURIComponent(id);
+          if (serverId.startsWith("installed:")) {
+            const entry = await fetchInstalledServer(serverId.slice("installed:".length), selectedClient, selectedPath, selectedProject);
+            if (!cancelled) setServer(entry);
+            return;
+          }
           serverData = findCatalogServer(serverId)
             ?? useFavoriteServers.getState().favoriteServers.find(item => item.id === serverId)
             ?? await fetchRegistryServer(serverId);
           if (!serverData) throw new Error("Server not found in registry");
-          applyServerConfig(serverData);
+          if (!cancelled) setServer(serverData);
         } else if (owner && repo) {
           throw new Error("No registry id, falling back to GitHub README");
         }
@@ -104,6 +60,10 @@ export function ServerPage() {
         // deep link exactly like the install-app page. Adding a server
         // must always be an explicit click.
       } catch (e: any) {
+        if (id && decodeURIComponent(id).startsWith("installed:")) {
+          if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+          return;
+        }
         // If API fetch fails, try to fetch JSON blocks from GitHub README
         console.error("Failed to fetch data", e);
         toast.info("Trying to fetch from GitHub README...");
@@ -138,11 +98,7 @@ export function ServerPage() {
                       tags: [],
                       tools: [],
                     };
-                    // Use helper to set state, ensure env fallback
-                    setServer(fallbackServer);
-                    setServerName(firstName);
-                    setConfig(configValue);
-                    setEnvValues(configValue.env || {});
+                    if (!cancelled) setServer({ ...fallbackServer, configs: [{ ...configValue, type: configValue.command ? "stdio" : configValue.type || "http", args: configValue.args || [] }] });
                     toast.success("Loaded config from GitHub README");
                     found = true;
                     break;
@@ -165,18 +121,19 @@ export function ServerPage() {
           toast.error("Failed to fetch from GitHub README");
         }
       } finally {
-        setIsLoading(false);
-        toast.dismiss();
+        if (!cancelled) setIsLoading(false);
       }
     };
-    fetchServer();
-  }, [id, owner, repo]);
+    void fetchServer();
+    return () => { cancelled = true; };
+  }, [id, owner, repo, selectedClient, selectedPath, selectedProject]);
 
   if (isLoading) return <ContentLoadingFallback />;
   if (!server)
     return (
       <div>
-        Server not found {owner} {repo} {id}
+        <p role="alert">{error || `Server not found ${owner || ""} ${repo || ""} ${id || ""}`}</p>
+        <Button variant="ghost" onClick={() => navigate(-1)}>Back</Button>
       </div>
     );
 
@@ -193,7 +150,7 @@ export function ServerPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{server.name}</span>
-            <ServerBadge isOfficial={server.isOfficial} />
+            {server.installed ? <span className="text-xs text-muted-foreground">{server.installed.disabled ? "Disabled" : "Installed"}</span> : <ServerBadge isOfficial={server.isOfficial} />}
           </CardTitle>
         </CardHeader>
 
@@ -202,7 +159,7 @@ export function ServerPage() {
             {serverTransportLabels(server).map(label => (
               <span key={label} className="rounded bg-muted px-2 py-1 text-xs font-medium">{label}</span>
             ))}
-            <Button
+            {!server.installed && <Button
               variant="outline"
               size="sm"
               onClick={() => toggleFavorite(server)}
@@ -210,7 +167,7 @@ export function ServerPage() {
             >
               <Star className={favoriteServers.some(item => item.id === server.id) ? "fill-yellow-400 text-yellow-500" : ""} />
               {favoriteServers.some(item => item.id === server.id) ? "Remove favorite" : "Favorite"}
-            </Button>
+            </Button>}
             {server.source && (
               <Button variant="outline" size="sm" onClick={() => openUrl(server.source)}>
                 <ExternalLink /> Website
@@ -228,22 +185,7 @@ export function ServerPage() {
         </CardContent>
       </Card>
 
-      <ServerConfigForm
-        serverName={serverName}
-        setServerName={setServerName}
-        configs={configs}
-        curIndex={curIndex}
-        onConfigChange={onConfigChange}
-        config={config}
-        envValues={envValues}
-        setEnvValues={setEnvValues}
-        onCommandChange={handleCommandChange}
-        onArgsChange={handleArgsChange}
-        onEnvChange={handleEnvChange}
-        onSseConfigChange={onSseConfigChange}
-        onSubmit={onSubmit}
-        selectedClient={selectedClient}
-      />
+      <div className="mt-6"><ServerWorkspace key={`${server.id}:${selectedClient}:${selectedPath}:${selectedProject}`} server={server} initialTab={search.tab === "tools" ? "tools" : "connection"} /></div>
     </div>
   );
 }

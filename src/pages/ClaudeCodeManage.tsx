@@ -1,6 +1,8 @@
 import AddServerDialog from "@/components/claude-code/AddServerDialog";
 import PreConfiguredServersDialog from "@/components/claude-code/PreConfiguredServersDialog";
-import ServerDetailsDialog from "@/components/claude-code/ServerDetailsDialog";
+import { installedServerPath } from "@/components/server/utils/installedServer";
+import { useViewStore } from "@/stores/viewStore";
+import { useClientPathStore } from "@/stores/clientPathStore";
 import ServerTable from "@/components/claude-code/ServerTable";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -19,14 +21,11 @@ export default function ClaudeCodeManage() {
     loadServers,
     addServer,
     removeServer,
-    getServerDetails,
     listProjects
   } = useClaudeCodeManagement();
 
   const { projects, selectedProject, setSelectedProject } = useCCProjectStore();
 
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  const [selectedServer, setSelectedServer] = useState<any>(null);
   const [addServerDialogOpen, setAddServerDialogOpen] = useState(false);
 
   const handleAddServer = async (formData: any) => {
@@ -41,12 +40,9 @@ export default function ClaudeCodeManage() {
     setAddServerDialogOpen(true);
   };
 
-  const handleGetServerDetails = async (serverName: string) => {
-    const server = await getServerDetails(serverName);
-    if (server) {
-      setSelectedServer(server);
-      setDetailsDialogOpen(true);
-    }
+  const handleGetServerDetails = (serverName: string) => {
+    useClientPathStore.getState().setSelectedClient("claude_code");
+    useViewStore.getState().navigate(installedServerPath(serverName));
   };
 
   useEffect(() => {
@@ -169,11 +165,7 @@ export default function ClaudeCodeManage() {
           onAddServer={handleAddServerFromTable}
         />
 
-        <ServerDetailsDialog
-          open={detailsDialogOpen}
-          onOpenChange={setDetailsDialogOpen}
-          server={selectedServer}
-        />
+
       </div>
     </div>
   );

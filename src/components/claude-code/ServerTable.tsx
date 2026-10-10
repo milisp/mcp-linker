@@ -83,7 +83,7 @@ export default function ServerTable({
             <TableBody>
               {servers.map((server) => (
                 <TableRow key={server.name}>
-                  <TableCell className="font-medium">{server.name}</TableCell>
+                  <TableCell className="font-medium"><button type="button" className="text-left hover:underline" onClick={() => onViewDetails(server.name)}>{server.name}</button></TableCell>
                   <TableCell>
                     <Badge variant="outline" className="flex items-center gap-1 w-fit">
                       {getServerTypeIcon(server.type)}
@@ -108,7 +108,7 @@ export default function ServerTable({
                         className="flex items-center gap-1"
                       >
                         <Eye className="h-3 w-3" />
-                        Details
+                        Tools & details
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

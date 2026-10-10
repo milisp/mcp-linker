@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { useViewStore } from "@/stores/viewStore";
+import { installedServerPath } from "@/components/server/utils/installedServer";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ServerConfig, ServerTableData } from "@/types";
@@ -51,7 +54,7 @@ export const useServerTableColumns = ({
       const isServerActive = !disabledServers?.[serverName];
       return (
         <div className="flex items-center gap-2">
-          <div className="font-medium">{serverName}</div>
+          <button type="button" className="font-medium text-left hover:underline" onClick={() => useViewStore.getState().navigate(installedServerPath(serverName, "connection"))}>{serverName}</button>
           <Badge
             variant={isServerActive ? "default" : "secondary"}
             className={`text-xs ${
@@ -94,14 +97,17 @@ export const useServerTableColumns = ({
       const serverName = row.original.name;
       const serverConfig = row.original;
       return (
-        <ServerActionButtons
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={() => useViewStore.getState().navigate(installedServerPath(serverName))}>Tools</Button>
+          <ServerActionButtons
           serverName={serverName}
           serverConfig={serverConfig}
           onEdit={onEdit}
           onDelete={onDelete}
           onEnable={onEnable}
           disabledServers={disabledServers}
-        />
+          />
+        </div>
       );
     },
   },

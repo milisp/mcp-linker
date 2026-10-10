@@ -5,9 +5,9 @@ use std::path::Path;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
-use toml_edit::{value, DocumentMut, InlineTable, Item, Table, Value};
+use toml_edit::{DocumentMut, InlineTable, Item, Table, Value, value};
 
-use crate::config::{get_config_path, CodexConfig};
+use crate::config::{CodexConfig, get_config_path};
 
 fn default_enabled() -> bool {
     true
@@ -32,6 +32,8 @@ pub enum McpServerConfig {
     #[serde(rename = "http")]
     Http {
         url: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        http_headers: Option<HashMap<String, String>>,
         #[serde(default = "default_enabled", skip_serializing_if = "is_enabled_true")]
         enabled: bool,
     },
@@ -51,6 +53,8 @@ impl<'de> Deserialize<'de> for McpServerConfig {
             args: Vec<String>,
             env: Option<HashMap<String, String>>,
             url: Option<String>,
+            #[serde(alias = "headers")]
+            http_headers: Option<HashMap<String, String>>,
             #[serde(default = "default_enabled")]
             enabled: bool,
         }
@@ -68,6 +72,7 @@ impl<'de> Deserialize<'de> for McpServerConfig {
                 .ok_or_else(|| serde::de::Error::missing_field("url"))?;
             Ok(McpServerConfig::Http {
                 url,
+                http_headers: raw.http_headers,
                 enabled: raw.enabled,
             })
         } else {
@@ -311,9 +316,7 @@ fn migrate_disabled_table(doc: &mut DocumentMut) -> Result<(), String> {
     Ok(())
 }
 
-fn partition_config_states(
-    servers: &HashMap<String, McpServerConfig>,
-) -> (usize, usize) {
+fn partition_config_states(servers: &HashMap<String, McpServerConfig>) -> (usize, usize) {
     let mut active = 0;
     let mut disabled = 0;
     for cfg in servers.values() {
@@ -343,12 +346,28 @@ fn inline_child_table(table: &mut Table, key: &str) {
     }
 }
 
+fn preserve_client_settings(existing: Option<&Item>, item: &mut Item) {
+    // Preserve client-owned auth, tool access, and timeout settings while editing
+    // the connection. Only connection fields represented above are replaced.
+    if let (Some(existing), Some(next)) =
+        (existing.and_then(Item::as_table_like), item.as_table_mut())
+    {
+        for (key, value) in existing.iter() {
+            if !["type", "command", "args", "env", "url"].contains(&key) && !next.contains_key(key)
+            {
+                next.insert(key, value.clone());
+            }
+        }
+    }
+}
+
 pub async fn add_mcp_server(name: String, config: McpServerConfig) -> Result<(), String> {
     let _guard = CODEX_CFG_LOCK.lock().await;
     let config_path = get_config_path()?;
     let mut doc = load_document(&config_path).await?;
     let table = ensure_table(&mut doc, "mcp_servers")?;
-    let item = server_to_item(&config)?;
+    let mut item = server_to_item(&config)?;
+    preserve_client_settings(table.get(&name), &mut item);
     table.insert(&name, item);
     persist_document(&config_path, doc).await
 }
@@ -435,6 +454,7 @@ pub async fn update_disabled(name: &str, server: McpServerConfig) -> Result<(), 
     );
     let table = ensure_table(&mut doc, "mcp_servers")?;
     let mut item = server_to_item(&server)?;
+    preserve_client_settings(table.get(name), &mut item);
     set_enabled_on_item(&mut item, false)?;
     table.insert(name, item);
     println!(
@@ -442,4 +462,190 @@ pub async fn update_disabled(name: &str, server: McpServerConfig) -> Result<(), 
         partition_server_keys(&doc).1
     );
     persist_document(&config_path, doc).await
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolPolicy {
+    pub server_exists: bool,
+    pub enabled_tools: Option<Vec<String>>,
+    pub disabled_tools: Vec<String>,
+}
+
+fn read_tool_policy(doc: &DocumentMut, name: &str) -> Result<ToolPolicy, String> {
+    let table = doc
+        .get("mcp_servers")
+        .and_then(Item::as_table_like)
+        .and_then(|servers| servers.get(name))
+        .and_then(Item::as_table_like);
+    let Some(table) = table else {
+        return Ok(ToolPolicy {
+            server_exists: false,
+            enabled_tools: None,
+            disabled_tools: Vec::new(),
+        });
+    };
+    let list = |key: &str| -> Result<Option<Vec<String>>, String> {
+        let Some(item) = table.get(key) else {
+            return Ok(None);
+        };
+        let values = item
+            .as_array()
+            .ok_or_else(|| format!("{} must be an array", key))?;
+        values
+            .iter()
+            .map(|value| {
+                value
+                    .as_str()
+                    .map(str::to_owned)
+                    .ok_or_else(|| format!("{} must contain tool names", key))
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .map(Some)
+    };
+    Ok(ToolPolicy {
+        server_exists: true,
+        enabled_tools: list("enabled_tools")?,
+        disabled_tools: list("disabled_tools")?.unwrap_or_default(),
+    })
+}
+
+fn apply_tool_policy(
+    doc: &mut DocumentMut,
+    name: &str,
+    enabled: Option<Vec<String>>,
+    disabled: Vec<String>,
+) -> Result<(), String> {
+    for tool in enabled.iter().flatten().chain(disabled.iter()) {
+        if tool.trim().is_empty() || tool.len() > 256 {
+            return Err("Invalid tool name".into());
+        }
+    }
+    let table = doc
+        .get_mut("mcp_servers")
+        .and_then(Item::as_table_like_mut)
+        .and_then(|servers| servers.get_mut(name))
+        .and_then(Item::as_table_like_mut)
+        .ok_or("Add this server to Codex before saving tool access")?;
+    let make_array = |values: Vec<String>| {
+        let mut array = toml_edit::Array::new();
+        for name in values {
+            array.push(name);
+        }
+        Item::Value(Value::Array(array))
+    };
+    match enabled {
+        Some(values) => {
+            table.insert("enabled_tools", make_array(values));
+        }
+        None => {
+            table.remove("enabled_tools");
+        }
+    }
+    if disabled.is_empty() {
+        table.remove("disabled_tools");
+    } else {
+        table.insert("disabled_tools", make_array(disabled));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn codex_get_tool_policy(server_name: String) -> Result<ToolPolicy, String> {
+    let _guard = CODEX_CFG_LOCK.lock().await;
+    let path = get_config_path()?;
+    let doc = load_document(&path).await?;
+    read_tool_policy(&doc, &server_name)
+}
+
+#[tauri::command]
+pub async fn codex_set_tool_policy(
+    server_name: String,
+    enabled_tools: Option<Vec<String>>,
+    disabled_tools: Vec<String>,
+) -> Result<ToolPolicy, String> {
+    let _guard = CODEX_CFG_LOCK.lock().await;
+    let path = get_config_path()?;
+    let mut doc = load_document(&path).await?;
+    apply_tool_policy(&mut doc, &server_name, enabled_tools, disabled_tools)?;
+    let policy = read_tool_policy(&doc, &server_name)?;
+    persist_document(&path, doc).await?;
+    Ok(policy)
+}
+
+#[cfg(test)]
+mod tool_policy_tests {
+    use super::*;
+    #[test]
+    fn tool_access_preserves_connection_and_other_servers() {
+        let mut doc: DocumentMut = "[mcp_servers.demo]\nurl = 'https://example.com/mcp'\nbearer_token_env_var = 'TOKEN'\nstartup_timeout_sec = 30\n[mcp_servers.other]\ncommand = 'other'\n".parse().unwrap();
+        apply_tool_policy(
+            &mut doc,
+            "demo",
+            Some(vec!["read".into()]),
+            vec!["write".into()],
+        )
+        .unwrap();
+        assert_eq!(
+            read_tool_policy(&doc, "demo").unwrap().enabled_tools,
+            Some(vec!["read".into()])
+        );
+        assert_eq!(
+            doc["mcp_servers"]["demo"]["bearer_token_env_var"].as_str(),
+            Some("TOKEN")
+        );
+        assert_eq!(
+            doc["mcp_servers"]["other"]["command"].as_str(),
+            Some("other")
+        );
+        apply_tool_policy(&mut doc, "demo", Some(vec![]), vec![]).unwrap();
+        assert_eq!(
+            read_tool_policy(&doc, "demo").unwrap().enabled_tools,
+            Some(vec![])
+        );
+        apply_tool_policy(&mut doc, "demo", None, vec![]).unwrap();
+        assert_eq!(read_tool_policy(&doc, "demo").unwrap().enabled_tools, None);
+        assert!(apply_tool_policy(&mut doc, "missing", None, vec![]).is_err());
+    }
+    #[test]
+    fn disabled_connection_edits_keep_tool_policy_and_auth() {
+        let doc: DocumentMut = "[mcp_servers.demo]\nurl = 'https://old.example/mcp'\nenabled = false\ndisabled_tools = ['write']\nbearer_token_env_var = 'TOKEN'\n".parse().unwrap();
+        let config: McpServerConfig = serde_json::from_value(
+            serde_json::json!({"type":"http","url":"https://new.example/mcp"}),
+        )
+        .unwrap();
+        let mut item = server_to_item(&config).unwrap();
+        preserve_client_settings(Some(&doc["mcp_servers"]["demo"]), &mut item);
+        set_enabled_on_item(&mut item, false).unwrap();
+        assert_eq!(
+            item["disabled_tools"]
+                .as_array()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .as_str(),
+            Some("write")
+        );
+        assert_eq!(item["bearer_token_env_var"].as_str(), Some("TOKEN"));
+        assert_eq!(item["enabled"].as_bool(), Some(false));
+        assert_eq!(item["url"].as_str(), Some("https://new.example/mcp"));
+    }
+    #[test]
+    fn inline_policy_and_http_headers_are_supported() {
+        let mut doc: DocumentMut =
+            "mcp_servers = { demo = { command = 'demo', disabled_tools = ['write'] } }"
+                .parse()
+                .unwrap();
+        apply_tool_policy(&mut doc, "demo", None, vec!["delete".into()]).unwrap();
+        assert_eq!(
+            read_tool_policy(&doc, "demo").unwrap().disabled_tools,
+            vec!["delete"]
+        );
+        let config: McpServerConfig = serde_json::from_value(serde_json::json!({"type":"http","url":"https://example.com","headers":{"Authorization":"Bearer test"}})).unwrap();
+        let item = server_to_item(&config).unwrap();
+        assert_eq!(
+            item["http_headers"]["Authorization"].as_str(),
+            Some("Bearer test")
+        );
+    }
 }

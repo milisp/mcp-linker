@@ -16,6 +16,8 @@ interface SaveServerConfigParams {
   setIsDialogOpen: (open: boolean) => void;
   onSuccess?: () => void;
   clearDraftOnSuccess?: boolean;
+  mode?: "add" | "update";
+  disabled?: boolean;
 }
 
 export function useSaveServerConfig() {
@@ -26,8 +28,9 @@ export function useSaveServerConfig() {
     selectedClient: string,
     selectedPath: string,
     selectedServer: string,
-    currentServer: ServerType,
     value: ServerConfig,
+    mode: "add" | "update",
+    disabled: boolean,
   ) {
     try {
       // Save to selected client
@@ -50,12 +53,13 @@ export function useSaveServerConfig() {
         } else {
           throw new Error("Unsupported config for Claude Code");
         }
-        await invoke("claude_mcp_add", {
+        if (disabled) await invoke("claude_update_disabled", { workingDir: selectedProject, name: selectedServer, serverConfig: value });
+        else await invoke("claude_mcp_add", {
           request: req,
           workingDir: selectedProject,
         });
       } else {
-        await invoke("add_mcp_server", {
+        await invoke(disabled ? "update_disabled_mcp_server" : mode === "update" ? "update_mcp_server" : "add_mcp_server", {
           clientName: selectedClient,
           path: selectedPath,
           serverName: selectedServer,
@@ -73,7 +77,6 @@ export function useSaveServerConfig() {
       } catch (e) {
         // already have
       }
-      console.log("add server", new Date(), currentServer);
     } catch (error) {
       console.error(error);
       throw error;
@@ -89,6 +92,8 @@ export function useSaveServerConfig() {
     setIsDialogOpen,
     onSuccess,
     clearDraftOnSuccess = true,
+    mode = "add",
+    disabled = false,
   }: SaveServerConfigParams): Promise<boolean> => {
     if (mustHavePathClients.includes(selectedClient) && !selectedPath) {
       toast.error("Path is required");
@@ -105,13 +110,12 @@ export function useSaveServerConfig() {
           selectedClient,
           selectedPath,
           serverName,
-          currentServer,
           config,
+          mode,
+          disabled,
         );
         try {
-          console.log("Saving to myservers:", serverName, config);
           const savedMyServers = localStorage.getItem("myservers");
-          console.log("Current myservers:", savedMyServers);
           const parsedMyServers = savedMyServers
             ? JSON.parse(savedMyServers)
             : [];
@@ -126,14 +130,11 @@ export function useSaveServerConfig() {
           );
           if (index !== -1) {
             parsedMyServers[index] = newServer;
-            console.log(`Updated existing server with name: ${serverName}`);
           } else {
             parsedMyServers.push(newServer);
-            console.log(`Added new server with name: ${serverName}`);
           }
 
           localStorage.setItem("myservers", JSON.stringify(parsedMyServers));
-          console.log("Updated myservers:", parsedMyServers);
         } catch (error) {
           console.error("Failed to save to myservers:", error);
         }
