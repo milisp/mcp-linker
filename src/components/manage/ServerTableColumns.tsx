@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useViewStore } from "@/stores/viewStore";
 import { installedServerPath } from "@/components/server/utils/installedServer";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ServerConfig, ServerTableData } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
@@ -51,32 +50,25 @@ export const useServerTableColumns = ({
     header: "Server Name",
     cell: ({ row }) => {
       const serverName = row.original.name;
-      const isServerActive = !disabledServers?.[serverName];
       return (
-        <div className="flex items-center gap-2">
-          <button type="button" className="font-medium text-left hover:underline" onClick={() => useViewStore.getState().navigate(installedServerPath(serverName, "connection"))}>{serverName}</button>
-          <Badge
-            variant={isServerActive ? "default" : "secondary"}
-            className={`text-xs ${
-              isServerActive
-                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {isServerActive ? "Active" : "Disabled"}
-          </Badge>
-        </div>
+        <button
+          type="button"
+          className="font-medium text-left hover:underline"
+          onClick={() => useViewStore.getState().navigate(installedServerPath(serverName, "connection"))}
+        >
+          {serverName}
+        </button>
       );
     },
   },
   {
     id: "command",
-    header: "Command",
+    header: "Command / URL",
     cell: ({ row }) => <CommandDisplay config={row.original} />,
   },
   {
     id: "status",
-    header: "Status",
+    header: "Enabled",
     cell: ({ row }) => {
       const serverName = row.original.name;
       const isServerActive = !disabledServers?.[serverName];

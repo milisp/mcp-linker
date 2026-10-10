@@ -26,6 +26,7 @@ export function ServerStatusSwitch({
       <Switch
         checked={isActive}
         onCheckedChange={handleChange}
+        aria-label={`Enable ${serverName}`}
         className="data-[state=checked]:bg-green-600"
       />
     </div>

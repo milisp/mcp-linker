@@ -1,5 +1,5 @@
 import { ServerTableData, SseConfig, StdioServerConfig } from "@/types";
-import { Terminal } from "lucide-react";
+import { Link, Terminal } from "lucide-react";
 
 interface CommandDisplayProps {
   config: ServerTableData;
@@ -26,7 +26,7 @@ export function CommandDisplay({ config }: CommandDisplayProps) {
       {isStdio ? (
         <Terminal className="h-4 w-4 text-primary flex-shrink-0" />
       ) : (
-        <div className="h-4 w-4 rounded-full bg-orange-500 flex-shrink-0" />
+        <Link className="h-4 w-4 text-muted-foreground flex-shrink-0" />
       )}
       <code className="text-sm bg-muted px-2 py-1 rounded truncate">
         {command}
