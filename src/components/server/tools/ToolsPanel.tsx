@@ -1,3 +1,4 @@
+import { ClaudeCodeToolsPanel } from "./ClaudeCodeToolsPanel";
 import { Button } from "@/components/ui/button";
 import type { ServerConfig } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
@@ -8,7 +9,7 @@ import type { ToolPolicy } from "./types";
 
 const EMPTY_POLICY: ToolPolicy = { serverExists: false, enabledTools: null, disabledTools: [] };
 
-export function ToolsPanel({ config, serverName, selectedClient, workingDir, canConnect, saveRevision }: {
+function InspectorToolsPanel({ config, serverName, selectedClient, workingDir, canConnect, saveRevision }: {
   config: ServerConfig; serverName: string; selectedClient: string; workingDir?: string | null; canConnect: boolean; saveRevision: number;
 }) {
   const inspector = useMcpInspector(config, workingDir);
@@ -130,4 +131,10 @@ export function ToolsPanel({ config, serverName, selectedClient, workingDir, can
       </section>}
     </div>
   );
+}
+
+export function ToolsPanel(props: Parameters<typeof InspectorToolsPanel>[0]) {
+  return props.selectedClient === "claude_code"
+    ? <ClaudeCodeToolsPanel serverName={props.serverName} workingDir={props.workingDir} saveRevision={props.saveRevision} />
+    : <InspectorToolsPanel {...props} />;
 }

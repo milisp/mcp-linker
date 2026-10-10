@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 
 mod adapter;
 mod claude_code_commands;
+mod claude_tools;
 mod claude_disabled;
 mod client;
 mod cmd;
@@ -71,6 +72,7 @@ pub fn run() {
             encryption::encrypt_data,
             encryption::decrypt_data,
             claude_code_commands::claude_mcp_list,
+            claude_tools::claude_mcp_tools,
             claude_code_commands::claude_mcp_get,
             claude_code_commands::claude_mcp_add,
             claude_code_commands::claude_mcp_remove,
