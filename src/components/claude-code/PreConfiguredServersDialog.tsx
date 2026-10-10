@@ -16,6 +16,7 @@ interface MCPServer {
   command?: string;
   args?: string;
   envVars?: { key: string; placeholder: string }[];
+  headers?: Record<string, string>;
 }
 
 const MCP_SERVERS: MCPServer[] = [
@@ -39,7 +40,8 @@ const MCP_SERVERS: MCPServer[] = [
     description: "Opt in by clicking Add. User-provided search objectives, search queries, and requested URLs are sent to Parallel.",
     category: "Development & Testing",
     type: "http",
-    url: "https://search.parallel.ai/mcp"
+    url: "https://search.parallel.ai/mcp",
+    headers: { "User-Agent": "mcp-linker" }
   },
   
   // Project Management & Documentation
@@ -204,7 +206,8 @@ export default function PreConfiguredServersDialog({ onAddServer }: PreConfigure
         type: server.type,
         url: server.url || "",
         command: server.command || "",
-        args: server.args || ""
+        args: server.args || "",
+        headers: server.headers
       };
       
       const success = await onAddServer(formData);
@@ -229,7 +232,8 @@ export default function PreConfiguredServersDialog({ onAddServer }: PreConfigure
         url: server.url || "",
         command: server.command || "",
         args: server.args || "",
-        env: envValues
+        env: envValues,
+        headers: server.headers
       };
       
       const success = await onAddServer(formData);

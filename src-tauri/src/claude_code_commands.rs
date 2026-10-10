@@ -18,6 +18,7 @@ pub struct ClaudeCodeServer {
     pub command: Option<String>,
     pub args: Option<Vec<String>>,
     pub env: Option<HashMap<String, String>>,
+    pub headers: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -286,6 +287,7 @@ fn parse_server_config(name: &str, config: &serde_json::Value) -> Result<ClaudeC
         command,
         args,
         env,
+        headers: None,
     })
 }
 
@@ -313,6 +315,15 @@ fn server_to_json(server: &ClaudeCodeServer) -> Result<serde_json::Value, String
     if let Some(env) = &server.env {
         json["env"] = serde_json::Value::Object(
             env.iter()
+                .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
+                .collect(),
+        );
+    }
+
+    if let Some(headers) = &server.headers {
+        json["headers"] = serde_json::Value::Object(
+            headers
+                .iter()
                 .map(|(k, v)| (k.clone(), serde_json::Value::String(v.clone())))
                 .collect(),
         );

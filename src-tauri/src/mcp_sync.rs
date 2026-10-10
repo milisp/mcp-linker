@@ -277,6 +277,11 @@ async fn write_to_client(
                         .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
                         .collect()
                 }),
+                headers: cfg_val.get("headers").and_then(|v| v.as_object()).map(|m| {
+                    m.iter()
+                        .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                        .collect()
+                }),
             };
             let _ = claude_code_commands::claude_mcp_add(server, workdir.to_string()).await;
         }
