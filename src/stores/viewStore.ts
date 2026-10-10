@@ -24,6 +24,7 @@ interface ViewEntry {
 
 interface ViewStore extends ViewEntry {
   history: ViewEntry[];
+  historyIndex: number;
   navigate: NavigateFn;
 }
 
@@ -99,6 +100,7 @@ const initial = getInitialEntry();
 export const useViewStore = create<ViewStore>((set, get) => ({
   ...initial,
   history: [initial],
+  historyIndex: 0,
 
   navigate: (to, options) => {
     if (typeof to === "number") {
@@ -106,15 +108,12 @@ export const useViewStore = create<ViewStore>((set, get) => ({
         window.location.reload();
         return;
       }
-      if (to === -1) {
-        const { history } = get();
-        if (history.length > 1) {
-          const newHist = history.slice(0, -1);
-          const prev = newHist[newHist.length - 1];
-          localStorage.setItem("lastRoute", entryToPath(prev));
-          set({ ...prev, history: newHist });
-        }
-      }
+      const { history, historyIndex } = get();
+      const nextIndex = historyIndex + to;
+      if (!Number.isInteger(nextIndex) || nextIndex < 0 || nextIndex >= history.length) return;
+      const entry = history[nextIndex];
+      localStorage.setItem("lastRoute", entryToPath(entry));
+      set({ ...entry, historyIndex: nextIndex });
       return;
     }
 
@@ -122,10 +121,11 @@ export const useViewStore = create<ViewStore>((set, get) => ({
     localStorage.setItem("lastRoute", to);
 
     set((state) => {
+      if (entryToPath(state) === entryToPath(entry)) return state;
       const newHist = options?.replace
-        ? [...state.history.slice(0, -1), entry]
-        : [...state.history, entry];
-      return { ...entry, history: newHist };
+        ? state.history.map((item, index) => index === state.historyIndex ? entry : item)
+        : [...state.history.slice(0, state.historyIndex + 1), entry];
+      return { ...entry, history: newHist, historyIndex: options?.replace ? state.historyIndex : newHist.length - 1 };
     });
   },
 }));

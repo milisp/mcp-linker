@@ -25,11 +25,12 @@ export function ServerPage() {
   const favoriteServers = useFavoriteServers(state => state.favoriteServers);
   const toggleFavorite = useFavoriteServers(state => state.toggleFavorite);
   const { id, owner, repo } = useViewStore((s) => s.params);
-  const { navigate, search } = useViewStore();
+  const { navigate, search, historyIndex } = useViewStore();
   const { selectedClient, selectedPath } = useClientPathStore();
   const selectedProject = useCCProjectStore(state => state.selectedProject);
   const selectedScope = useCCProjectStore(state => state.selectedScope);
   const installedRoute = !!id && decodeURIComponent(id).startsWith("installed:");
+  const goBack = () => historyIndex > 0 ? navigate(-1) : navigate(installedRoute ? "/manage" : "/", { replace: true });
   const installedTarget = installedRoute ? JSON.stringify([selectedClient, selectedPath, selectedProject, selectedScope]) : "catalog";
   const [error, setError] = useState<string | null>(null);
   const { fetchAllJsonBlocks } = useGithubReadmeJson();
@@ -137,14 +138,14 @@ export function ServerPage() {
     return (
       <div>
         <p role="alert">{error || `Server not found ${owner || ""} ${repo || ""} ${id || ""}`}</p>
-        <Button variant="ghost" onClick={() => navigate(-1)}>Back</Button>
+        <Button variant="ghost" onClick={goBack}>Back</Button>
       </div>
     );
 
   return (
     <div className="max-w-3xl mx-auto p-6">
       <Button
-        onClick={() => navigate(-1)}
+        onClick={goBack}
         variant="ghost"
         className="text-muted-foreground hover:text-foreground"
       >

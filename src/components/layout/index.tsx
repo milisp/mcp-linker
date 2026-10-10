@@ -11,11 +11,13 @@ import { useState } from "react";
 import { Toaster } from "sonner";
 import { ClientSelector } from "../settings/client-selector";
 import { InstallationScope, InstallationTarget } from "../settings/InstallationTarget";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const Layout = () => {
   const isMacOS = platform() === "macos";
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { view } = useViewStore();
+  const { view, navigate, history, historyIndex } = useViewStore();
 
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -31,6 +33,10 @@ const Layout = () => {
                 <SidebarTrigger
                   className={isMacOS && !sidebarOpen ? "ml-8 shrink-0" : "shrink-0"}
                 />
+              <div className="flex shrink-0 items-center gap-1" role="group" aria-label="Page navigation">
+                <Button variant="ghost" size="icon" aria-label="Go back" title="Go back" disabled={historyIndex === 0} onClick={() => navigate(-1)}><ArrowLeft className="size-4" /></Button>
+                <Button variant="ghost" size="icon" aria-label="Go forward" title="Go forward" disabled={historyIndex >= history.length - 1} onClick={() => navigate(1)}><ArrowRight className="size-4" /></Button>
+              </div>
               {!["auth", "notes", "about", "settings"].includes(view) && <><ClientSelector /><InstallationScope /><InstallationTarget allowClientChange={false} compact /></>}
             </header>
 
