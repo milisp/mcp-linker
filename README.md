@@ -1,13 +1,20 @@
+<div align="center">
+
+<img src="./src-tauri/icons/128x128.png" alt="MCP Linker Logo" width="200" />
+
 # MCP Linker
 
-[![Stars](https://img.shields.io/github/stars/milisp/mcp-linker?style=flat)](https://github.com/milisp/mcp-linker/stargazers)
-[![Downloads](https://img.shields.io/github/downloads/milisp/mcp-linker/total.svg)](https://milisp.github.io/modern-github-release/#/repo/milisp/mcp-linker)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)](#)
+[![GitHub Release](https://img.shields.io/github/v/release/milisp/mcp-linker?color=2ea44f&logo=github)](https://github.com/milisp/mcp-linker/releases)
+[![GitHub Stars](https://img.shields.io/github/stars/milisp/mcp-linker?color=yellow&logo=github)](https://github.com/milisp/mcp-linker/stargazers)
+[![Downloads](https://img.shields.io/github/downloads/milisp/mcp-linker/total?color=blue)](https://github.com/milisp/mcp-linker/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-🌐 **Languages**: [中文](docs/README.zh-CN.md) | [🌍 Other Languages](./docs/)
+English · [简体中文](docs/README.zh-CN.md) · [繁體中文](docs/README.zh-TW.md) · [日本語](docs/README.ja-JP.md) · [Deutsch](docs/README.de.md) · [Français](docs/README.fr.md) · [Español](docs/README.es.md)
 
 **One-click add and sync MCP servers across AI clients — No LLM calls needed, Built-in marketplace**
+
+</div>
 
 > [!TIP]
 > ⭐ Star the repo and follow **milisp** on [Twitter](https://x.com/lisp_mi) and [GitHub](https://github.com/milisp) for more!
@@ -23,10 +30,9 @@
 
 - **Local Sync** — Sync MCP server configs across multiple clients
 - **Official MCP Registry** — Browse and install servers straight from registry.modelcontextprotocol.io
-- **Multi-Client Support** — Claude Desktop/Code, Cursor, VS Code, Cline, Windsurf, Codex, Roo Code. [see Detail](./docs/clients.md)
+- **Multi-Client Support** — Claude Desktop/Code, Codex, Cursor, VS Code, Cline. [see Detail](./docs/clients.md)
 - **Cross-Platform** — macOS, Windows, Linux
 - **Smart Detection** — Auto-detect Python, Node.js, uv environments
-- **GUI for OpenAI Codex CLI** — based on [Codexia](https://github.com/milisp/codexia)
 
 ## 🚀 Quick Start
 
@@ -42,8 +48,8 @@ brew install mcplinker
 yay -S mcp-linker-bin
 ```
 
-**Windows / Linux / macOS (Direct Download)**
-Download the: [📥latest Releases](https://milisp.github.io/modern-github-release/#/repo/milisp/mcp-linker)
+**GitHub Releases (Pre-built Binaries)**
+[Download](https://github.com/milisp/mcp-linker/releases)
 
 > [!Note]
 > If you have subscribed, please relaunch the app after logging in for the first time.
