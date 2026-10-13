@@ -1,6 +1,5 @@
 import { LicenseRequiredError, claudeWrite, clientWrite } from "@/lib/claude";
 import { mustHavePathClients } from "@/lib/data";
-import { useClientPathStore } from "@/stores/clientPathStore";
 import { requireLocalClaudeScope, useCCProjectStore } from "@/stores/ccProject";
 import { ConfigType } from "@/types/mcpConfig";
 import { invoke } from "@tauri-apps/api/core";
@@ -17,7 +16,6 @@ export function useMcpConfig(
   const [disabledServers, setDisabledServers] = useState<Record<string, any>>(
     {},
   );
-  const { getClientPath } = useClientPathStore();
   const { selectedProject, selectedScope } = useCCProjectStore();
 
   // Helper to centralize common operation logic
@@ -352,56 +350,6 @@ export function useMcpConfig(
     [selectedClient, selectedPath, selectedProject, selectedScope, executeMcpOperation, loadConfig],
   );
 
-  const syncConfig = useCallback(
-    async (fromClient: string, toClient: string, overrideAll: boolean) => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Get paths for both clients
-        if (fromClient === "claude_code" || toClient === "claude_code") {
-          requireLocalClaudeScope(selectedScope);
-        }
-        if ((fromClient === "claude_code" || toClient === "claude_code") && !selectedProject) {
-          throw new Error("Please select a Claude Code project");
-        }
-        const fromPath = fromClient === "claude_code" ? selectedProject : getClientPath(fromClient);
-        const toPath = toClient === "claude_code" ? selectedProject : getClientPath(toClient);
-
-        await executeMcpOperation(
-          invoke("sync_mcp_config", {
-            fromClient,
-            toClient,
-            fromPath,
-            toPath,
-            overrideAll,
-          }),
-          `Configuration synced from ${fromClient} to ${toClient} successfully`,
-          "Failed to sync configuration",
-        );
-        await loadConfig();
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to sync configuration";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [
-      selectedClient,
-      selectedPath,
-      executeMcpOperation,
-      loadConfig,
-      getClientPath,
-      selectedScope,
-      selectedProject,
-    ],
-  );
-
   const batchDeleteServers = useCallback(
     async (keys: string[]) => {
       if (selectedClient === "custom" && !selectedPath) {
@@ -455,7 +403,6 @@ export function useMcpConfig(
     disabledServers,
     enableServer,
     disableServer,
-    syncConfig,
     batchDeleteServers,
   };
 }
