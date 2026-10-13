@@ -13,7 +13,7 @@ pub async fn read_json_file(client_name: String, path: Option<String>) -> Result
         return Ok(json);
     }
 
-    let app_config = ClientConfig::new(&client_name, path.as_deref());
+    let app_config = ClientConfig::new(&client_name, path.as_deref())?;
     let file_path = app_config.get_path();
 
     // Remove the file existence check - let JsonManager handle it
@@ -49,7 +49,7 @@ pub async fn write_json_file(
     path: Option<String>,
     content: Value,
 ) -> Result<(), String> {
-    let app_config = ClientConfig::new(&client_name, path.as_deref());
+    let app_config = ClientConfig::new(&client_name, path.as_deref())?;
     let file_path = app_config.get_path();
 
     JsonManager::write_json_file(file_path, &content).await
@@ -57,7 +57,7 @@ pub async fn write_json_file(
 
 #[tauri::command]
 pub async fn get_app_path(client_name: String, path: Option<String>) -> Result<String, String> {
-    let app_config = ClientConfig::new(&client_name, path.as_deref());
+    let app_config = ClientConfig::new(&client_name, path.as_deref())?;
     let file_path = app_config.get_path();
 
     Ok(file_path.to_string_lossy().to_string())

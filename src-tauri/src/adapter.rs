@@ -20,13 +20,13 @@ impl<'a> ClientAdapter<'a> {
         }
     }
 
-    fn json_path(&self) -> Option<(String, std::path::PathBuf)> {
+    fn json_path(&self) -> Result<(String, std::path::PathBuf), String> {
         match self {
             ClientAdapter::Json { client, path } => {
-                let cfg = ClientConfig::new(client, *path);
-                Some((client.to_string(), cfg.get_path().to_path_buf()))
+                let cfg = ClientConfig::new(client, *path)?;
+                Ok((client.to_string(), cfg.get_path().to_path_buf()))
             }
-            _ => None,
+            ClientAdapter::Codex => Err("Codex has no JSON config".into()),
         }
     }
 
@@ -42,7 +42,7 @@ impl<'a> ClientAdapter<'a> {
                 Ok(serde_json::json!({"mcpServers": servers}))
             }
             ClientAdapter::Json { .. } => {
-                let (client_name, path) = self.json_path().unwrap();
+                let (client_name, path) = self.json_path()?;
                 println!(
                     "[Adapter][JSON:{}] add server: {} -> {}",
                     client_name,
@@ -63,7 +63,7 @@ impl<'a> ClientAdapter<'a> {
                 Ok(serde_json::json!({"mcpServers": servers}))
             }
             ClientAdapter::Json { .. } => {
-                let (client_name, path) = self.json_path().unwrap();
+                let (client_name, path) = self.json_path()?;
                 println!(
                     "[Adapter][JSON:{}] remove server: {} -> {}",
                     client_name,
@@ -87,7 +87,7 @@ impl<'a> ClientAdapter<'a> {
                 Ok(serde_json::json!({"mcpServers": servers}))
             }
             ClientAdapter::Json { .. } => {
-                let (client_name, path) = self.json_path().unwrap();
+                let (client_name, path) = self.json_path()?;
                 println!(
                     "[Adapter][JSON:{}] update server: {} -> {}",
                     client_name,
@@ -110,7 +110,7 @@ impl<'a> ClientAdapter<'a> {
                 Ok(serde_json::json!({"mcpServers": servers}))
             }
             ClientAdapter::Json { .. } => {
-                let (client_name, path) = self.json_path().unwrap();
+                let (client_name, path) = self.json_path()?;
                 println!(
                     "[Adapter][JSON:{}] batch delete -> {}",
                     client_name,
@@ -129,7 +129,7 @@ impl<'a> ClientAdapter<'a> {
                 Ok(serde_json::to_value(disabled).unwrap_or_default())
             }
             ClientAdapter::Json { .. } => {
-                let (client_name, path) = self.json_path().unwrap();
+                let (client_name, path) = self.json_path()?;
                 println!(
                     "[Adapter][JSON:{}] list disabled -> {}",
                     client_name,
@@ -149,7 +149,7 @@ impl<'a> ClientAdapter<'a> {
                 Ok(serde_json::to_value(disabled).unwrap_or_default())
             }
             ClientAdapter::Json { .. } => {
-                let (client_name, path) = self.json_path().unwrap();
+                let (client_name, path) = self.json_path()?;
                 println!(
                     "[Adapter][JSON:{}] disable: {} -> {}",
                     client_name,
@@ -170,7 +170,7 @@ impl<'a> ClientAdapter<'a> {
                 Ok(serde_json::to_value(disabled).unwrap_or_default())
             }
             ClientAdapter::Json { .. } => {
-                let (client_name, path) = self.json_path().unwrap();
+                let (client_name, path) = self.json_path()?;
                 println!(
                     "[Adapter][JSON:{}] enable: {} -> {}",
                     client_name,
@@ -193,7 +193,7 @@ impl<'a> ClientAdapter<'a> {
                 Ok(serde_json::to_value(disabled).unwrap_or_default())
             }
             ClientAdapter::Json { .. } => {
-                let (client_name, path) = self.json_path().unwrap();
+                let (client_name, path) = self.json_path()?;
                 println!(
                     "[Adapter][JSON:{}] update disabled: {} -> {}",
                     client_name,

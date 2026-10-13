@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { availableClients } from "@/constants/clients";
 import { LicenseRequiredError, claudeWrite, clientWrite, toClaudeRequest } from "@/lib/claude";
-import { needspathClient } from "@/lib/data";
+import { needspathClient, pickClientPath } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import {
   SCOPE_LABEL,
@@ -22,6 +22,7 @@ import {
   type Staged,
   basename,
   buildSourceOptions,
+  convertServer,
   ccLabel,
   ccSource,
   describe,
@@ -29,7 +30,6 @@ import {
   missingNames,
   parseCCSource,
   rightNamesOf,
-  sanitize,
   sidebarProjects,
   stageCopy,
   targetValueOf,
@@ -40,7 +40,6 @@ import { useClientPathStore } from "@/stores/clientPathStore";
 import { useProjectPreferences } from "@/stores/projectPreferences";
 import { ServerTableData } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
-import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { ArrowLeft, Check, ChevronRight, ChevronsUpDown, ChevronsRight, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -169,16 +168,26 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
   const save = async () => {
     setSaving(true);
     let done = 0;
-    try {
-      // One at a time: every write rewrites the same config file.
-      for (const name of toDelete) { await writeTarget(name); done++; }
-      for (const name of toCopy) { await writeTarget(name, sanitize(source[name])); done++; }
-      toast.success(t("manage.sync.saved", { count: done }));
-    } catch (error) {
-      if (!(error instanceof LicenseRequiredError)) {
-        toast.error(error instanceof Error ? error.message : String(error));
+    const failures: string[] = [];
+    // One at a time: every write rewrites the same config file. A bad entry
+    // must not stop the rest, but a missing license stops everything.
+    const run = async (name: string, write: () => Promise<unknown>) => {
+      try {
+        await write();
+        done++;
+      } catch (error) {
+        if (error instanceof LicenseRequiredError) throw error;
+        failures.push(`${name}: ${error instanceof Error ? error.message : String(error)}`);
       }
+    };
+    try {
+      for (const name of toDelete) await run(name, () => writeTarget(name));
+      for (const name of toCopy) await run(name, async () => writeTarget(name, convertServer(selectedClient, source[name])));
+    } catch {
+      // The upgrade dialog already explains a missing license.
     } finally {
+      if (done) toast.success(t("manage.sync.saved", { count: done }));
+      if (failures.length) toast.error(failures.join("\n"));
       resetStaged();
       await onSaved();
       setSaving(false);
@@ -195,8 +204,8 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
   const isTarget = (scope: ClaudeCodeScope, dir: string) => ccSource(scope, dir) === targetValue;
 
   const browseFromPath = async () => {
-    const picked = await openDialog({ directory: true, multiple: false });
-    if (typeof picked === "string") {
+    const picked = await pickClientPath(fromClient);
+    if (picked) {
       setFromPath(picked);
       setClientPath(fromClient, picked);
       loadSource();

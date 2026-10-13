@@ -28,8 +28,11 @@ pub fn get_key_by_client(client: &str) -> &str {
     }
 }
 
-/// Returns true if the client uses per-server 'disabled' key instead of global __disabled section
+/// Clients that read a per-server `"disabled": true`. Clients without a native
+/// flag (Claude Desktop, Cursor, VS Code) cannot be told to skip a server, so a
+/// disabled server is parked under `__disabled` in the same file instead: it
+/// stays with the config, and those clients ignore the unknown key.
 pub fn is_per_server_disabled_client(client: &str) -> bool {
-    client == "cline"
+    matches!(client, "cline" | "mcphub")
 }
 

@@ -3,11 +3,11 @@ import {
   buildSourceOptions,
   ccLabel,
   ccSource,
+  convertServer,
   describe,
   missingNames,
   parseCCSource,
   rightNamesOf,
-  sanitize,
   sidebarProjects,
   stageCopy,
   targetValueOf,
@@ -111,14 +111,70 @@ group("pane contents", () => {
 });
 
 group("server config helpers", () => {
-  it("sanitize drops bookkeeping keys only", () => {
-    expect(sanitize({ name: "x", command: "c", args: ["1"], disabled: true, _creator: "mcp_linker", updated_at: "t" }))
-      .toEqual({ command: "c", args: ["1"] });
-  });
-
   it("describe shows the command line or the url", () => {
     expect(describe({ command: "npx", args: ["-y", "pkg"] })).toBe("npx -y pkg");
     expect(describe({ serverUrl: "https://s" })).toBe("https://s");
     expect(describe({})).toBe("");
+  });
+});
+
+group("convertServer", () => {
+  const stdio = { command: "npx", args: ["-y", "pkg"], env: { KEY: "v" }, disabled: true, autoApprove: ["x"], _creator: "mcp_linker" };
+  const remote = { url: "https://mcp.example.com/mcp", headers: { Authorization: "Bearer t" } };
+
+  it("drops client-only and bookkeeping keys from stdio servers", () => {
+    expect(convertServer("cursor", stdio)).toEqual({ command: "npx", args: ["-y", "pkg"], env: { KEY: "v" } });
+  });
+
+  it("adds the type VS Code and Codex need", () => {
+    expect(convertServer("copilot", stdio)).toMatchObject({ type: "stdio", command: "npx" });
+    expect(convertServer("copilot", remote)).toEqual({ type: "http", ...remote });
+    expect(convertServer("codex", stdio)).toMatchObject({ type: "stdio" });
+  });
+
+  it("spells streamable HTTP the way Cline requires", () => {
+    expect(convertServer("cline", remote)).toEqual({ type: "streamableHttp", ...remote });
+    expect(convertServer("cline", { ...remote, type: "sse" })).toMatchObject({ type: "sse" });
+  });
+
+  it("maps Codex http_headers both ways", () => {
+    expect(convertServer("codex", remote)).toEqual({ type: "http", url: remote.url, http_headers: remote.headers });
+    expect(convertServer("cursor", { type: "http", url: remote.url, http_headers: remote.headers, enabled: false })).toEqual(remote);
+  });
+
+  it("reads other clients' url keys and transport spellings", () => {
+    expect(convertServer("copilot", { serverUrl: "https://a" })).toEqual({ type: "http", url: "https://a" });
+    expect(convertServer("copilot", { httpUrl: "https://a" })).toEqual({ type: "http", url: "https://a" });
+    expect(convertServer("copilot", { type: "streamableHttp", url: "https://a" })).toEqual({ type: "http", url: "https://a" });
+    expect(convertServer("copilot", { transportType: "sse", url: "https://a" })).toEqual({ type: "sse", url: "https://a" });
+  });
+
+  it("bridges remote servers through mcp-remote for Claude Desktop, with headers in env", () => {
+    expect(convertServer("claude", remote)).toEqual({
+      command: "npx",
+      args: ["-y", "mcp-remote", remote.url, "--header", "Authorization:${MCP_REMOTE_HEADER_0}"],
+      env: { MCP_REMOTE_HEADER_0: "Bearer t" },
+    });
+    expect(convertServer("claude", { type: "sse", url: "https://a" }).args).toEqual(["-y", "mcp-remote", "https://a", "--transport", "sse-only"]);
+  });
+
+  it("unwraps an mcp-remote bridge back into a remote server", () => {
+    expect(convertServer("cursor", convertServer("claude", remote))).toEqual(remote);
+    expect(convertServer("claude_code", { command: "npx", args: ["mcp-remote@0.1.29", "https://a", "--transport", "sse-only"] }))
+      .toEqual({ type: "sse", url: "https://a" });
+  });
+
+  it("keeps a bridge with options it cannot carry as a stdio server", () => {
+    const bridge = { command: "npx", args: ["-y", "mcp-remote", "https://a", "3334"] };
+    expect(convertServer("cursor", bridge)).toEqual(bridge);
+  });
+
+  it("stringifies non-string env values and keeps cwd where supported", () => {
+    expect(convertServer("cline", { command: "node", env: { PORT: 3000 }, cwd: "/srv" })).toEqual({ command: "node", args: [], env: { PORT: "3000" }, cwd: "/srv" });
+    expect(convertServer("claude", { command: "node", cwd: "/srv" })).toEqual({ command: "node", args: [] });
+  });
+
+  it("rejects entries with neither command nor url", () => {
+    expect(() => convertServer("cursor", { type: "stdio" })).toThrow();
   });
 });
