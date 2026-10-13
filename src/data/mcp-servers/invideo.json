@@ -4,6 +4,15 @@
   "title": "invideo",
   "description": "Build video creation capabilities into your applications",
   "version": "1.0.0",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/invideo.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "sse",

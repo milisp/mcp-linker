@@ -4,6 +4,15 @@
   "title": "asana",
   "description": "Interact with your Asana workspace to keep projects on track",
   "version": "1.0.0",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/asana.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "sse",

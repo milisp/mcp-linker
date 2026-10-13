@@ -4,6 +4,15 @@
   "title": "atlassian",
   "description": "Manage your Jira tickets and Confluence docs",
   "version": "1.0.0",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/atlassian.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "sse",

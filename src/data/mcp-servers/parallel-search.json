@@ -4,6 +4,15 @@
   "title": "parallel-search",
   "description": "Opt in by clicking Add. User-provided search objectives, search queries, and requested URLs are s...",
   "version": "1.0.0",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/parallel-search.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "streamable-http",

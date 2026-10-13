@@ -4,6 +4,15 @@
   "title": "clickup",
   "description": "Task management, project tracking",
   "version": "1.0.0",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/clickup.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
   "packages": [
     {
       "registryType": "npm",

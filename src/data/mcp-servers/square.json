@@ -4,6 +4,15 @@
   "title": "square",
   "description": "Use an agent to build on Square APIs. Payments, inventory, orders, and more",
   "version": "1.0.0",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/square.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "sse",

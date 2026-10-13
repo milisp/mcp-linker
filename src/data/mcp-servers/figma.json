@@ -4,6 +4,15 @@
   "title": "figma",
   "description": "Access designs, export assets (Requires Figma Desktop with Dev Mode MCP Server)",
   "version": "1.0.0",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/figma.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "sse",

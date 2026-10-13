@@ -4,6 +4,15 @@
   "title": "cloudflare",
   "description": "Build applications, analyze traffic, monitor performance, and manage security settings",
   "version": "1.0.0",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/cloudflare.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "streamable-http",
