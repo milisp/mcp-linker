@@ -1,4 +1,5 @@
 import { normalizeServerConfig } from "../utils/normalizeServerConfig";
+import { defaultServerName } from "../utils/quickInstall";
 import { useCCProjectStore } from "@/stores/ccProject";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useServerEditorStore, type ServerEditorDraft } from "@/stores/serverEditorStore";
@@ -11,10 +12,12 @@ export function useServerEditor(server: ServerType) {
   const { selectedClient, selectedPath } = useClientPathStore();
   const selectedProject = useCCProjectStore(state => state.selectedProject);
   const selectedScope = useCCProjectStore(state => state.selectedScope);
-  const identity = server.source === "saved" ? ["normalized", server.id, server.name] : server.id || server.name;
+  // Saved and custom servers are named by the user, not by a registry id.
+  const named = server.source === "saved" || server.source === "custom";
+  const identity = named ? ["normalized", server.id, server.name] : server.id || server.name;
   const key = JSON.stringify([identity, selectedClient, selectedPath, selectedClient === "claude_code" ? [selectedProject, selectedScope] : null]);
   const initial = useMemo<ServerEditorDraft>(() => ({
-    name: server.installed?.name ?? (server.source === "saved" ? server.name : server.id.split("/").pop() || server.name),
+    name: defaultServerName(server),
     configs: structuredClone(server.configs?.some(config => config.type !== "encrypted") ? server.configs.filter(config => config.type !== "encrypted").map(config => normalizeServerConfig(config) ?? config) : [{ type: "stdio", command: "", args: [], env: {} }]),
     index: 0,
     dirty: false,
@@ -69,9 +72,11 @@ export function useServerEditor(server: ServerType) {
   return {
     key, draft, config, selectedClient, selectedPath, selectedProject, selectedScope,
     setName: (name: string) => update(draft => ({ ...draft, name, dirty: true })),
-    selectConfig: (index: number) => update(draft => ({ ...draft, index })),
+    // Switching an installed server to another option is an unsaved change.
+    selectConfig: (index: number) => update(draft => ({ ...draft, index, dirty: draft.dirty || (!!draft.persistedName && index !== draft.index) })),
     setConfig,
     retryLoad: () => { update(draft => ({ ...draft, loaded: false, loadError: undefined })); setLoadRevision(value => value + 1); },
+    markUninstalled: () => update(draft => ({ ...draft, persistedName: undefined })),
     markSaved: () => update(draft => ({ ...draft, dirty: false, persistedName: draft.name, loadError: undefined })),
   };
 }

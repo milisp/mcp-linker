@@ -1,3 +1,4 @@
+import { claudeWrite } from "@/lib/claude";
 import { useToast } from "@/hooks/use-toast";
 import { useCCProjectStore } from "@/stores/ccProject";
 import { invoke } from "@tauri-apps/api/core";
@@ -133,7 +134,7 @@ export function useClaudeCodeManagement() {
         request.headers = headers;
       }
 
-      const response = await invoke<{success: boolean, message: string}>("claude_mcp_add", { 
+      const response = await claudeWrite<{success: boolean, message: string}>("claude_mcp_add", { 
         request, 
         workingDir: selectedProject || "", scope: selectedScope
       });
@@ -166,7 +167,7 @@ export function useClaudeCodeManagement() {
 
   const removeServer = async (serverName: string) => {
     try {
-      const response = await invoke<{success: boolean, message: string}>("claude_mcp_remove", { 
+      const response = await claudeWrite<{success: boolean, message: string}>("claude_mcp_remove", { 
         name: serverName,
         workingDir: selectedProject || "", scope: selectedScope
       });

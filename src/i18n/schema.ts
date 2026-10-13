@@ -80,4 +80,68 @@ export interface TranslationSchema {
   general: string;
   language: string;
   encryption: string;
+  license: {
+    title: string;
+    active: string;
+    inactive: string;
+    placeholder: string;
+    activate: string;
+    activated: string;
+    deactivate: string;
+    deactivated: string;
+    device: string;
+    buy: string;
+  };
+  upgrade: {
+    description: string;
+    enterKey: string;
+    buy: string;
+    features: {
+      claudeCode: string;
+      codex: string;
+      sync: string;
+      batch: string;
+      inspection: string;
+    };
+  };
+  manage: {
+    title: string;
+    subtitle: string;
+    savedSubtitle: string;
+    savedEmpty: string;
+    refresh: string;
+    installed: string;
+    saved: string;
+    total: string;
+    enabled: string;
+    disabled: string;
+    localSync: string;
+    name: string;
+    actions: string;
+    tools: string;
+    copyToProject: string;
+    copyTo: string;
+    selectAll: string;
+    selectRow: string;
+    enableSelected: string;
+    disableSelected: string;
+    deleteSelected: string;
+  };
+  table: {
+    search: string;
+    previous: string;
+    next: string;
+    noResults: string;
+  };
+  collections: {
+    title: string;
+    label: string;
+    curated: string;
+    explore: string;
+    previous: string;
+    next: string;
+    serverCount_one: string;
+    serverCount_other: string;
+    notFound: string;
+  };
 }

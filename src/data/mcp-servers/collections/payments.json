@@ -1,0 +1,10 @@
+{
+  "title": "Payments & commerce",
+  "description": "Take payments, manage orders, and connect bank accounts across the major commerce platforms.",
+  "servers": [
+    "stripe",
+    "paypal",
+    "square",
+    "plaid"
+  ]
+}

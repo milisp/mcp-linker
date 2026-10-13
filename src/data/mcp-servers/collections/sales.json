@@ -1,0 +1,11 @@
+{
+  "title": "Sales",
+  "description": "Prospect, enrich, and engage leads with sales intelligence, CRM, and customer messaging tools.",
+  "servers": [
+    "apollo",
+    "close",
+    "zoominfo",
+    "lusha",
+    "intercom"
+  ]
+}

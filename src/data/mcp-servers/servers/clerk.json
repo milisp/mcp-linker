@@ -1,0 +1,31 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/clerk",
+  "title": "Clerk",
+  "description": "Look up Clerk auth docs, SDK snippets, and quickstarts",
+  "version": "1.0.0",
+  "websiteUrl": "https://clerk.com/docs/guides/ai/mcp/clerk-mcp-server",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/clerk.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.clerk.com/mcp"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "clerk",
+        "category": "Development & Testing"
+      }
+    }
+  }
+}

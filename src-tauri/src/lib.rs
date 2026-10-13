@@ -19,10 +19,13 @@ mod encryption;
 mod git;
 mod installer;
 mod json_manager;
+mod license;
 mod mcp_commands;
 mod mcp_crud;
 mod mcp_inspector;
 mod mcp_sync;
+#[cfg(target_os = "macos")]
+mod menu;
 mod window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -79,6 +82,7 @@ pub fn run() {
             claude_code_commands::claude_mcp_get,
             claude_code_commands::claude_mcp_add,
             claude_code_commands::claude_mcp_remove,
+            claude_code_commands::claude_mcp_copy,
             claude_code_commands::claude_list_projects,
             claude_code_commands::check_claude_cli_available,
             claude_code_commands::check_claude_config_exists,
@@ -86,16 +90,22 @@ pub fn run() {
             claude_disabled::claude_disable_server,
             claude_disabled::claude_enable_server,
             claude_disabled::claude_update_disabled,
+            license::license_status,
+            license::activate_license,
+            license::deactivate_license,
         ])
         .manage(mcp_inspector::InspectorState::default())
         .manage(Arc::new(Mutex::new(None::<String>)))
         .setup(|_app| {
             use tauri::Manager;
+            _app.manage(license::LicenseStore(std::sync::Mutex::new(license::load(_app.handle()))));
             let inspector = _app.state::<mcp_inspector::InspectorState>().inner().clone();
             tauri::async_runtime::spawn(async move {
                 let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
                 loop { interval.tick().await; inspector.expire_idle().await; }
             });
+            #[cfg(target_os = "macos")]
+            menu::setup(_app)?;
             #[cfg(any(windows, target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;

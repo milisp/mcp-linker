@@ -1,38 +1,38 @@
+import { DeleteAlertDialog } from "@/components/common/DeleteAlertDialog";
 import { Button } from "@/components/ui/button";
-import { useViewStore } from "@/stores/viewStore";
 import type { ServerType } from "@/types";
-import { Check, Cloud, Loader2, Monitor, Server } from "lucide-react";
+import { Check, Cloud, Loader2, Monitor, Server, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { quickInstallConfig, serverTransportLabels } from "../utils/quickInstall";
 
 interface ServerCardProps {
   server: ServerType;
-  onOpenDialog: (server: ServerType) => void;
-  onQuickAdd: (server: ServerType) => Promise<boolean>;
+  onOpenDetails: (server: ServerType) => void;
+  onQuickAdd: (server: ServerType) => Promise<unknown>;
   targetLabel: string;
-  targetKey: string;
+  /** Installed in the selected target under this server's default name. */
+  installed: boolean;
+  /** Shown as a trash button with confirmation, e.g. to forget a saved configuration. */
+  onRemove?: (server: ServerType) => Promise<void>;
 }
 
-export function ServerCard({ server, onOpenDialog, onQuickAdd, targetLabel, targetKey }: ServerCardProps) {
-  const navigate = useViewStore(state => state.navigate);
+export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, installed, onRemove }: ServerCardProps) {
   const [isAdding, setIsAdding] = useState(false);
-  const [addedTarget, setAddedTarget] = useState<string | null>(null);
   const addingRef = useRef(false);
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const canQuickAdd = quickInstallConfig(server) !== null;
-  const isAdded = addedTarget === targetKey;
   const labels = serverTransportLabels(server);
 
   const handleAdd = async () => {
     if (addingRef.current) return;
-    if (!canQuickAdd) {
-      onOpenDialog(server);
+    if (installed || !canQuickAdd) {
+      onOpenDetails(server);
       return;
     }
     addingRef.current = true;
     setIsAdding(true);
     try {
-      if (await onQuickAdd(server)) setAddedTarget(targetKey);
+      await onQuickAdd(server);
     } finally {
       addingRef.current = false;
       setIsAdding(false);
@@ -43,11 +43,11 @@ export function ServerCard({ server, onOpenDialog, onQuickAdd, targetLabel, targ
     <div className="flex min-w-0 items-center gap-3 rounded-lg border bg-card px-3 py-3 transition-colors hover:bg-muted/30">
       <button
         type="button"
-        onClick={() => navigate(`/servers/${encodeURIComponent(server.id)}`)}
+        onClick={() => onOpenDetails(server)}
         aria-label={`View details for ${server.name}`}
         className="flex min-w-0 flex-1 items-center gap-3 text-left rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground ${server.logoUrl && failedLogo !== server.logoUrl ? "border bg-white" : "bg-muted"}`}>
           {server.logoUrl && failedLogo !== server.logoUrl ? (
             <img src={server.logoUrl} alt="" loading="lazy" className="size-7 rounded object-contain" onError={() => setFailedLogo(server.logoUrl!)} />
           ) : <Server className="size-5" />}
@@ -68,16 +68,21 @@ export function ServerCard({ server, onOpenDialog, onQuickAdd, targetLabel, targ
       <Button
         type="button"
         size="sm"
-        variant={isAdded ? "outline" : "default"}
+        variant={installed ? "outline" : "default"}
         className="h-8 min-w-16 shrink-0 px-2.5 text-xs"
         onClick={handleAdd}
-        disabled={isAdding || isAdded}
-        title={canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name} before adding to ${targetLabel}`}
-        aria-label={isAdding ? `Adding ${server.name}` : isAdded ? `${server.name} added to ${targetLabel}` : canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name}`}
+        disabled={isAdding}
+        title={installed ? `${server.name} is installed in ${targetLabel}. Open to update or uninstall` : canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name} before adding to ${targetLabel}`}
+        aria-label={isAdding ? `Adding ${server.name}` : installed ? `${server.name} installed in ${targetLabel}. Open details` : canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name}`}
       >
-        {isAdding ? <Loader2 className="size-3.5 animate-spin" /> : isAdded ? <Check className="size-3.5" /> : null}
-        {isAdding ? "Adding" : isAdded ? "Added" : canQuickAdd ? "Add" : "Configure"}
+        {isAdding ? <Loader2 className="size-3.5 animate-spin" /> : installed ? <Check className="size-3.5" /> : null}
+        {isAdding ? "Adding" : installed ? "Installed" : canQuickAdd ? "Add" : "Configure"}
       </Button>
+      {onRemove && <DeleteAlertDialog
+        itemName={`the saved configuration "${server.name}"`}
+        onDelete={() => onRemove(server)}
+        trigger={<Button type="button" variant="ghost" size="icon" className="size-8 shrink-0 text-muted-foreground hover:text-destructive" aria-label={`Remove ${server.name}`}><Trash2 className="size-4" /></Button>}
+      />}
     </div>
   );
 }

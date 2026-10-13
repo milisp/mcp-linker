@@ -1,0 +1,12 @@
+{
+  "title": "Production & DevOps",
+  "description": "Deploy, monitor, and debug production systems across CI, hosting, observability, and error tracking.",
+  "servers": [
+    "sentry",
+    "grafana",
+    "cloudflare",
+    "circleci",
+    "vercel",
+    "honeycomb"
+  ]
+}

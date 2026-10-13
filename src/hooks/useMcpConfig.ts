@@ -1,3 +1,4 @@
+import { LicenseRequiredError, claudeWrite, clientWrite } from "@/lib/claude";
 import { mustHavePathClients } from "@/lib/data";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { requireLocalClaudeScope, useCCProjectStore } from "@/stores/ccProject";
@@ -49,7 +50,8 @@ export function useMcpConfig(
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : errorMessagePrefix;
-        toast.error(errorMessage);
+        // The upgrade dialog already explains a missing license.
+        if (!(error instanceof LicenseRequiredError)) toast.error(errorMessage);
         throw error; // Re-throw to allow caller to handle
       }
     },
@@ -166,7 +168,7 @@ export function useMcpConfig(
           requireLocalClaudeScope(selectedScope);
           if (!selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_update_disabled", {
+            claudeWrite("claude_update_disabled", {
               workingDir: selectedProject,
               scope: selectedScope,
               name: key,
@@ -178,7 +180,7 @@ export function useMcpConfig(
         } else if (selectedClient === "claude_code") {
           if (selectedScope !== "user" && !selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_mcp_add", {
+            claudeWrite("claude_mcp_add", {
               request: {
                 name: key,
                 ...(updatedConfig as any).command
@@ -202,7 +204,7 @@ export function useMcpConfig(
           );
         } else if (isDisabled) {
           await executeMcpOperation(
-            invoke("update_disabled_mcp_server", {
+            clientWrite("update_disabled_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -213,7 +215,7 @@ export function useMcpConfig(
           );
         } else {
           await executeMcpOperation(
-            invoke("update_mcp_server", {
+            clientWrite("update_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -247,7 +249,7 @@ export function useMcpConfig(
         if (selectedClient === "claude_code") {
           if (selectedScope !== "user" && !selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_mcp_remove", {
+            claudeWrite("claude_mcp_remove", {
               name: key,
               workingDir: selectedProject || "",
               scope: selectedScope,
@@ -257,7 +259,7 @@ export function useMcpConfig(
           );
         } else {
           await executeMcpOperation(
-            invoke("remove_mcp_server", {
+            clientWrite("remove_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -285,7 +287,7 @@ export function useMcpConfig(
           requireLocalClaudeScope(selectedScope);
           if (!selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_enable_server", {
+            claudeWrite("claude_enable_server", {
               workingDir: selectedProject,
               scope: selectedScope,
               name: key,
@@ -295,7 +297,7 @@ export function useMcpConfig(
           );
         } else {
           await executeMcpOperation(
-            invoke("enable_mcp_server", {
+            clientWrite("enable_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -321,7 +323,7 @@ export function useMcpConfig(
           requireLocalClaudeScope(selectedScope);
           if (!selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_disable_server", {
+            claudeWrite("claude_disable_server", {
               workingDir: selectedProject,
               scope: selectedScope,
               name: key,
@@ -331,7 +333,7 @@ export function useMcpConfig(
           );
         } else {
           await executeMcpOperation(
-            invoke("disable_mcp_server", {
+            clientWrite("disable_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -414,7 +416,7 @@ export function useMcpConfig(
 
       try {
         await executeMcpOperation(
-          selectedClient === "claude_code" ? Promise.all(keys.map(name => invoke("claude_mcp_remove", {
+          selectedClient === "claude_code" ? Promise.all(keys.map(name => claudeWrite("claude_mcp_remove", {
             name, workingDir: selectedProject || "", scope: selectedScope,
           }))) : invoke("batch_delete_mcp_servers", {
             clientName: selectedClient,

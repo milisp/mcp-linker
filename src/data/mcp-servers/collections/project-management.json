@@ -1,0 +1,12 @@
+{
+  "title": "Project management",
+  "description": "Plan, assign, and track work across the leading project management tools.",
+  "servers": [
+    "linear",
+    "atlassian",
+    "asana",
+    "clickup",
+    "notion",
+    "monday"
+  ]
+}

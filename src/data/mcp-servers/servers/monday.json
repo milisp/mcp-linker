@@ -1,0 +1,41 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/monday",
+  "title": "monday.com",
+  "description": "Manage boards, items, and workflows in monday.com",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/mondaycom/mcp",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/monday.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.monday.com/mcp",
+      "headers": [
+        {
+          "description": "monday.com API token (format: 'Bearer your_token_here' or just 'your_token_here')",
+          "isSecret": true,
+          "name": "Authorization"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "monday",
+        "category": "Project Management"
+      }
+    }
+  }
+}
