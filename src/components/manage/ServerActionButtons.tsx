@@ -1,5 +1,3 @@
-import { installedServerPath } from "@/components/server/utils/installedServer";
-import { useViewStore } from "@/stores/viewStore";
 import { DeleteAlertDialog } from "@/components/common/DeleteAlertDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,12 +39,8 @@ export function ServerActionButtons({
 
   return (
     <div className="flex items-center gap-1">
-      {/* Edit Button */}
-      {serverConfig.type !== "encrypted" ? <Button
-        variant="ghost" size="sm" className="h-8 w-8 p-0"
-        aria-label={`Edit ${serverName}`}
-        onClick={() => useViewStore.getState().navigate(installedServerPath(serverName, "connection"))}
-      ><PenSquare className="h-4 w-4" /></Button> : <Dialog
+      {/* Encrypted configs keep the in-place edit dialog; others are edited on the details page */}
+      {serverConfig.type === "encrypted" && <Dialog
         open={editingServer === serverName}
         onOpenChange={(open) => setEditingServer(open ? serverName : null)}
       >

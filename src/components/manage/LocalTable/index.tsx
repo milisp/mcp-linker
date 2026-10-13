@@ -1,18 +1,21 @@
 // Main LocalTable component, refactored to use hooks and header component
 import { LocalSyncDialog } from "@/components/manage/LocalSyncDialog";
 import { RefreshMcpConfig } from "@/components/manage/RefreshMcpConfig";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { useMcpConfig } from "@/hooks/useMcpConfig";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { requirePro } from "@/stores/license";
 import { RowSelectionState, Table } from "@tanstack/react-table";
+import { Monitor } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useServerTableColumns } from "../ServerTableColumns";
-import { LocalTableHeader } from "./LocalTableHeader";
 import { useServersData } from "./useServersData";
 import { useSyncHandlers } from "./useSyncHandlers";
 
 export const LocalTable = () => {
+  const { t } = useTranslation();
   const { selectedClient, selectedPath } = useClientPathStore();
   const [localSyncDialogOpen, setLocalSyncDialogOpen] = useState(false);
   const [isDeleting, _setIsDeleting] = useState(false);
@@ -124,10 +127,6 @@ export const LocalTable = () => {
 
   return (
     <div className="flex flex-col">
-      <LocalTableHeader
-        isSyncing={isSyncing}
-        onLocalSync={handleLocalSync}
-      />
       {error ? (
         <RefreshMcpConfig error={error} onRetry={loadConfig} />
       ) : (
@@ -145,6 +144,12 @@ export const LocalTable = () => {
               handleBatchDelete,
               isDeleting,
             }}
+            toolbar={
+              <Button variant="outline" size="sm" onClick={handleLocalSync} disabled={isSyncing}>
+                <Monitor className="size-4" />
+                {t("manage.localSync")}
+              </Button>
+            }
           />
           <LocalSyncDialog
             open={localSyncDialogOpen}

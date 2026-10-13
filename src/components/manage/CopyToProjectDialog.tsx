@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { FolderInput } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -113,10 +115,11 @@ export function CopyToProjectDialog({ serverName, open, onOpenChange }: {
 
 /** Row action shown for enabled Claude Code servers. */
 export function CopyToProjectButton({ serverName }: { serverName: string }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>Copy to…</Button>
+      <Button variant="ghost" size="sm" aria-label={`${t("manage.copyToProject")}: ${serverName}`} title={t("manage.copyToProject")} onClick={() => setOpen(true)}><FolderInput className="size-4" />{t("manage.copyTo")}</Button>
       <CopyToProjectDialog serverName={serverName} open={open} onOpenChange={setOpen} />
     </>
   );

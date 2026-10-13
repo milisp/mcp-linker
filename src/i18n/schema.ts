@@ -104,4 +104,33 @@ export interface TranslationSchema {
       inspection: string;
     };
   };
+  manage: {
+    title: string;
+    subtitle: string;
+    savedSubtitle: string;
+    savedEmpty: string;
+    refresh: string;
+    installed: string;
+    saved: string;
+    total: string;
+    enabled: string;
+    disabled: string;
+    localSync: string;
+    name: string;
+    actions: string;
+    tools: string;
+    copyToProject: string;
+    copyTo: string;
+    selectAll: string;
+    selectRow: string;
+    enableSelected: string;
+    disableSelected: string;
+    deleteSelected: string;
+  };
+  table: {
+    search: string;
+    previous: string;
+    next: string;
+    noResults: string;
+  };
 }

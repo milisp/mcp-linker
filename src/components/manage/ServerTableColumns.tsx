@@ -5,10 +5,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ServerConfig, ServerTableData } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { useClientPathStore } from "@/stores/clientPathStore";
-import { CommandDisplay } from "./CommandDisplay";
 import { CopyToProjectButton } from "./CopyToProjectDialog";
 import { ServerActionButtons } from "./ServerActionButtons";
 import { ServerStatusSwitch } from "./ServerStatusSwitch";
+import { useTranslation } from "react-i18next";
+import { Wrench } from "lucide-react";
 
 interface ServerTableColumnsProps {
   disabledServers: Record<string, ServerConfig>;
@@ -24,7 +25,9 @@ export const useServerTableColumns = ({
   onDisable,
   onEdit,
   onDelete,
-}: ServerTableColumnsProps): ColumnDef<ServerTableData>[] => [
+}: ServerTableColumnsProps): ColumnDef<ServerTableData>[] => {
+  const { t } = useTranslation();
+  return [
   {
     id: "select",
     header: ({ table }) => (
@@ -34,14 +37,14 @@ export const useServerTableColumns = ({
           (table.getIsSomePageRowsSelected() && "indeterminate")
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
+        aria-label={t("manage.selectAll")}
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
+        aria-label={t("manage.selectRow")}
       />
     ),
     enableSorting: false,
@@ -49,7 +52,7 @@ export const useServerTableColumns = ({
   },
   {
     accessorKey: "name",
-    header: "Server Name",
+    header: t("manage.name"),
     cell: ({ row }) => {
       const serverName = row.original.name;
       return (
@@ -64,13 +67,8 @@ export const useServerTableColumns = ({
     },
   },
   {
-    id: "command",
-    header: "Command / URL",
-    cell: ({ row }) => <CommandDisplay config={row.original} />,
-  },
-  {
     id: "status",
-    header: "Enabled",
+    header: t("manage.enabled"),
     cell: ({ row }) => {
       const serverName = row.original.name;
       const isServerActive = !disabledServers?.[serverName];
@@ -86,13 +84,13 @@ export const useServerTableColumns = ({
   },
   {
     id: "actions",
-    header: "Actions",
+    header: () => <div className="text-right">{t("manage.actions")}</div>,
     cell: ({ row }) => {
       const serverName = row.original.name;
       const serverConfig = row.original;
       return (
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => useViewStore.getState().navigate(installedServerPath(serverName))}>Tools</Button>
+        <div className="flex items-center justify-end gap-1">
+          <Button variant="ghost" size="icon" className="size-8" aria-label={`${t("manage.tools")}: ${serverName}`} title={t("manage.tools")} onClick={() => useViewStore.getState().navigate(installedServerPath(serverName))}><Wrench className="size-4" /></Button>
           {useClientPathStore.getState().selectedClient === "claude_code" && !(serverName in disabledServers) && <CopyToProjectButton serverName={serverName} />}
           <ServerActionButtons
           serverName={serverName}
@@ -107,3 +105,4 @@ export const useServerTableColumns = ({
     },
   },
 ];
+};
