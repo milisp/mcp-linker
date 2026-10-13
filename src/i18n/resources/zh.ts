@@ -136,6 +136,17 @@ const zh: { translation: TranslationSchema } = {
       next: "下一页",
       noResults: "没有结果。",
     },
+    collections: {
+      title: "专题",
+      label: "专题",
+      curated: "MCP Linker 精选",
+      explore: "探索",
+      previous: "上一个专题",
+      next: "下一个专题",
+      serverCount_one: "{{count}} 个 server",
+      serverCount_other: "{{count}} 个 server",
+      notFound: "未找到该专题。",
+    },
   },
 };
 

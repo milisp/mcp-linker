@@ -136,6 +136,17 @@ const ja: { translation: TranslationSchema } = {
       next: "次へ",
       noResults: "結果がありません。",
     },
+    collections: {
+      title: "コレクション",
+      label: "コレクション",
+      curated: "MCP Linker 厳選",
+      explore: "見る",
+      previous: "前のコレクション",
+      next: "次のコレクション",
+      serverCount_one: "{{count}} 件のサーバー",
+      serverCount_other: "{{count}} 件のサーバー",
+      notFound: "コレクションが見つかりません。",
+    },
   },
 };
 

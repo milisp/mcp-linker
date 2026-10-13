@@ -136,6 +136,17 @@ const de: { translation: TranslationSchema } = {
       next: "Weiter",
       noResults: "Keine Ergebnisse.",
     },
+    collections: {
+      title: "Sammlungen",
+      label: "Sammlung",
+      curated: "Kuratiert von MCP Linker",
+      explore: "Entdecken",
+      previous: "Vorherige Sammlung",
+      next: "Nächste Sammlung",
+      serverCount_one: "{{count}} Server",
+      serverCount_other: "{{count}} Server",
+      notFound: "Sammlung nicht gefunden.",
+    },
   },
 };
 

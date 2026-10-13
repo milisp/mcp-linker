@@ -137,6 +137,17 @@ const tc: { translation: TranslationSchema } = {
       next: "下一頁",
       noResults: "沒有結果。",
     },
+    collections: {
+      title: "專題",
+      label: "專題",
+      curated: "MCP Linker 精選",
+      explore: "探索",
+      previous: "上一個專題",
+      next: "下一個專題",
+      serverCount_one: "{{count}} 個 server",
+      serverCount_other: "{{count}} 個 server",
+      notFound: "找不到此專題。",
+    },
   },
 };
 

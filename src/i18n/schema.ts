@@ -133,4 +133,15 @@ export interface TranslationSchema {
     next: string;
     noResults: string;
   };
+  collections: {
+    title: string;
+    label: string;
+    curated: string;
+    explore: string;
+    previous: string;
+    next: string;
+    serverCount_one: string;
+    serverCount_other: string;
+    notFound: string;
+  };
 }

@@ -1,4 +1,5 @@
 import ClaudeCodeManage from "@/pages/ClaudeCodeManage";
+import { CollectionPage } from "@/pages/CollectionPage";
 import Discover from "@/pages/Discover";
 import Manage from "@/pages/manage";
 import NotesPage from "@/pages/NotesPage";
@@ -40,6 +41,8 @@ export const AppRoutes = () => {
       return <NotesPage />;
     case "favorites":
       return <Discover />;
+    case "collection":
+      return <CollectionPage />;
     default:
       return <Discover />;
   }

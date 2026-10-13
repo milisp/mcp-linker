@@ -44,7 +44,7 @@ export const AppSidebar = () => {
           {navs.filter(nav => ["discover", "manage"].includes(nav.id)).map((nav) => (
             <SidebarMenuItem key={nav.id}>
               <SidebarMenuButton
-                isActive={view === nav.id || (nav.id === "discover" && view === "favorites") || (nav.id === "manage" && view === "recently")}
+                isActive={view === nav.id || (nav.id === "discover" && (view === "favorites" || view === "collection")) || (nav.id === "manage" && view === "recently")}
                 onClick={() => navigate(`/${nav.id}`)}
               >
                 {nav.icon}
