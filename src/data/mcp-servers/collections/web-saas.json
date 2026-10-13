@@ -1,0 +1,12 @@
+{
+  "title": "Web & SaaS development",
+  "description": "Ship web apps faster with hosting, a database, auth, payments, error tracking, and design handoff.",
+  "servers": [
+    "vercel",
+    "supabase",
+    "clerk",
+    "stripe",
+    "sentry",
+    "figma"
+  ]
+}

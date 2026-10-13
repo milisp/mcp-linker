@@ -1,0 +1,9 @@
+{
+  "title": "Product analytics",
+  "description": "Measure how people use your product, then plan and document what to build next.",
+  "servers": [
+    "posthog",
+    "linear",
+    "notion"
+  ]
+}

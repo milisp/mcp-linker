@@ -1,0 +1,10 @@
+{
+  "title": "Design",
+  "description": "Move from diagrams and whiteboards to polished designs without leaving your editor.",
+  "servers": [
+    "figma",
+    "miro",
+    "mermaid-chart",
+    "eraser"
+  ]
+}

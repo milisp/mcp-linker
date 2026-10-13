@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/mermaid-chart",
+  "title": "Mermaid Chart",
+  "description": "Validate and render Mermaid diagrams",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/Mermaid-Chart/mermaid-mcp",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/mermaid-chart.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.mermaidchart.com/mcp"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "mermaid-chart",
+        "category": "Design & Media"
+      }
+    }
+  }
+}

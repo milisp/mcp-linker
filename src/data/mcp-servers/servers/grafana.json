@@ -1,0 +1,41 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/grafana",
+  "title": "Grafana",
+  "description": "Query dashboards, metrics, logs, and alerts",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/grafana/mcp-grafana",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/grafana.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.grafana.com/mcp",
+      "headers": [
+        {
+          "description": "URL of your Grafana Cloud instance",
+          "placeholder": "https://<instance>.grafana.net",
+          "name": "X-Grafana-URL"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "grafana",
+        "category": "Infrastructure & DevOps"
+      }
+    }
+  }
+}

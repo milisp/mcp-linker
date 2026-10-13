@@ -1,5 +1,8 @@
 # MCP server catalog
 
+This folder is a copy of [milisp/mcp-servers](https://github.com/milisp/mcp-servers).
+Edit the catalog there, then run `scripts/sync-catalog.sh` to update it here.
+
 Each JSON file uses the official MCP Registry server.json format:
 https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json
 
@@ -9,12 +12,7 @@ client configuration fields are not stored in the JSON catalog.
 
 ## Adding a server
 
-1. Create `<server-name>.json` with `$schema`, `name`, `description`, and `version`.
-2. Describe installation options in `packages` and/or `remotes`.
-3. Register the file in `index.ts`. Array order controls catalog display order.
-4. Add optional official fields such as `title`, `websiteUrl`, `repository`, and `icons`.
-5. Declare inputs using `environmentVariables`, headers, or remote variables. Never commit secrets.
-6. Validate against the linked schema and run `npm run typecheck`.
+Follow the steps in the mcp-servers README, run `bun run validate` there, then sync.
 
 Catalog-specific metadata lives at
 `_meta["io.modelcontextprotocol.registry/publisher-provided"]["io.github.milisp.mcp-linker"]`:
