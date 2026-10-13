@@ -1,6 +1,14 @@
 import { useTranslation } from "react-i18next";
-import { FolderInput } from "lucide-react";
+import { Check, ChevronsUpDown, FolderInput } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { claudeWrite, LicenseRequiredError } from "@/lib/claude";
 import { type ClaudeCodeScope, useCCProjectStore } from "@/stores/ccProject";
@@ -24,17 +33,20 @@ export function CopyToProjectDialog({ serverName, open, onOpenChange }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { projects, selectedProject, selectedScope } = useCCProjectStore();
-  const visible = useProjectPreferences(state => state.preferences.claude_code?.visibleProjects ?? []);
-  const targets = [...new Set([...visible, ...projects])].filter(Boolean);
+  const { selectedProject, selectedScope } = useCCProjectStore();
+  const saved = useProjectPreferences(state => state.preferences.claude_code?.visibleProjects);
+  // Same choices as the sidebar "Projects" list in InstallationTarget.
+  const visible = saved ?? (selectedProject ? [selectedProject] : []);
+  const targets = [...new Set([...visible, ...(selectedProject ? [selectedProject] : [])])];
   const [toDir, setToDir] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [toScope, setToScope] = useState<ClaudeCodeScope>("local");
   const [exists, setExists] = useState(false);
   const [busy, setBusy] = useState(false);
   const needsProject = toScope !== "user";
 
   const reset = (next: boolean) => {
-    if (!next) { setExists(false); setToDir(""); }
+    if (!next) { setExists(false); setToDir(""); setPickerOpen(false); }
     onOpenChange(next);
   };
 
@@ -63,7 +75,7 @@ export function CopyToProjectDialog({ serverName, open, onOpenChange }: {
 
   return (
     <Dialog open={open} onOpenChange={reset}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Copy "{serverName}"</DialogTitle>
           <DialogDescription>
@@ -80,17 +92,33 @@ export function CopyToProjectDialog({ serverName, open, onOpenChange }: {
             </SelectContent>
           </Select>
           {needsProject && (
-            <Select value={toDir} onValueChange={value => { setToDir(value); setExists(false); }}>
-              <SelectTrigger aria-label="Target project"><SelectValue placeholder="Choose a project" /></SelectTrigger>
-              <SelectContent>
-                {targets.map(path => (
-                  <SelectItem key={path} value={path}>
-                    <span className="block">{basename(path)}</span>
-                    <span className="block max-w-sm break-all text-xs text-muted-foreground">{path}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" aria-expanded={pickerOpen} aria-label="Target project" className="justify-between font-normal">
+                  <span className="min-w-0 truncate">{toDir ? basename(toDir) : "Choose a project"}</span>
+                  <ChevronsUpDown className="size-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-(--radix-popover-trigger-width) min-w-80 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Filter projects" />
+                  <CommandList>
+                    <CommandEmpty>No matching project.</CommandEmpty>
+                    <CommandGroup>
+                      {targets.map(path => (
+                        <CommandItem key={path} value={path} onSelect={() => { setToDir(path); setExists(false); setPickerOpen(false); }}>
+                          <span className="flex min-w-0 flex-col">
+                            <span className="truncate">{basename(path)}</span>
+                            <span className="break-all text-xs text-muted-foreground">{path}</span>
+                          </span>
+                          {toDir === path && <Check className="ml-auto" />}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
         {exists && (
