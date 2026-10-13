@@ -96,7 +96,7 @@ const ja: { translation: TranslationSchema } = {
       buy: "ライセンスを購入",
     },
     upgrade: {
-      description: "この機能は MCP Linker Personal と Pro（買い切り）に含まれます。サーバーの追加・編集・有効化などの基本操作は引き続き無料です。",
+      description: "この機能には MCP Linker のライセンス（Personal または Commercial、買い切り）が必要です。Claude Desktop や Cursor など他のクライアントでのサーバー管理は引き続き無料です。",
       enterKey: "ライセンスキーを入力",
       buy: "ライセンスを購入",
       features: {

@@ -96,7 +96,7 @@ const zh: { translation: TranslationSchema } = {
       buy: "购买许可证",
     },
     upgrade: {
-      description: "此功能属于 MCP Linker Personal 和 Pro（一次性购买）。添加、编辑、启用 server 等基础操作仍然免费。",
+      description: "此功能需要 MCP Linker 许可证（Personal 或 Commercial，一次性购买）。在 Claude Desktop、Cursor 等其他客户端中管理 server 仍然免费。",
       enterKey: "输入许可证密钥",
       buy: "购买许可证",
       features: {

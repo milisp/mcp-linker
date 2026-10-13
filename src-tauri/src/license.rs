@@ -47,7 +47,7 @@ pub fn require(feature: &str) -> Result<(), String> {
     if LICENSED.load(Ordering::Relaxed) {
         Ok(())
     } else {
-        Err(format!("{feature} requires an MCP Linker Personal or Pro license."))
+        Err(format!("{feature} requires an MCP Linker Personal or Commercial license."))
     }
 }
 

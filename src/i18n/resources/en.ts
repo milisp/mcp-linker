@@ -96,7 +96,7 @@ const en: { translation: TranslationSchema } = {
       buy: "Buy a license",
     },
     upgrade: {
-      description: "This is part of MCP Linker Personal and Pro, a one-time purchase. Adding, editing, and enabling servers stays free.",
+      description: "This needs an MCP Linker license, Personal or Commercial, bought once. Managing servers in Claude Desktop, Cursor, and other clients stays free.",
       enterKey: "Enter license key",
       buy: "Buy a license",
       features: {

@@ -1,6 +1,7 @@
 # License activation
 
-Personal and Pro are one-time purchases on Polar. Polar issues a license key
+Personal and Commercial are one-time purchases on Polar. They unlock the
+same features; Commercial adds the commercial use license and priority support. Polar issues a license key
 (the product's License Key benefit) and emails it to the buyer. MCP Linker
 activates the key directly with Polar; the website and no other server are
 involved.
@@ -117,6 +118,6 @@ MCP_LINKER_POLAR_ORG_ID". The release workflow refuses to run when the
 
 ## Polar setup
 
-1. Create the Personal and Pro products as one-time purchases.
+1. Create the Personal and Commercial products as one-time purchases.
 2. Add the License Key benefit to both, with an activation limit per key.
 3. Add the `MCP_LINKER_POLAR_ORG_ID` secret to the GitHub repository.

@@ -96,7 +96,7 @@ const es: { translation: TranslationSchema } = {
       buy: "Comprar una licencia",
     },
     upgrade: {
-      description: "Esta función forma parte de MCP Linker Personal y Pro (pago único). Añadir, editar y activar servidores sigue siendo gratis.",
+      description: "Esto requiere una licencia de MCP Linker, Personal o Commercial, de pago único. Gestionar servidores en Claude Desktop, Cursor y otros clientes sigue siendo gratis.",
       enterKey: "Introducir clave de licencia",
       buy: "Comprar una licencia",
       features: {

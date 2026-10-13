@@ -97,7 +97,7 @@ const tc: { translation: TranslationSchema } = {
       buy: "購買授權",
     },
     upgrade: {
-      description: "此功能屬於 MCP Linker Personal 與 Pro（一次性購買）。新增、編輯、啟用 server 等基本操作仍然免費。",
+      description: "此功能需要 MCP Linker 授權（Personal 或 Commercial，一次性購買）。在 Claude Desktop、Cursor 等其他用戶端中管理 server 仍然免費。",
       enterKey: "輸入授權金鑰",
       buy: "購買授權",
       features: {
