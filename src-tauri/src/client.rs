@@ -1,3 +1,4 @@
+use crate::json_manager::file_io::parse_jsonc;
 use dirs::home_dir;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
@@ -86,7 +87,7 @@ fn migrate_legacy_copilot(legacy: &Path, user: &Path, marker: &Path) -> Result<(
     }
     let read = |path: &Path| -> Result<Value, String> {
         match std::fs::read_to_string(path) {
-            Ok(text) => serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display())),
+            Ok(text) => parse_jsonc(&text).map_err(|e| format!("{}: {e}", path.display())),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(json!({})),
             Err(e) => Err(format!("{}: {e}", path.display())),
         }
