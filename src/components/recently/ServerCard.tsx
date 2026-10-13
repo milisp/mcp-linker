@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useRepoUrlStore } from "@/stores/repoUrl";
 import { ConfigType } from "@/types/mcpConfig";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,10 +25,6 @@ export function ServerCard({
 }: ServerCardProps) {
   const [open, setOpen] = useState(false);
   const { t } = useTranslation();
-  const setRepoUrl = useRepoUrlStore((state) => state.setRepoUrl);
-
-  // Construct GitHub URL from serverKey
-  const githubUrl = `https://github.com/${serverKey}`;
 
   return (
     <SharedServerCard
@@ -40,7 +35,7 @@ export function ServerCard({
       primaryAction={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setRepoUrl(githubUrl)}>
+            <Button>
               <span>{t("get")}</span>
             </Button>
           </DialogTrigger>

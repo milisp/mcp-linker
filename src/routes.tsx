@@ -2,6 +2,7 @@ import ClaudeCodeManage from "@/pages/ClaudeCodeManage";
 import Discover from "@/pages/Discover";
 import Manage from "@/pages/manage";
 import NotesPage from "@/pages/NotesPage";
+import { NewServerPage } from "@/pages/NewServerPage";
 import { ServerPage } from "@/pages/ServerPage";
 import SettingsPage from "@/pages/SettingsPage";
 import {
@@ -16,7 +17,7 @@ import { InstallAppPage } from "./pages/InstallApp";
 import { useViewStore } from "./stores/viewStore";
 
 export const AppRoutes = () => {
-  const { view } = useViewStore();
+  const { view, params } = useViewStore();
 
   switch (view) {
     case "discover":
@@ -32,7 +33,7 @@ export const AppRoutes = () => {
     case "about":
       return <About />;
     case "server":
-      return <ServerPage />;
+      return params.id === "new" ? <NewServerPage /> : <ServerPage />;
     case "install-app":
       return <InstallAppPage />;
     case "notes":

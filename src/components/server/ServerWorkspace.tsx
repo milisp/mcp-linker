@@ -17,7 +17,7 @@ import { clientOptions } from "@/constants/clients";
 import { InstallationTarget } from "@/components/settings/InstallationTarget";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export function ServerWorkspace({ server, onSaved, onUninstalled, initialTab = "connection" }: { initialTab?: "connection" | "tools"; server: ServerType; onSaved?: () => void; onUninstalled?: () => void }) {
+export function ServerWorkspace({ server, onSaved, onUninstalled, initialTab = "connection" }: { initialTab?: "connection" | "tools"; server: ServerType; onSaved?: (name: string) => void; onUninstalled?: () => void }) {
   const editor = useServerEditor(server);
   const { saveServerConfig } = useSaveServerConfig();
   const { refreshServerList } = useMcpRefresh();
@@ -62,7 +62,7 @@ export function ServerWorkspace({ server, onSaved, onUninstalled, initialTab = "
     lock.current = true; setSaving(true); setError(null);
     try {
       const saved = await saveServerConfig({ selectedClient: editor.selectedClient, selectedPath: editor.selectedPath || "", currentServer: server, serverName: editor.draft.name, config, mode: installed ? "update" : "add", disabled: !!server.installed?.disabled, clearDraftOnSuccess: false, setIsDialogOpen: () => {} });
-      if (saved) { editor.markSaved(); setRevision(value => value + 1); onSaved?.(); }
+      if (saved) { editor.markSaved(); setRevision(value => value + 1); onSaved?.(editor.draft.name); }
       else setError("Configuration could not be saved. Review the error and try again.");
     } finally { lock.current = false; setSaving(false); }
   };
@@ -78,6 +78,8 @@ export function ServerWorkspace({ server, onSaved, onUninstalled, initialTab = "
     }
   };
   const section = "space-y-2 p-4";
+  // A custom server offers one blank config per transport; the type control switches between them.
+  const custom = server.source === "custom";
   return <div className="min-w-0 space-y-4">
     {server.installed?.disabled && <p className="text-sm text-muted-foreground">This server is disabled in the client. Saving preserves that state; inspection runs separately.</p>}
     <Tabs defaultValue={initialTab}>
@@ -91,9 +93,18 @@ export function ServerWorkspace({ server, onSaved, onUninstalled, initialTab = "
       </div>
       <TabsContent value="connection" className="space-y-4">
         <div className="divide-y rounded-xl border bg-card">
-          <label className={`block ${section}`}><span className="text-sm font-medium">Server name</span><input className="w-full rounded-md border bg-transparent px-3 py-2 text-sm" readOnly={!!server.installed} value={editor.draft.name} onChange={event => editor.setName(event.target.value)} /></label>
-          {editor.draft.configs.length > 1 && <div className="flex flex-wrap gap-2 p-4" aria-label="Connection options">{editor.draft.configs.map((option, index) => <Button key={index} size="sm" variant={index === editor.draft.index ? "default" : "outline"} onClick={() => editor.selectConfig(index)}>{(option.type === "http" || option.type === "sse") && <Cloud className="size-3.5" />}{option.type === "stdio" ? "Local" : "Remote"} · {option.type} {index + 1}</Button>)}</div>}
-          <ConnectionFields key={`${editor.key}:${editor.draft.index}:${editor.config.type}`} config={editor.config} onChange={editor.setConfig} sectionClassName={section} />
+          <label className={`block ${section}`}><span className="text-sm font-medium">Server name</span><input className="w-full rounded-md border bg-transparent px-3 py-2 text-sm" readOnly={!!server.installed} value={editor.draft.name} placeholder={custom ? "MCP server name" : undefined} onChange={event => editor.setName(event.target.value)} /></label>
+          {custom && <div className="flex flex-wrap items-center justify-between gap-2 p-4">
+            <span className="text-sm font-medium">Type</span>
+            <div className="flex gap-1 rounded-lg bg-muted p-1" role="radiogroup" aria-label="Type">
+              {(["stdio", "http", "sse"] as const).map(type => {
+                const index = editor.draft.configs.findIndex(option => option.type === type);
+                return index < 0 ? null : <Button key={type} type="button" size="sm" role="radio" aria-checked={index === editor.draft.index} variant={index === editor.draft.index ? "outline" : "ghost"} className="h-7 px-3 text-xs" onClick={() => editor.selectConfig(index)}>{type === "stdio" ? "STDIO" : type === "http" ? "Streamable HTTP" : "SSE"}</Button>;
+              })}
+            </div>
+          </div>}
+          {!custom && editor.draft.configs.length > 1 && <div className="flex flex-wrap gap-2 p-4" aria-label="Connection options">{editor.draft.configs.map((option, index) => <Button key={index} size="sm" variant={index === editor.draft.index ? "default" : "outline"} onClick={() => editor.selectConfig(index)}>{(option.type === "http" || option.type === "sse") && <Cloud className="size-3.5" />}{option.type === "stdio" ? "Local" : "Remote"} · {option.type} {index + 1}</Button>)}</div>}
+          <ConnectionFields key={`${editor.key}:${editor.draft.index}:${editor.config.type}`} config={editor.config} onChange={editor.setConfig} sectionClassName={section} showTransport={!custom} commandShortcuts={custom} />
         </div>
         {editor.draft.loadError && <p role="alert" className="text-sm text-destructive">Could not read the installed configuration: {editor.draft.loadError} <Button variant="outline" size="sm" onClick={editor.retryLoad}>Retry</Button></p>}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

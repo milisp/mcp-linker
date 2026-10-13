@@ -11,10 +11,12 @@ export function useServerEditor(server: ServerType) {
   const { selectedClient, selectedPath } = useClientPathStore();
   const selectedProject = useCCProjectStore(state => state.selectedProject);
   const selectedScope = useCCProjectStore(state => state.selectedScope);
-  const identity = server.source === "saved" ? ["normalized", server.id, server.name] : server.id || server.name;
+  // Saved and custom servers are named by the user, not by a registry id.
+  const named = server.source === "saved" || server.source === "custom";
+  const identity = named ? ["normalized", server.id, server.name] : server.id || server.name;
   const key = JSON.stringify([identity, selectedClient, selectedPath, selectedClient === "claude_code" ? [selectedProject, selectedScope] : null]);
   const initial = useMemo<ServerEditorDraft>(() => ({
-    name: server.installed?.name ?? (server.source === "saved" ? server.name : server.id.split("/").pop() || server.name),
+    name: server.installed?.name ?? (named ? server.name : server.id.split("/").pop() || server.name),
     configs: structuredClone(server.configs?.some(config => config.type !== "encrypted") ? server.configs.filter(config => config.type !== "encrypted").map(config => normalizeServerConfig(config) ?? config) : [{ type: "stdio", command: "", args: [], env: {} }]),
     index: 0,
     dirty: false,

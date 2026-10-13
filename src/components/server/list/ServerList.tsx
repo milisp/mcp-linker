@@ -1,7 +1,6 @@
 import { availableClients } from "@/constants/clients";
 import { useCCProjectStore } from "@/stores/ccProject";
 import { useClientPathStore } from "@/stores/clientPathStore";
-import { useRepoUrlStore } from "@/stores/repoUrl";
 import { useViewStore } from "@/stores/viewStore";
 import type { ServerType } from "@/types";
 import { useEffect, useState } from "react";
@@ -16,7 +15,6 @@ interface ServerListProps {
 }
 
 export function ServerList({ mcpServers }: ServerListProps) {
-  const setRepoUrl = useRepoUrlStore(state => state.setRepoUrl);
   const navigate = useViewStore(state => state.navigate);
   const { selectedClient, selectedPath } = useClientPathStore();
   const selectedProject = useCCProjectStore(state => state.selectedProject);
@@ -41,7 +39,6 @@ export function ServerList({ mcpServers }: ServerListProps) {
   }, [targetKey]);
 
   const openDetails = (server: ServerType) => {
-    setRepoUrl(server.source);
     navigate(`/servers/${encodeURIComponent(server.id)}`);
   };
 
