@@ -83,6 +83,18 @@ const en: { translation: TranslationSchema } = {
     general: "General",
     language: "Language",
     encryption: "Encryption",
+    license: {
+      title: "License",
+      active: "Activated on this device.",
+      inactive: "Not activated. Enter the license key from your purchase email.",
+      placeholder: "License key",
+      activate: "Activate",
+      activated: "License activated.",
+      deactivate: "Deactivate",
+      deactivated: "License deactivated on this device.",
+      device: "Device ID: {{id}}",
+      buy: "Buy a license",
+    },
   },
 };
 

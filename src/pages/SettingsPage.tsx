@@ -19,6 +19,7 @@ export default function SettingPage() {
   const SECTIONS = [
     { id: "general", label: t("general", "General") },
     { id: "encryption", label: t("encryption", "Encryption") },
+    { id: "license", label: t("license.title") },
   ];
   const [selectedSection, setSelectedSection] = useState<string>("general");
   const { isChecking, triggerManualCheck } = useUpdateStore();

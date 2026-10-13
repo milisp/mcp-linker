@@ -83,6 +83,18 @@ const ja: { translation: TranslationSchema } = {
     general: "一般",
     language: "言語",
     encryption: "暗号化",
+    license: {
+      title: "ライセンス",
+      active: "このデバイスで有効化されています。",
+      inactive: "未有効化です。購入メールに記載のライセンスキーを入力してください。",
+      placeholder: "ライセンスキー",
+      activate: "有効化",
+      activated: "ライセンスを有効化しました。",
+      deactivate: "無効化",
+      deactivated: "このデバイスのライセンスを無効化しました。",
+      device: "デバイス ID: {{id}}",
+      buy: "ライセンスを購入",
+    },
   },
 };
 

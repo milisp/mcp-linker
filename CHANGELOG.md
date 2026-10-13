@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### New Features
+- **License activation** — activate a Personal or Pro license key in Settings → License; nothing is gated by it yet
+
 ## [2.4.0] - 2026-10-10
 
 ### New Features

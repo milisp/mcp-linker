@@ -2,6 +2,7 @@ import EncryptionKeyCard from "@/components/settings/EncryptionKeyCard";
 import SecurityNoticeCard from "@/components/settings/SecurityNoticeCard";
 import React from "react";
 import LangSelect from "./LangSelect";
+import LicenseCard from "./LicenseCard";
 
 interface Key {
   id: string;
@@ -43,6 +44,10 @@ const SettingsSectionContent: React.FC<SettingsSectionContentProps> = ({
       </div>
     );
   }
+  if (selectedSection === "license") {
+    return <LicenseCard />;
+  }
+
   // Add more sections here
   return null;
 };

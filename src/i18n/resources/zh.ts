@@ -83,6 +83,18 @@ const zh: { translation: TranslationSchema } = {
     general: "通用",
     language: "语言",
     encryption: "加密",
+    license: {
+      title: "许可证",
+      active: "已在此设备上激活。",
+      inactive: "未激活。请输入购买邮件中的许可证密钥。",
+      placeholder: "许可证密钥",
+      activate: "激活",
+      activated: "许可证已激活。",
+      deactivate: "停用",
+      deactivated: "已在此设备上停用许可证。",
+      device: "设备 ID：{{id}}",
+      buy: "购买许可证",
+    },
   },
 };
 

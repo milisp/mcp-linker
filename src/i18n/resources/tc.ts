@@ -84,6 +84,18 @@ const tc: { translation: TranslationSchema } = {
     general: "通用",
     language: "語言",
     encryption: "加密",
+    license: {
+      title: "授權",
+      active: "已在此裝置上啟用。",
+      inactive: "尚未啟用。請輸入購買郵件中的授權金鑰。",
+      placeholder: "授權金鑰",
+      activate: "啟用",
+      activated: "授權已啟用。",
+      deactivate: "停用",
+      deactivated: "已在此裝置上停用授權。",
+      device: "裝置 ID：{{id}}",
+      buy: "購買授權",
+    },
   },
 };
 

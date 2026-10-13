@@ -80,4 +80,16 @@ export interface TranslationSchema {
   general: string;
   language: string;
   encryption: string;
+  license: {
+    title: string;
+    active: string;
+    inactive: string;
+    placeholder: string;
+    activate: string;
+    activated: string;
+    deactivate: string;
+    deactivated: string;
+    device: string;
+    buy: string;
+  };
 }

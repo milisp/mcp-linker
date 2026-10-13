@@ -36,3 +36,5 @@ bun.lockb
 CLAUDE.md
 
 tauri-app/src/bindings/
+# Local build env (Polar org id for license activation)
+src-tauri/.cargo/config.toml

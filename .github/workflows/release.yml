@@ -10,6 +10,8 @@ env:
   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
   TAURI_BUNDLE: all
+  # Compiled into license.rs; a build without it cannot activate licenses.
+  MCP_LINKER_POLAR_ORG_ID: ${{ secrets.MCP_LINKER_POLAR_ORG_ID }}
 
 jobs:
   # Runs once before the build matrix: fail fast on version mismatches and
@@ -22,6 +24,13 @@ jobs:
       notes: ${{ steps.notes.outputs.body }}
     steps:
       - uses: actions/checkout@v7
+
+      - name: Check license configuration
+        run: |
+          if [ -z "$MCP_LINKER_POLAR_ORG_ID" ]; then
+            echo "::error::MCP_LINKER_POLAR_ORG_ID secret is not set. Builds without it can't activate licenses."
+            exit 1
+          fi
 
       - name: Check versions match
         run: |
