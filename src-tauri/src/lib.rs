@@ -23,6 +23,8 @@ mod mcp_commands;
 mod mcp_crud;
 mod mcp_inspector;
 mod mcp_sync;
+#[cfg(target_os = "macos")]
+mod menu;
 mod window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -96,6 +98,8 @@ pub fn run() {
                 let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
                 loop { interval.tick().await; inspector.expire_idle().await; }
             });
+            #[cfg(target_os = "macos")]
+            menu::setup(_app)?;
             #[cfg(any(windows, target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
