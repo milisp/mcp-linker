@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { availableClients } from "@/constants/clients";
 import { LicenseRequiredError, claudeWrite, clientWrite, toClaudeRequest } from "@/lib/claude";
-import { needspathClient } from "@/lib/data";
+import { needspathClient, pickClientPath } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import {
   SCOPE_LABEL,
@@ -40,7 +40,6 @@ import { useClientPathStore } from "@/stores/clientPathStore";
 import { useProjectPreferences } from "@/stores/projectPreferences";
 import { ServerTableData } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
-import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { ArrowLeft, Check, ChevronRight, ChevronsUpDown, ChevronsRight, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -205,8 +204,8 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
   const isTarget = (scope: ClaudeCodeScope, dir: string) => ccSource(scope, dir) === targetValue;
 
   const browseFromPath = async () => {
-    const picked = await openDialog({ directory: true, multiple: false });
-    if (typeof picked === "string") {
+    const picked = await pickClientPath(fromClient);
+    if (picked) {
       setFromPath(picked);
       setClientPath(fromClient, picked);
       loadSource();
