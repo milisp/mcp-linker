@@ -1,4 +1,5 @@
 use dirs::home_dir;
+use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 
 /// Where a JSON client keeps its MCP config.
@@ -12,24 +13,33 @@ pub struct ClientConfig {
 impl ClientConfig {
     pub fn new(name: &str, path: Option<&str>) -> Result<Self, String> {
         let home = home_dir().ok_or("Failed to get home directory")?;
-        let project = path.filter(|p| !p.is_empty()).map(PathBuf::from);
+        let path = Self::resolve(&home, name, path)?;
+        if name == "copilot" && path.ends_with("Code/User/mcp.json") {
+            let marker = home.join(".config/mcplinker/copilot-user-config-migrated");
+            if let Err(e) = migrate_legacy_copilot(&home.join(".vscode/mcp.json"), &path, &marker) {
+                eprintln!("[Copilot] legacy config migration skipped: {e}");
+            }
+        }
+        Ok(Self { path })
+    }
 
-        let path = match name {
-            "claude" => Self::app_support_dir(&home).join("Claude/claude_desktop_config.json"),
-            "cline" => Self::vscode_user_dir(&home)
+    /// Pure path lookup; `new` adds the one-time Copilot migration on top.
+    fn resolve(home: &Path, name: &str, path: Option<&str>) -> Result<PathBuf, String> {
+        let project = path.filter(|p| !p.is_empty()).map(PathBuf::from);
+        Ok(match name {
+            "claude" => Self::app_support_dir(home).join("Claude/claude_desktop_config.json"),
+            "cline" => Self::vscode_user_dir(home)
                 .join("globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"),
             "copilot" => match project {
                 Some(dir) => dir.join(".vscode/mcp.json"),
-                None => Self::vscode_user_dir(&home).join("mcp.json"),
+                None => Self::vscode_user_dir(home).join("mcp.json"),
             },
-            "cursor" => project.unwrap_or(home).join(".cursor/mcp.json"),
+            "cursor" => project.unwrap_or_else(|| home.to_path_buf()).join(".cursor/mcp.json"),
             "mcphub" => home.join(".config/mcphub/servers.json"),
             "mcplinker" => home.join(".config/mcplinker/mcp.json"),
             "custom" => Self::custom_file(project)?,
             other => return Err(format!("Unknown client '{other}'")),
-        };
-
-        Ok(Self { path })
+        })
     }
 
     fn custom_file(path: Option<PathBuf>) -> Result<PathBuf, String> {
@@ -66,13 +76,80 @@ impl ClientConfig {
     }
 }
 
+/// mcp-linker used to keep Copilot's user servers in ~/.vscode/mcp.json, which
+/// VS Code only reads when the home folder is opened as a workspace. Copy them
+/// once into the real user config. Entries already there win, and the old file
+/// is left alone since it may still be that workspace's config.
+fn migrate_legacy_copilot(legacy: &Path, user: &Path, marker: &Path) -> Result<(), String> {
+    if marker.exists() || !legacy.is_file() {
+        return Ok(());
+    }
+    let read = |path: &Path| -> Result<Value, String> {
+        match std::fs::read_to_string(path) {
+            Ok(text) => serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display())),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(json!({})),
+            Err(e) => Err(format!("{}: {e}", path.display())),
+        }
+    };
+    let old = read(legacy)?;
+    let mut new = read(user)?;
+    if !new.is_object() {
+        return Err(format!("{} is not a JSON object", user.display()));
+    }
+
+    let known = |new: &Value, name: &str| {
+        ["servers", "__disabled"]
+            .iter()
+            .any(|section| new.get(*section).and_then(|s| s.get(name)).is_some())
+    };
+    let mut changed = false;
+    for section in ["servers", "__disabled"] {
+        let Some(entries) = old.get(section).and_then(Value::as_object) else { continue };
+        for (name, config) in entries {
+            if known(&new, name) {
+                continue;
+            }
+            if !new[section].is_object() {
+                new[section] = json!({});
+            }
+            new[section][name] = config.clone();
+            changed = true;
+        }
+    }
+    // `${input:id}` placeholders in the copied servers need their input definitions.
+    if let Some(inputs) = old.get("inputs").and_then(Value::as_array) {
+        if !new["inputs"].is_array() {
+            new["inputs"] = json!([]);
+        }
+        let list = new["inputs"].as_array_mut().unwrap();
+        for input in inputs {
+            if !list.iter().any(|have| have.get("id").is_some() && have.get("id") == input.get("id")) {
+                list.push(input.clone());
+                changed = true;
+            }
+        }
+    }
+
+    let write = |path: &Path, text: String| -> Result<(), String> {
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        }
+        std::fs::write(path, text).map_err(|e| format!("{}: {e}", path.display()))
+    };
+    if changed {
+        write(user, serde_json::to_string_pretty(&new).map_err(|e| e.to_string())?)?;
+    }
+    write(marker, format!("migrated {} into {}\n", legacy.display(), user.display()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use tempfile::tempdir;
 
+    // Never touch the real home: `new` would run the Copilot migration there.
     fn path_of(name: &str, path: Option<&str>) -> Result<PathBuf, String> {
-        ClientConfig::new(name, path).map(|c| c.path)
+        ClientConfig::resolve(Path::new("/home/test"), name, path)
     }
 
     #[test]
@@ -84,7 +161,7 @@ mod tests {
 
     #[test]
     fn cursor_uses_home_or_project_folder() {
-        assert!(path_of("cursor", None).unwrap().ends_with(".cursor/mcp.json"));
+        assert_eq!(path_of("cursor", None).unwrap(), PathBuf::from("/home/test/.cursor/mcp.json"));
         assert_eq!(path_of("cursor", Some("/work/app")).unwrap(), PathBuf::from("/work/app/.cursor/mcp.json"));
     }
 
@@ -119,5 +196,105 @@ mod tests {
     #[test]
     fn unknown_client_is_an_error() {
         assert!(path_of("vscode", None).is_err());
+    }
+
+    mod legacy_copilot {
+        use super::super::migrate_legacy_copilot;
+        use serde_json::{json, Value};
+        use std::path::{Path, PathBuf};
+        use tempfile::{tempdir, TempDir};
+
+        struct Paths { _dir: TempDir, legacy: PathBuf, user: PathBuf, marker: PathBuf }
+
+        fn paths() -> Paths {
+            let dir = tempdir().unwrap();
+            let root = dir.path().to_path_buf();
+            Paths {
+                legacy: root.join("home/.vscode/mcp.json"),
+                user: root.join("support/Code/User/mcp.json"),
+                marker: root.join("home/.config/mcplinker/marker"),
+                _dir: dir,
+            }
+        }
+
+        fn write(path: &Path, value: Value) {
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, value.to_string()).unwrap();
+        }
+
+        fn read(path: &Path) -> Value {
+            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+        }
+
+        #[test]
+        fn copies_servers_disabled_and_inputs_into_a_new_user_config() {
+            let p = paths();
+            write(&p.legacy, json!({
+                "servers": { "a": { "type": "stdio", "command": "a" } },
+                "__disabled": { "off": { "command": "off" } },
+                "inputs": [{ "id": "token", "type": "promptString" }]
+            }));
+
+            migrate_legacy_copilot(&p.legacy, &p.user, &p.marker).unwrap();
+
+            let user = read(&p.user);
+            assert_eq!(user["servers"]["a"]["command"], "a");
+            assert_eq!(user["__disabled"]["off"]["command"], "off");
+            assert_eq!(user["inputs"][0]["id"], "token");
+            assert!(p.marker.exists());
+            assert!(p.legacy.exists(), "the legacy file stays in place");
+        }
+
+        #[test]
+        fn keeps_existing_user_entries_and_inputs() {
+            let p = paths();
+            write(&p.legacy, json!({
+                "servers": { "a": { "command": "old" }, "b": { "command": "b" }, "off": { "command": "x" } },
+                "inputs": [{ "id": "token", "description": "old" }, { "id": "other" }]
+            }));
+            write(&p.user, json!({
+                "servers": { "a": { "command": "new" } },
+                "__disabled": { "off": { "command": "kept" } },
+                "inputs": [{ "id": "token", "description": "new" }]
+            }));
+
+            migrate_legacy_copilot(&p.legacy, &p.user, &p.marker).unwrap();
+
+            let user = read(&p.user);
+            assert_eq!(user["servers"]["a"]["command"], "new");
+            assert_eq!(user["servers"]["b"]["command"], "b");
+            assert!(user["servers"].get("off").is_none(), "a disabled entry with that name already exists");
+            assert_eq!(user["inputs"], json!([{ "id": "token", "description": "new" }, { "id": "other" }]));
+        }
+
+        #[test]
+        fn runs_only_once() {
+            let p = paths();
+            write(&p.legacy, json!({ "servers": { "a": { "command": "a" } } }));
+            migrate_legacy_copilot(&p.legacy, &p.user, &p.marker).unwrap();
+
+            // A server the user deletes afterwards must not come back.
+            write(&p.user, json!({ "servers": {} }));
+            migrate_legacy_copilot(&p.legacy, &p.user, &p.marker).unwrap();
+            assert_eq!(read(&p.user), json!({ "servers": {} }));
+        }
+
+        #[test]
+        fn does_nothing_without_a_legacy_file() {
+            let p = paths();
+            migrate_legacy_copilot(&p.legacy, &p.user, &p.marker).unwrap();
+            assert!(!p.user.exists());
+            assert!(!p.marker.exists());
+        }
+
+        #[test]
+        fn leaves_files_alone_when_the_legacy_file_is_invalid() {
+            let p = paths();
+            std::fs::create_dir_all(p.legacy.parent().unwrap()).unwrap();
+            std::fs::write(&p.legacy, "{ not json").unwrap();
+            assert!(migrate_legacy_copilot(&p.legacy, &p.user, &p.marker).is_err());
+            assert!(!p.user.exists());
+            assert!(!p.marker.exists(), "retry after the user fixes the file");
+        }
     }
 }
