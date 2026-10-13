@@ -47,7 +47,7 @@ export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, ins
         aria-label={`View details for ${server.name}`}
         className="flex min-w-0 flex-1 items-center gap-3 text-left rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground ${server.logoUrl && failedLogo !== server.logoUrl ? "border bg-white" : "bg-muted"}`}>
           {server.logoUrl && failedLogo !== server.logoUrl ? (
             <img src={server.logoUrl} alt="" loading="lazy" className="size-7 rounded object-contain" onError={() => setFailedLogo(server.logoUrl!)} />
           ) : <Server className="size-5" />}

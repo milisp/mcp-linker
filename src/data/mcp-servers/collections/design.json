@@ -3,6 +3,9 @@
   "description": "Move from diagrams and whiteboards to polished designs without leaving your editor.",
   "servers": [
     "figma",
+    "canva",
+    "whimsical",
+    "mobbin",
     "miro",
     "mermaid-chart",
     "eraser"

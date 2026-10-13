@@ -7,7 +7,8 @@
     "Infrastructure & DevOps",
     "Database & Data",
     "Automation & Integration",
-    "Analytics"
+    "Analytics",
+    "Sales & Marketing"
   ],
   "servers": [
     "sentry",
@@ -43,7 +44,19 @@
     "miro",
     "mermaid-chart",
     "eraser",
-    "posthog"
+    "posthog",
+    "canva",
+    "whimsical",
+    "mobbin",
+    "monday",
+    "context7",
+    "workos",
+    "honeycomb",
+    "amplitude",
+    "apollo",
+    "close",
+    "zoominfo",
+    "lusha"
   ],
   "collections": [
     "ios",
@@ -53,6 +66,7 @@
     "design",
     "payments",
     "product-analytics",
-    "project-management"
+    "project-management",
+    "sales"
   ]
 }

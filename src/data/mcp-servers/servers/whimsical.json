@@ -1,0 +1,35 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/whimsical",
+  "title": "Whimsical",
+  "description": "Create flowcharts, mind maps, wireframes, and docs in Whimsical",
+  "version": "1.0.0",
+  "websiteUrl": "https://whimsical.com/mcp",
+  "repository": {
+    "url": "https://github.com/WhimsicalCode/mcp-server-guide",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/whimsical.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.whimsical.com/mcp"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "whimsical",
+        "category": "Design & Media"
+      }
+    }
+  }
+}
