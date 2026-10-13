@@ -173,7 +173,7 @@ export function ServerPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-6"><ServerWorkspace key={server.id} server={server} initialTab={search.tab === "tools" ? "tools" : "connection"} /></div>
+      <div className="mt-6"><ServerWorkspace key={server.id} server={server} initialTab={search.tab === "tools" ? "tools" : "connection"} onUninstalled={installedRoute ? () => navigate("/manage", { replace: true }) : undefined} /></div>
     </div>
   );
 }

@@ -69,9 +69,11 @@ export function useServerEditor(server: ServerType) {
   return {
     key, draft, config, selectedClient, selectedPath, selectedProject, selectedScope,
     setName: (name: string) => update(draft => ({ ...draft, name, dirty: true })),
-    selectConfig: (index: number) => update(draft => ({ ...draft, index })),
+    // Switching an installed server to another option is an unsaved change.
+    selectConfig: (index: number) => update(draft => ({ ...draft, index, dirty: draft.dirty || (!!draft.persistedName && index !== draft.index) })),
     setConfig,
     retryLoad: () => { update(draft => ({ ...draft, loaded: false, loadError: undefined })); setLoadRevision(value => value + 1); },
+    markUninstalled: () => update(draft => ({ ...draft, persistedName: undefined })),
     markSaved: () => update(draft => ({ ...draft, dirty: false, persistedName: draft.name, loadError: undefined })),
   };
 }

@@ -27,7 +27,3 @@ export function parseArguments(text: string): string[] {
   if (started) args.push(token);
   return args;
 }
-
-export function formatArguments(args: string[]): string {
-  return args.map(arg => arg && !/[\s'"\\]/.test(arg) ? arg : `"${arg.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(" ");
-}

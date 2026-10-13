@@ -4,9 +4,10 @@ import { useClientPathStore } from "@/stores/clientPathStore";
 import { useRepoUrlStore } from "@/stores/repoUrl";
 import { useViewStore } from "@/stores/viewStore";
 import type { ServerType } from "@/types";
-import { invoke } from "@tauri-apps/api/core";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSaveServerConfig } from "../hooks/useSaveServerConfig";
+import { fetchInstalledNames } from "../utils/installedServer";
 import { quickInstallConfig } from "../utils/quickInstall";
 import { ServerCard } from "./ServerCard";
 
@@ -23,6 +24,21 @@ export function ServerList({ mcpServers }: ServerListProps) {
   const { saveServerConfig } = useSaveServerConfig();
   const targetLabel = availableClients.find(client => client.value === selectedClient)?.label ?? selectedClient;
   const targetKey = JSON.stringify([selectedClient, selectedPath, selectedClient === "claude_code" ? [selectedProject, selectedScope] : null]);
+  // Installed names belong to one target; ignore them once the target changes.
+  const [installed, setInstalled] = useState<{ targetKey: string; names: Set<string> } | null>(null);
+  const installedNames = installed?.targetKey === targetKey ? installed.names : null;
+  const serverName = (server: ServerType) => server.id.split("/").pop() || server.name;
+  const markInstalled = (name: string) => setInstalled(current => current?.targetKey === targetKey ? { targetKey, names: new Set(current.names).add(name) } : current);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => fetchInstalledNames(selectedClient, selectedPath, selectedProject, selectedScope)
+      .then(names => { if (!cancelled) setInstalled({ targetKey, names }); })
+      .catch(() => { if (!cancelled) setInstalled(null); });
+    void load();
+    window.addEventListener("mcpServerListChanged", load);
+    return () => { cancelled = true; window.removeEventListener("mcpServerListChanged", load); };
+  }, [targetKey]);
 
   const openDetails = (server: ServerType) => {
     setRepoUrl(server.source);
@@ -35,31 +51,30 @@ export function ServerList({ mcpServers }: ServerListProps) {
       openDetails(server);
       return false;
     }
-    const serverName = server.id.split("/").pop() || server.name;
-    if (selectedClient === "claude_code" && (selectedScope === "user" || selectedProject)) {
-      // The Claude Code add command overwrites existing entries. Let the user
-      // review an existing name on the details page instead of replacing it on one click.
-      try {
-        const existing = await invoke<{ name: string }[]>("claude_mcp_list", { workingDir: selectedProject || "", scope: selectedScope });
-        if (existing.some(entry => entry.name === serverName)) {
-          toast.info("This server already exists. Review its configuration before saving.");
-          openDetails(server);
-          return false;
-        }
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : String(error));
+    const name = serverName(server);
+    // Adding overwrites a server with the same name, so check the target again
+    // instead of trusting names loaded when the list opened.
+    try {
+      const names = await fetchInstalledNames(selectedClient, selectedPath, selectedProject, selectedScope);
+      setInstalled({ targetKey, names });
+      if (names.has(name)) {
+        toast.info(`${name} is already installed in ${targetLabel}`);
         return false;
       }
+    } catch {
+      // Unreadable or missing config: saving reports the real problem.
     }
-    return saveServerConfig({
+    const saved = await saveServerConfig({
       selectedClient,
       selectedPath: selectedPath || "",
       currentServer: server,
-      serverName,
+      serverName: name,
       config,
       setIsDialogOpen: () => {},
       clearDraftOnSuccess: false,
     });
+    if (saved) markInstalled(name);
+    return saved;
   };
 
   if (mcpServers.length === 0) return <p className="text-sm text-muted-foreground">No servers match your criteria.</p>;
@@ -67,7 +82,7 @@ export function ServerList({ mcpServers }: ServerListProps) {
   return (
     <div className="grid w-full grid-cols-1 gap-2 xl:grid-cols-2">
       {mcpServers.map(server => (
-        <ServerCard key={server.id} server={server} onOpenDetails={openDetails} onQuickAdd={quickAdd} targetLabel={targetLabel} targetKey={targetKey} />
+        <ServerCard key={server.id} server={server} installed={!!installedNames?.has(serverName(server))} onOpenDetails={openDetails} onQuickAdd={quickAdd} targetLabel={targetLabel} />
       ))}
     </div>
   );

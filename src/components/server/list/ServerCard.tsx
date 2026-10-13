@@ -7,30 +7,29 @@ import { quickInstallConfig, serverTransportLabels } from "../utils/quickInstall
 interface ServerCardProps {
   server: ServerType;
   onOpenDetails: (server: ServerType) => void;
-  onQuickAdd: (server: ServerType) => Promise<boolean>;
+  onQuickAdd: (server: ServerType) => Promise<unknown>;
   targetLabel: string;
-  targetKey: string;
+  /** Installed in the selected target under this server's default name. */
+  installed: boolean;
 }
 
-export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, targetKey }: ServerCardProps) {
+export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, installed }: ServerCardProps) {
   const [isAdding, setIsAdding] = useState(false);
-  const [addedTarget, setAddedTarget] = useState<string | null>(null);
   const addingRef = useRef(false);
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const canQuickAdd = quickInstallConfig(server) !== null;
-  const isAdded = addedTarget === targetKey;
   const labels = serverTransportLabels(server);
 
   const handleAdd = async () => {
     if (addingRef.current) return;
-    if (!canQuickAdd) {
+    if (installed || !canQuickAdd) {
       onOpenDetails(server);
       return;
     }
     addingRef.current = true;
     setIsAdding(true);
     try {
-      if (await onQuickAdd(server)) setAddedTarget(targetKey);
+      await onQuickAdd(server);
     } finally {
       addingRef.current = false;
       setIsAdding(false);
@@ -66,15 +65,15 @@ export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, tar
       <Button
         type="button"
         size="sm"
-        variant={isAdded ? "outline" : "default"}
+        variant={installed ? "outline" : "default"}
         className="h-8 min-w-16 shrink-0 px-2.5 text-xs"
         onClick={handleAdd}
-        disabled={isAdding || isAdded}
-        title={canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name} before adding to ${targetLabel}`}
-        aria-label={isAdding ? `Adding ${server.name}` : isAdded ? `${server.name} added to ${targetLabel}` : canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name}`}
+        disabled={isAdding}
+        title={installed ? `${server.name} is installed in ${targetLabel}. Open to update or uninstall` : canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name} before adding to ${targetLabel}`}
+        aria-label={isAdding ? `Adding ${server.name}` : installed ? `${server.name} installed in ${targetLabel}. Open details` : canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name}`}
       >
-        {isAdding ? <Loader2 className="size-3.5 animate-spin" /> : isAdded ? <Check className="size-3.5" /> : null}
-        {isAdding ? "Adding" : isAdded ? "Added" : canQuickAdd ? "Add" : "Configure"}
+        {isAdding ? <Loader2 className="size-3.5 animate-spin" /> : installed ? <Check className="size-3.5" /> : null}
+        {isAdding ? "Adding" : installed ? "Installed" : canQuickAdd ? "Add" : "Configure"}
       </Button>
     </div>
   );
