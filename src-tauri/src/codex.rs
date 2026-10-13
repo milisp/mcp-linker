@@ -551,6 +551,7 @@ fn apply_tool_policy(
 
 #[tauri::command]
 pub async fn codex_get_tool_policy(server_name: String) -> Result<ToolPolicy, String> {
+    crate::license::require_for_client("codex")?;
     let _guard = CODEX_CFG_LOCK.lock().await;
     let path = get_config_path()?;
     let doc = load_document(&path).await?;

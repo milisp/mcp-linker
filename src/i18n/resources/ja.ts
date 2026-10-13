@@ -95,6 +95,18 @@ const ja: { translation: TranslationSchema } = {
       device: "デバイス ID: {{id}}",
       buy: "ライセンスを購入",
     },
+    upgrade: {
+      description: "この機能は MCP Linker Personal と Pro（買い切り）に含まれます。サーバーの追加・編集・有効化などの基本操作は引き続き無料です。",
+      enterKey: "ライセンスキーを入力",
+      buy: "ライセンスを購入",
+      features: {
+        claudeCode: "Claude Code サーバーの管理",
+        codex: "Codex サーバーの管理",
+        sync: "クライアント間の同期",
+        batch: "一括操作",
+        inspection: "ライブツール検査",
+      },
+    },
   },
 };
 

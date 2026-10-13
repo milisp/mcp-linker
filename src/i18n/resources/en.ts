@@ -95,6 +95,18 @@ const en: { translation: TranslationSchema } = {
       device: "Device ID: {{id}}",
       buy: "Buy a license",
     },
+    upgrade: {
+      description: "This is part of MCP Linker Personal and Pro, a one-time purchase. Adding, editing, and enabling servers stays free.",
+      enterKey: "Enter license key",
+      buy: "Buy a license",
+      features: {
+        claudeCode: "Managing Claude Code servers",
+        codex: "Managing Codex servers",
+        sync: "Sync between clients",
+        batch: "Batch actions",
+        inspection: "Live tool inspection",
+      },
+    },
   },
 };
 

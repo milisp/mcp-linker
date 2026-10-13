@@ -95,6 +95,18 @@ const es: { translation: TranslationSchema } = {
       device: "ID del dispositivo: {{id}}",
       buy: "Comprar una licencia",
     },
+    upgrade: {
+      description: "Esta función forma parte de MCP Linker Personal y Pro (pago único). Añadir, editar y activar servidores sigue siendo gratis.",
+      enterKey: "Introducir clave de licencia",
+      buy: "Comprar una licencia",
+      features: {
+        claudeCode: "Gestionar servidores de Claude Code",
+        codex: "Gestionar servidores de Codex",
+        sync: "Sincronizar entre clientes",
+        batch: "Acciones por lotes",
+        inspection: "Inspección de herramientas en vivo",
+      },
+    },
   },
 };
 

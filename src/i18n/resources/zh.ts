@@ -95,6 +95,18 @@ const zh: { translation: TranslationSchema } = {
       device: "设备 ID：{{id}}",
       buy: "购买许可证",
     },
+    upgrade: {
+      description: "此功能属于 MCP Linker Personal 和 Pro（一次性购买）。添加、编辑、启用 server 等基础操作仍然免费。",
+      enterKey: "输入许可证密钥",
+      buy: "购买许可证",
+      features: {
+        claudeCode: "管理 Claude Code server",
+        codex: "管理 Codex server",
+        sync: "在客户端之间同步",
+        batch: "批量操作",
+        inspection: "MCP 工具实时检查",
+      },
+    },
   },
 };
 

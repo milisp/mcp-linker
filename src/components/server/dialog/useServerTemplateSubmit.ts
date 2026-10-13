@@ -1,5 +1,5 @@
 import { useMcpRefresh } from "@/contexts/McpRefreshContext";
-import { invoke } from "@tauri-apps/api/core";
+import { addToClaudeCode, clientWrite, LicenseRequiredError } from "@/lib/claude";
 import { toast } from "sonner";
 import { transformConfig } from "../utils/transformConfig";
 
@@ -25,7 +25,8 @@ export function useServerTemplateSubmit({
   const handleSubmit = async () => {
     try {
       const finalConfig = transformConfig(serverType, config);
-      await invoke("add_mcp_server", {
+      if (selectedClient === "claude_code") await addToClaudeCode(serverName, finalConfig as unknown as Record<string, unknown>);
+      else await clientWrite("add_mcp_server", {
         clientName: selectedClient,
         path: selectedPath || undefined,
         serverName: serverName,
@@ -39,7 +40,7 @@ export function useServerTemplateSubmit({
       setIsDialogOpen(false);
     } catch (error) {
       console.error(`Error updating config: ${error}`);
-      toast.error("Failed to update configuration");
+      if (!(error instanceof LicenseRequiredError)) toast.error(`Failed to update configuration: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 

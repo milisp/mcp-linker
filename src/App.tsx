@@ -1,5 +1,8 @@
 import CommandChecker from "@/components/settings/CommandChecker";
 import { UpdateChecker } from "@/components/UpdateChecker";
+import { UpgradeDialog } from "@/components/UpgradeDialog";
+import { useLicense } from "@/stores/license";
+import { useEffect } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { McpRefreshProvider } from "@/contexts/McpRefreshContext";
 import { useDeepLink } from "@/hooks/useDeepLink";
@@ -19,6 +22,9 @@ const queryClient = new QueryClient({
 
 function App() {
   useDeepLink();
+  useEffect(() => {
+    useLicense.getState().load().catch(console.error);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -26,6 +32,7 @@ function App() {
         <ThemeProvider storageKey="vite-ui-theme">
           <Layout />
           <UpdateChecker />
+          <UpgradeDialog />
         </ThemeProvider>
         <CommandChecker />
       </McpRefreshProvider>

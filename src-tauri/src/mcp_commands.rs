@@ -7,6 +7,7 @@ pub async fn disable_mcp_server(
     path: Option<String>,
     server_name: String,
 ) -> Result<Value, String> {
+    crate::license::require_for_client(&client_name)?;
     let adapter = ClientAdapter::new(&client_name, path.as_deref());
     adapter.disable(server_name).await
 }
@@ -17,6 +18,7 @@ pub async fn enable_mcp_server(
     path: Option<String>,
     server_name: String,
 ) -> Result<Value, String> {
+    crate::license::require_for_client(&client_name)?;
     let adapter = ClientAdapter::new(&client_name, path.as_deref());
     adapter.enable(server_name).await
 }
@@ -37,6 +39,7 @@ pub async fn update_disabled_mcp_server(
     server_name: String,
     server_config: Value,
 ) -> Result<Value, String> {
+    crate::license::require_for_client(&client_name)?;
     let adapter = ClientAdapter::new(&client_name, path.as_deref());
     adapter.update_disabled(server_name, server_config).await
 }

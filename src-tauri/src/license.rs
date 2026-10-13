@@ -9,6 +9,7 @@ use ring::rand::{SecureRandom, SystemRandom};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
@@ -25,6 +26,40 @@ const ORGANIZATION_ID: &str = match option_env!("MCP_LINKER_POLAR_ORG_ID") {
     Some(id) => id,
     None => "",
 };
+
+/// Mirrors `activation_id.is_some()` so feature checks need no managed state.
+static LICENSED: AtomicBool = AtomicBool::new(false);
+
+/// Debug builds only: `MCP_LINKER_LICENSE_DISABLE=1 bun tauri dev` unlocks every
+/// feature without a key. Release builds compile this to `false`.
+fn dev_bypass() -> bool {
+    cfg!(debug_assertions)
+        && std::env::var("MCP_LINKER_LICENSE_DISABLE").is_ok_and(|v| v == "1" || v == "true")
+}
+
+fn is_licensed(license: &License) -> bool {
+    license.activation_id.is_some() || dev_bypass()
+}
+
+/// Errors unless this device holds an activated license. Paid features call
+/// this in their commands; the UI checks first and offers an upgrade.
+pub fn require(feature: &str) -> Result<(), String> {
+    if LICENSED.load(Ordering::Relaxed) {
+        Ok(())
+    } else {
+        Err(format!("{feature} requires an MCP Linker Personal or Pro license."))
+    }
+}
+
+/// Changing Claude Code or Codex configuration is a paid feature; every other
+/// client stays free. Reading configuration is never gated.
+pub fn require_for_client(client: &str) -> Result<(), String> {
+    match client {
+        "claude_code" => require("Managing Claude Code servers"),
+        "codex" => require("Managing Codex servers"),
+        _ => Ok(()),
+    }
+}
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -67,14 +102,17 @@ fn license_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 pub fn load(app: &AppHandle) -> License {
-    license_path(app)
+    let license: License = license_path(app)
         .ok()
         .and_then(|path| fs::read_to_string(path).ok())
         .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_default()
+        .unwrap_or_default();
+    LICENSED.store(is_licensed(&license), Ordering::Relaxed);
+    license
 }
 
 fn persist(app: &AppHandle, license: &License) -> Result<(), String> {
+    LICENSED.store(is_licensed(license), Ordering::Relaxed);
     let path = license_path(app)?;
     let temporary = path.with_extension("json.tmp");
     let json = serde_json::to_vec_pretty(license).map_err(|e| e.to_string())?;
@@ -84,8 +122,12 @@ fn persist(app: &AppHandle, license: &License) -> Result<(), String> {
 
 fn status_of(license: &License) -> LicenseStatus {
     LicenseStatus {
-        licensed: license.activation_id.is_some(),
-        display_key: license.display_key.clone(),
+        licensed: is_licensed(license),
+        display_key: if license.activation_id.is_none() && dev_bypass() {
+            Some("Development bypass (MCP_LINKER_LICENSE_DISABLE)".into())
+        } else {
+            license.display_key.clone()
+        },
         device_id: license.device_id.clone(),
     }
 }

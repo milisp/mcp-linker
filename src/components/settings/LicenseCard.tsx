@@ -10,10 +10,10 @@ import { Input } from "@/components/ui/input";
 import {
   activateLicense,
   deactivateLicense,
-  getLicenseStatus,
   type LicenseStatus,
   PRICING_URL,
 } from "@/lib/license";
+import { useLicense } from "@/stores/license";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { KeyRound } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -22,12 +22,13 @@ import { toast } from "sonner";
 
 export default function LicenseCard() {
   const { t } = useTranslation();
-  const [status, setStatus] = useState<LicenseStatus | null>(null);
+  const status = useLicense(state => state.status);
+  const setStatus = useLicense(state => state.setStatus);
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    getLicenseStatus().then(setStatus).catch(error => toast.error(String(error)));
+    useLicense.getState().load().catch(error => toast.error(String(error)));
   }, []);
 
   const run = async (action: () => Promise<LicenseStatus>, success: string) => {

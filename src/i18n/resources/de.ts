@@ -95,6 +95,18 @@ const de: { translation: TranslationSchema } = {
       device: "Geräte-ID: {{id}}",
       buy: "Lizenz kaufen",
     },
+    upgrade: {
+      description: "Diese Funktion ist Teil von MCP Linker Personal und Pro (Einmalkauf). Server hinzufügen, bearbeiten und aktivieren bleibt kostenlos.",
+      enterKey: "Lizenzschlüssel eingeben",
+      buy: "Lizenz kaufen",
+      features: {
+        claudeCode: "Claude Code-Server verwalten",
+        codex: "Codex-Server verwalten",
+        sync: "Zwischen Clients synchronisieren",
+        batch: "Stapelaktionen",
+        inspection: "Live-Tool-Prüfung",
+      },
+    },
   },
 };
 

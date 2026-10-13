@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### New Features
-- **License activation** — activate a Personal or Pro license key in Settings → License; nothing is gated by it yet
+- **License activation** — activate a Personal or Pro license key in Settings → License
+- **Copy Claude Code servers between projects** — copy a server's full configuration to another project or scope, with confirmation before replacing one of the same name
+- **Personal and Pro features** — changing Claude Code and Codex servers, sync between clients, batch actions, and live tool inspection now require a license; viewing their servers and managing every other client stay free
+
+### Fixes
+- Streamable HTTP servers added to Claude Code are written with the `http` type Claude Code expects, and `serverUrl`/`httpUrl` configs are recognized
+- Syncing to Claude Code now reports servers that fail to write instead of reporting success
+- Adding to Claude Code from Import Configuration or a template no longer writes a stray `mcp.json` that Claude Code never reads
+- Remote servers without headers can be added from a template
 
 ## [2.4.0] - 2026-10-10
 

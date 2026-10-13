@@ -15,8 +15,7 @@ export const transformConfig = (
     };
   } else if (
     (serverType === "sse" || serverType === "http") &&
-    "url" in config &&
-    "headers" in config
+    "url" in config
   ) {
     finalConfig = {
       type: serverType as "http" | "sse",

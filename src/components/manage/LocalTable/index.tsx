@@ -4,6 +4,7 @@ import { RefreshMcpConfig } from "@/components/manage/RefreshMcpConfig";
 import { DataTable } from "@/components/ui/data-table";
 import { useMcpConfig } from "@/hooks/useMcpConfig";
 import { useClientPathStore } from "@/stores/clientPathStore";
+import { requirePro } from "@/stores/license";
 import { RowSelectionState, Table } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
 import { useServerTableColumns } from "../ServerTableColumns";
@@ -37,6 +38,7 @@ export const LocalTable = () => {
 
   // Batch actions
   const handleBatchDelete = async () => {
+    if (!requirePro("batch")) return;
     try {
       const selectedIndices = Object.keys(rowSelection);
       const selectedNames = selectedIndices.map(
@@ -50,6 +52,7 @@ export const LocalTable = () => {
   };
 
   const handleBatchEnable = async () => {
+    if (!requirePro("batch")) return;
     const selectedIndices = Object.keys(rowSelection);
     const selectedNames = selectedIndices.map(
       (index) => serversData[parseInt(index)].name,
@@ -61,6 +64,7 @@ export const LocalTable = () => {
   };
 
   const handleBatchDisable = async () => {
+    if (!requirePro("batch")) return;
     const selectedIndices = Object.keys(rowSelection);
     const selectedNames = selectedIndices.map(
       (index) => serversData[parseInt(index)].name,
@@ -84,7 +88,7 @@ export const LocalTable = () => {
   const { handleSync } = useSyncHandlers(syncConfig, setIsSyncing);
 
   // Header action handlers
-  const handleLocalSync = () => setLocalSyncDialogOpen(true);
+  const handleLocalSync = () => requirePro("sync") && setLocalSyncDialogOpen(true);
 
   const localColumns = useServerTableColumns({
     disabledServers,

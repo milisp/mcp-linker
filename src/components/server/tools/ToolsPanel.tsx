@@ -1,5 +1,6 @@
 import { ClaudeCodeToolsPanel } from "./ClaudeCodeToolsPanel";
 import { useCCProjectStore } from "@/stores/ccProject";
+import { requirePro, useLicensed } from "@/stores/license";
 import { Button } from "@/components/ui/button";
 import type { ServerConfig } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
@@ -136,6 +137,8 @@ function InspectorToolsPanel({ config, serverName, selectedClient, workingDir, c
 
 export function ToolsPanel(props: Parameters<typeof InspectorToolsPanel>[0]) {
   const scope = useCCProjectStore(state => state.selectedScope);
+  const licensed = useLicensed();
+  if (!licensed) return <div className="space-y-2 text-sm text-muted-foreground"><p>Connect to this server to list its tools and try them out. Live tool inspection is part of MCP Linker Personal and Pro.</p><Button variant="outline" size="sm" onClick={() => requirePro("inspection")}>Unlock tool inspection</Button></div>;
   if (props.selectedClient === "claude_code" && scope !== "local") return <p className="text-sm text-muted-foreground">Claude Code tool inspection currently supports Local scope only. Project and User configurations can be saved, but cannot be inspected here yet.</p>;
   return props.selectedClient === "claude_code"
     ? <ClaudeCodeToolsPanel serverName={props.serverName} workingDir={props.workingDir} saveRevision={props.saveRevision} />

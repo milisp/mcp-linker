@@ -5,8 +5,28 @@ Personal and Pro are one-time purchases on Polar. Polar issues a license key
 activates the key directly with Polar; the website and no other server are
 involved.
 
-No feature is gated yet. Activation only records that this device holds a
-valid key.
+## What a license unlocks
+
+Free: adding, editing, enabling, disabling, and deleting servers one at a
+time in every client except Claude Code and Codex, Discover, and viewing
+Claude Code and Codex servers. A license unlocks:
+
+| Feature | UI gate | Command check |
+|---|---|---|
+| Changing Claude Code servers (add, edit, remove, enable, disable, copy) | `claudeWrite` in `src/lib/claude.ts` | `claude_mcp_add`, `claude_mcp_remove`, `claude_mcp_copy`, `claude_disable_server`, `claude_enable_server`, `claude_update_disabled` |
+| Changing Codex servers | `clientWrite` in `src/lib/claude.ts` | `license::require_for_client` in `add_mcp_server`, `update_mcp_server`, `remove_mcp_server`, `enable_mcp_server`, `disable_mcp_server`, `update_disabled_mcp_server`; `codex_set_tool_policy` |
+| Sync between clients | `LocalTable` Local Sync | `sync_mcp_config` |
+| Batch actions | `LocalTable` batch handlers | `batch_delete_mcp_servers` |
+| Live tool inspection | `ToolsPanel` | `mcp_inspector_connect`, `claude_mcp_tools` |
+
+The UI calls `requirePro(feature)` from `src/stores/license.ts` (directly, or
+through `claudeWrite`), which opens the upgrade dialog when unlicensed.
+Commands call `license::require`, which reads a flag kept in step with
+`license.json`. Add both when gating a new feature. Reading Claude Code
+configuration is never gated.
+
+The source is AGPL-3.0, so these checks keep honest users honest; they are not
+DRM.
 
 ## The model: activate once, then never check again
 
@@ -43,6 +63,19 @@ does not exist" from Polar.
 
 Deactivation fails closed the other way: if Polar can't be reached, the local
 license is kept so the user can retry instead of losing the slot.
+
+## Development bypass
+
+Debug builds unlock every paid feature without a key when started with:
+
+```sh
+MCP_LINKER_LICENSE_DISABLE=1 bun tauri dev
+```
+
+It is read at runtime by `license.rs` and guarded by `cfg!(debug_assertions)`,
+so release builds ignore it. A `VITE_` variable would not work: it only reaches
+the frontend, while the Rust commands check the license too, and it would be
+baked into whatever bundle was built with it.
 
 ## Device id
 

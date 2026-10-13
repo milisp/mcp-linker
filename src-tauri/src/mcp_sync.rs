@@ -14,6 +14,7 @@ pub async fn sync_mcp_config(
     to_path: Option<String>,
     override_all: bool,
 ) -> Result<(), String> {
+    crate::license::require("Syncing between clients")?;
     // Load source and target
     let from_json = read_from_client(&from_client, from_path.as_deref()).await?;
     let mut to_json = read_from_client(&to_client, to_path.as_deref())
@@ -242,6 +243,7 @@ async fn write_to_client(
                 }
             }
         }
+        let mut failures = Vec::new();
         for (name, cfg_val) in from_map {
             // Determine type with stdio inference when command present
             let inferred_type = cfg_val
@@ -263,9 +265,9 @@ async fn write_to_client(
             let server = claude_code_commands::ClaudeCodeServer {
                 name: name.clone(),
                 r#type: inferred_type,
-                url: cfg_val
-                    .get("url")
-                    .and_then(|v| v.as_str())
+                url: ["url", "serverUrl", "httpUrl"]
+                    .iter()
+                    .find_map(|key| cfg_val.get(*key).and_then(|v| v.as_str()))
                     .map(|s| s.to_string()),
                 command: cfg_val
                     .get("command")
@@ -287,9 +289,17 @@ async fn write_to_client(
                         .collect()
                 }),
             };
-            let _ = claude_code_commands::claude_mcp_add(server, workdir.to_string(), None).await;
+            if let Err(e) =
+                claude_code_commands::claude_mcp_add(server, workdir.to_string(), None).await
+            {
+                failures.push(format!("{name}: {e}"));
+            }
         }
-        Ok(())
+        if failures.is_empty() {
+            Ok(())
+        } else {
+            Err(format!("Some servers were not synced:\n{}", failures.join("\n")))
+        }
     } else {
         let cfg = ClientConfig::new(client, path);
         let p = cfg.get_path();

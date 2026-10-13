@@ -96,6 +96,18 @@ const tc: { translation: TranslationSchema } = {
       device: "裝置 ID：{{id}}",
       buy: "購買授權",
     },
+    upgrade: {
+      description: "此功能屬於 MCP Linker Personal 與 Pro（一次性購買）。新增、編輯、啟用 server 等基本操作仍然免費。",
+      enterKey: "輸入授權金鑰",
+      buy: "購買授權",
+      features: {
+        claudeCode: "管理 Claude Code server",
+        codex: "管理 Codex server",
+        sync: "在用戶端之間同步",
+        batch: "批次操作",
+        inspection: "MCP 工具即時檢查",
+      },
+    },
   },
 };
 

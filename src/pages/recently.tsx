@@ -1,3 +1,4 @@
+import { clientWrite } from "@/lib/claude";
 import { ServerCard } from "@/components/recently/ServerCard";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { type ServerConfig } from "@/types";
@@ -29,7 +30,7 @@ export default function Recently({ embedded = false }: { embedded?: boolean }) {
             };
             toast.info(JSON.stringify(saveServerItem));
             try {
-              await invoke("add_mcp_server", saveServerItem);
+              await clientWrite("add_mcp_server", saveServerItem);
             } catch (e) {
               // already exists
             }
@@ -72,8 +73,8 @@ export default function Recently({ embedded = false }: { embedded?: boolean }) {
         serverName: key,
       };
       await Promise.allSettled([
-        invoke("remove_mcp_server", params),
-        invoke("remove_mcp_server", { ...params, clientName: "mcplinker" }),
+        clientWrite("remove_mcp_server", params),
+        clientWrite("remove_mcp_server", { ...params, clientName: "mcplinker" }),
       ]);
 
       setServerList((prev) => prev.filter((s) => s.name !== key));

@@ -2,6 +2,7 @@ import SettingsSectionContent from "@/components/settings/SettingsSectionContent
 import SettingsSidebar from "@/components/settings/SettingsSidebar";
 import { Button } from "@/components/ui/button";
 import { useUpdateStore } from "@/stores/useUpdateStore";
+import { useViewStore } from "@/stores/viewStore";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -21,7 +22,10 @@ export default function SettingPage() {
     { id: "encryption", label: t("encryption", "Encryption") },
     { id: "license", label: t("license.title") },
   ];
-  const [selectedSection, setSelectedSection] = useState<string>("general");
+  const section = useViewStore(state => state.search.section);
+  const [selectedSection, setSelectedSection] = useState<string>(
+    SECTIONS.some(s => s.id === section) ? section! : "general",
+  );
   const { isChecking, triggerManualCheck } = useUpdateStore();
 
   // Main render

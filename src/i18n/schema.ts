@@ -92,4 +92,16 @@ export interface TranslationSchema {
     device: string;
     buy: string;
   };
+  upgrade: {
+    description: string;
+    enterKey: string;
+    buy: string;
+    features: {
+      claudeCode: string;
+      codex: string;
+      sync: string;
+      batch: string;
+      inspection: string;
+    };
+  };
 }
