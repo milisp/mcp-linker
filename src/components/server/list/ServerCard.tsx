@@ -1,7 +1,7 @@
 import { DeleteAlertDialog } from "@/components/common/DeleteAlertDialog";
 import { Button } from "@/components/ui/button";
 import type { ServerType } from "@/types";
-import { Check, Cloud, Loader2, Monitor, Server, Trash2 } from "lucide-react";
+import { Check, Cloud, Loader2, Monitor, Plus, Server, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { quickInstallConfig, serverTransportLabels } from "../utils/quickInstall";
 
@@ -22,6 +22,7 @@ export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, ins
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const canQuickAdd = quickInstallConfig(server) !== null;
   const labels = serverTransportLabels(server);
+  const showAddIcon = canQuickAdd && !installed && !isAdding;
 
   const handleAdd = async () => {
     if (addingRef.current) return;
@@ -69,14 +70,14 @@ export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, ins
         type="button"
         size="sm"
         variant={installed ? "outline" : "default"}
-        className="h-8 min-w-16 shrink-0 px-2.5 text-xs"
+        className={`h-8 shrink-0 text-xs ${showAddIcon ? "w-8 px-0" : "min-w-16 px-2.5"}`}
         onClick={handleAdd}
         disabled={isAdding}
         title={installed ? `${server.name} is installed in ${targetLabel}. Open to update or uninstall` : canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name} before adding to ${targetLabel}`}
         aria-label={isAdding ? `Adding ${server.name}` : installed ? `${server.name} installed in ${targetLabel}. Open details` : canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name}`}
       >
-        {isAdding ? <Loader2 className="size-3.5 animate-spin" /> : installed ? <Check className="size-3.5" /> : null}
-        {isAdding ? "Adding" : installed ? "Installed" : canQuickAdd ? "Add" : "Configure"}
+        {isAdding ? <Loader2 className="size-3.5 animate-spin" /> : installed ? <Check className="size-3.5" /> : showAddIcon ? <Plus className="size-3.5" /> : null}
+        {isAdding ? "Adding" : installed ? "Installed" : canQuickAdd ? null : "Configure"}
       </Button>
       {onRemove && <DeleteAlertDialog
         itemName={`the saved configuration "${server.name}"`}
