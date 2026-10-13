@@ -1,104 +1,49 @@
+import { ServerList } from "@/components/server";
+import { fetchSavedServers, removeSavedServer } from "@/components/server/utils/savedServer";
 import { clientWrite } from "@/lib/claude";
-import { ServerCard } from "@/components/recently/ServerCard";
-import { useClientPathStore } from "@/stores/clientPathStore";
-import { type ServerConfig } from "@/types";
-import { ConfigType } from "@/types/mcpConfig";
+import type { ServerConfig, ServerType } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// Type for server list item
-type ServerListItem = { name: string; config: ServerConfig };
+/** Copies configurations saved by older versions in localStorage into the mcplinker config, once. */
+async function migrateLocalStorage() {
+  const legacy = localStorage.getItem("myservers");
+  if (!legacy || await invoke<boolean>("check_mcplinker_config_exists")) return;
+  const servers = JSON.parse(legacy) as { name: string; config: ServerConfig }[];
+  await Promise.allSettled(servers.map(server => clientWrite("add_mcp_server", {
+    clientName: "mcplinker", path: "", serverName: server.name, serverConfig: server.config,
+  })));
+}
 
 export default function Recently({ embedded = false }: { embedded?: boolean }) {
-  const [serverList, setServerList] = useState<ServerListItem[]>([]);
-  const { selectedClient, selectedPath } = useClientPathStore();
+  const [servers, setServers] = useState<ServerType[] | null>(null);
 
-  // Load saved server configurations
   useEffect(() => {
-    async function checkFileExists(parsed: any) {
-      try {
-        const exists = await invoke<boolean>("check_mcplinker_config_exists");
-        if (!exists) {
-          toast.info("start add");
-          parsed.forEach(async (s: ServerListItem) => {
-            const saveServerItem = {
-              clientName: "mcplinker",
-              path: "",
-              serverName: s.name,
-              serverConfig: s.config,
-            };
-            toast.info(JSON.stringify(saveServerItem));
-            try {
-              await clientWrite("add_mcp_server", saveServerItem);
-            } catch (e) {
-              // already exists
-            }
-          });
-        }
-      } catch (e) {
-        console.log("Failed to check config file");
-      }
-    }
-    const saved = localStorage.getItem("myservers");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as {
-          name: string;
-          config: ServerConfig;
-        }[];
-        checkFileExists(parsed);
-        setServerList(parsed);
-      } catch (error) {
-        console.error("Failed to load myservers:", error);
-      }
-    }
-    invoke<ConfigType>("read_json_file", {
-      clientName: "mcplinker",
-      path: "",
-    }).then((savedData) => {
-      const parsed = Object.entries(savedData.mcpServers).map(
-        ([name, config]) => ({ name, config }),
-      );
-      setServerList(parsed);
-    });
+    migrateLocalStorage()
+      .catch(error => console.error("Failed to migrate saved servers:", error))
+      .then(fetchSavedServers)
+      .then(setServers)
+      .catch(error => {
+        toast.error(`Failed to load saved configurations: ${error instanceof Error ? error.message : String(error)}`);
+        setServers([]);
+      });
   }, []);
 
-  // Handle server operations
-  const handleDelete = async (key: string) => {
+  const remove = async (server: ServerType) => {
     try {
-      const params = {
-        clientName: selectedClient,
-        path: selectedPath,
-        serverName: key,
-      };
-      await Promise.allSettled([
-        clientWrite("remove_mcp_server", params),
-        clientWrite("remove_mcp_server", { ...params, clientName: "mcplinker" }),
-      ]);
-
-      setServerList((prev) => prev.filter((s) => s.name !== key));
-      toast.success("Server deleted");
+      await removeSavedServer(server.name);
+      setServers(current => current?.filter(item => item.name !== server.name) ?? null);
+      toast.success(`Removed ${server.name} from saved`);
     } catch (error) {
-      toast.error("Failed to delete server");
+      toast.error(`Failed to remove ${server.name}: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
   return (
-    <div>
-      {!embedded && <h1 className="text-2xl font-semibold p-2">
-        Saved Configurations
-      </h1>}
-      <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 ${embedded ? "" : "p-2"}`}>
-        {serverList.map((server) => (
-          <ServerCard
-            key={server.name}
-            serverKey={server.name}
-            config={server.config}
-            onDelete={handleDelete}
-          />
-        ))}
-      </div>
+    <div className={embedded ? "" : "p-4"}>
+      {!embedded && <h1 className="mb-4 text-2xl font-semibold">Saved</h1>}
+      {servers && <ServerList mcpServers={servers} onRemove={remove} emptyMessage="Servers you add are saved here so you can add them to other clients." />}
     </div>
   );
 }

@@ -1,6 +1,7 @@
+import { DeleteAlertDialog } from "@/components/common/DeleteAlertDialog";
 import { Button } from "@/components/ui/button";
 import type { ServerType } from "@/types";
-import { Check, Cloud, Loader2, Monitor, Server } from "lucide-react";
+import { Check, Cloud, Loader2, Monitor, Server, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { quickInstallConfig, serverTransportLabels } from "../utils/quickInstall";
 
@@ -11,9 +12,11 @@ interface ServerCardProps {
   targetLabel: string;
   /** Installed in the selected target under this server's default name. */
   installed: boolean;
+  /** Shown as a trash button with confirmation, e.g. to forget a saved configuration. */
+  onRemove?: (server: ServerType) => Promise<void>;
 }
 
-export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, installed }: ServerCardProps) {
+export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, installed, onRemove }: ServerCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const addingRef = useRef(false);
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
@@ -75,6 +78,11 @@ export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, ins
         {isAdding ? <Loader2 className="size-3.5 animate-spin" /> : installed ? <Check className="size-3.5" /> : null}
         {isAdding ? "Adding" : installed ? "Installed" : canQuickAdd ? "Add" : "Configure"}
       </Button>
+      {onRemove && <DeleteAlertDialog
+        itemName={`the saved configuration "${server.name}"`}
+        onDelete={() => onRemove(server)}
+        trigger={<Button type="button" variant="ghost" size="icon" className="size-8 shrink-0 text-muted-foreground hover:text-destructive" aria-label={`Remove ${server.name}`}><Trash2 className="size-4" /></Button>}
+      />}
     </div>
   );
 }

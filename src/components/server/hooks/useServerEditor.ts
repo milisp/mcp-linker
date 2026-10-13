@@ -1,4 +1,5 @@
 import { normalizeServerConfig } from "../utils/normalizeServerConfig";
+import { defaultServerName } from "../utils/quickInstall";
 import { useCCProjectStore } from "@/stores/ccProject";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useServerEditorStore, type ServerEditorDraft } from "@/stores/serverEditorStore";
@@ -16,7 +17,7 @@ export function useServerEditor(server: ServerType) {
   const identity = named ? ["normalized", server.id, server.name] : server.id || server.name;
   const key = JSON.stringify([identity, selectedClient, selectedPath, selectedClient === "claude_code" ? [selectedProject, selectedScope] : null]);
   const initial = useMemo<ServerEditorDraft>(() => ({
-    name: server.installed?.name ?? (named ? server.name : server.id.split("/").pop() || server.name),
+    name: defaultServerName(server),
     configs: structuredClone(server.configs?.some(config => config.type !== "encrypted") ? server.configs.filter(config => config.type !== "encrypted").map(config => normalizeServerConfig(config) ?? config) : [{ type: "stdio", command: "", args: [], env: {} }]),
     index: 0,
     dirty: false,

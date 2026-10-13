@@ -38,7 +38,7 @@ export default function McpManage() {
         </div>
 
         <Tabs value={saved ? "saved" : "installed"} onValueChange={value => navigate(value === "saved" ? "/manage?tab=saved" : "/manage")} className="mb-4">
-          <TabsList><TabsTrigger value="installed">Installed</TabsTrigger><TabsTrigger value="saved">Saved Configurations</TabsTrigger></TabsList>
+          <TabsList><TabsTrigger value="installed">Installed</TabsTrigger><TabsTrigger value="saved">Saved</TabsTrigger></TabsList>
         </Tabs>
         {saved ? <Recently embedded /> : <>
         {/* Dashboard */}

@@ -7,14 +7,16 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSaveServerConfig } from "../hooks/useSaveServerConfig";
 import { fetchInstalledNames } from "../utils/installedServer";
-import { quickInstallConfig } from "../utils/quickInstall";
+import { defaultServerName as serverName, quickInstallConfig } from "../utils/quickInstall";
 import { ServerCard } from "./ServerCard";
 
 interface ServerListProps {
   mcpServers: ServerType[];
+  onRemove?: (server: ServerType) => Promise<void>;
+  emptyMessage?: string;
 }
 
-export function ServerList({ mcpServers }: ServerListProps) {
+export function ServerList({ mcpServers, onRemove, emptyMessage = "No servers match your criteria." }: ServerListProps) {
   const navigate = useViewStore(state => state.navigate);
   const { selectedClient, selectedPath } = useClientPathStore();
   const selectedProject = useCCProjectStore(state => state.selectedProject);
@@ -25,7 +27,6 @@ export function ServerList({ mcpServers }: ServerListProps) {
   // Installed names belong to one target; ignore them once the target changes.
   const [installed, setInstalled] = useState<{ targetKey: string; names: Set<string> } | null>(null);
   const installedNames = installed?.targetKey === targetKey ? installed.names : null;
-  const serverName = (server: ServerType) => server.id.split("/").pop() || server.name;
   const markInstalled = (name: string) => setInstalled(current => current?.targetKey === targetKey ? { targetKey, names: new Set(current.names).add(name) } : current);
 
   useEffect(() => {
@@ -74,12 +75,12 @@ export function ServerList({ mcpServers }: ServerListProps) {
     return saved;
   };
 
-  if (mcpServers.length === 0) return <p className="text-sm text-muted-foreground">No servers match your criteria.</p>;
+  if (mcpServers.length === 0) return <p className="text-sm text-muted-foreground">{emptyMessage}</p>;
 
   return (
     <div className="grid w-full grid-cols-1 gap-2 xl:grid-cols-2">
       {mcpServers.map(server => (
-        <ServerCard key={server.id} server={server} installed={!!installedNames?.has(serverName(server))} onOpenDetails={openDetails} onQuickAdd={quickAdd} targetLabel={targetLabel} />
+        <ServerCard key={server.id} server={server} installed={!!installedNames?.has(serverName(server))} onOpenDetails={openDetails} onQuickAdd={quickAdd} targetLabel={targetLabel} onRemove={onRemove} />
       ))}
     </div>
   );
