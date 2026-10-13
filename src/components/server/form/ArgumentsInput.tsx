@@ -13,6 +13,14 @@ export function ArgumentsInput({ args, onChange }: { args: string[]; onChange: (
     setRows(args.length ? args : [""]);
   }, [args]);
 
+  const inputs = useRef<(HTMLInputElement | null)[]>([]);
+  const focusIndex = useRef<number | null>(null);
+  useEffect(() => {
+    if (focusIndex.current === null) return;
+    inputs.current[focusIndex.current]?.focus();
+    focusIndex.current = null;
+  }, [rows]);
+
   const update = (next: string[]) => {
     setRows(next);
     // Blank rows are placeholders for typing, not empty-string arguments.
@@ -25,6 +33,7 @@ export function ArgumentsInput({ args, onChange }: { args: string[]; onChange: (
     {rows.map((arg, index) => (
       <div key={index} className="flex items-center gap-2">
         <input
+          ref={el => { inputs.current[index] = el; }}
           value={arg}
           aria-label={`Argument ${index + 1}`}
           className="min-w-0 flex-1 rounded-md border bg-transparent px-3 py-2 font-mono text-sm"
@@ -44,6 +53,6 @@ export function ArgumentsInput({ args, onChange }: { args: string[]; onChange: (
         </Button>
       </div>
     ))}
-    <Button type="button" variant="secondary" size="sm" className="w-full" onClick={() => setRows([...rows, ""])}><Plus className="size-3.5" /> Add argument</Button>
+    <Button type="button" variant="secondary" size="sm" className="w-full" onClick={() => { focusIndex.current = rows.length; setRows([...rows, ""]); }}><Plus className="size-3.5" /> Add argument</Button>
   </fieldset>;
 }

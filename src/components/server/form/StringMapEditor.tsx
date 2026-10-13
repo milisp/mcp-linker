@@ -21,6 +21,14 @@ export function StringMapEditor({ title, addLabel, values, onChange, secret = fa
     setRows(toRows(values));
   }, [values]);
 
+  const keyInputs = useRef<(HTMLInputElement | null)[]>([]);
+  const focusIndex = useRef<number | null>(null);
+  useEffect(() => {
+    if (focusIndex.current === null) return;
+    keyInputs.current[focusIndex.current]?.focus();
+    focusIndex.current = null;
+  }, [rows]);
+
   const update = (next: Row[]) => {
     setRows(next);
     // Rows without a key are still being typed and are not saved.
@@ -44,7 +52,7 @@ export function StringMapEditor({ title, addLabel, values, onChange, secret = fa
         const blank = rows.length === 1 && !row.key && !row.value;
         return (
           <div key={index} className="flex items-center gap-2">
-            <input value={row.key} placeholder="Key" aria-label={`${title} key ${index + 1}`} aria-invalid={duplicate} title={duplicate ? "Duplicate key: the last value wins" : undefined}
+            <input ref={el => { keyInputs.current[index] = el; }} value={row.key} placeholder="Key" aria-label={`${title} key ${index + 1}`} aria-invalid={duplicate} title={duplicate ? "Duplicate key: the last value wins" : undefined}
               onChange={event => update(rows.map((current, i) => i === index ? { ...current, key: event.target.value } : current))}
               className="min-w-0 flex-1 rounded-md border bg-transparent px-3 py-2 text-sm aria-invalid:border-destructive" />
             <input value={row.value} placeholder="Value" type={secret && !visible ? "password" : "text"} autoComplete="off" aria-label={`${title} value ${index + 1}`}
@@ -57,7 +65,7 @@ export function StringMapEditor({ title, addLabel, values, onChange, secret = fa
           </div>
         );
       })}
-      <Button type="button" variant="secondary" size="sm" className="w-full" onClick={() => setRows([...rows, { key: "", value: "" }])}><Plus className="size-3.5" /> {addLabel}</Button>
+      <Button type="button" variant="secondary" size="sm" className="w-full" onClick={() => { focusIndex.current = rows.length; setRows([...rows, { key: "", value: "" }]); }}><Plus className="size-3.5" /> {addLabel}</Button>
     </fieldset>
   );
 }

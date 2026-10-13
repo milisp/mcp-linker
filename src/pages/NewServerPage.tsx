@@ -16,10 +16,9 @@ import { toast } from "sonner";
 const BLANK: ServerConfig[] = [
   { type: "stdio", command: "", args: [], env: {} },
   { type: "http", url: "", headers: {} },
-  { type: "sse", url: "", headers: {} },
 ];
 
-/** A fresh id per form gives the editor a fresh draft. */
+/** A fresh id per form gives the editor a fresh draft. SSE is offered only for an imported SSE config. */
 function customServer(imported?: ImportedServer): ServerType {
   return {
     id: `custom:${crypto.randomUUID()}`, name: imported?.name ?? "", description: "", source: "custom",
