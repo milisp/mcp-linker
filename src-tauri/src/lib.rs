@@ -23,7 +23,6 @@ mod license;
 mod mcp_commands;
 mod mcp_crud;
 mod mcp_inspector;
-mod mcp_sync;
 #[cfg(target_os = "macos")]
 mod menu;
 mod window;
@@ -70,7 +69,6 @@ pub fn run() {
             mcp_commands::enable_mcp_server,
             mcp_commands::list_disabled_servers,
             mcp_commands::update_disabled_mcp_server,
-            mcp_sync::sync_mcp_config,
             installer::check_command_exists,
             installer::install_command,
             git::git_clone,
