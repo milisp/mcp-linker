@@ -1,4 +1,4 @@
-import { claudeWrite, clientWrite } from "@/lib/claude";
+import { claudeWrite, clientWrite, LicenseRequiredError } from "@/lib/claude";
 import { mustHavePathClients } from "@/lib/data";
 // useSaveServerConfig.ts
 import { useMcpRefresh } from "@/contexts/McpRefreshContext";
@@ -157,7 +157,7 @@ export function useSaveServerConfig() {
       } catch (error) {
         console.error("Failed to update config:", error);
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(`Failed to update configuration: ${message}`);
+        if (!(error instanceof LicenseRequiredError)) toast.error(`Failed to update configuration: ${message}`);
         return false;
       }
     }

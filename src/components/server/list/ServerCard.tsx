@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { useViewStore } from "@/stores/viewStore";
 import type { ServerType } from "@/types";
 import { Check, Cloud, Loader2, Monitor, Server } from "lucide-react";
 import { useRef, useState } from "react";
@@ -7,14 +6,13 @@ import { quickInstallConfig, serverTransportLabels } from "../utils/quickInstall
 
 interface ServerCardProps {
   server: ServerType;
-  onOpenDialog: (server: ServerType) => void;
+  onOpenDetails: (server: ServerType) => void;
   onQuickAdd: (server: ServerType) => Promise<boolean>;
   targetLabel: string;
   targetKey: string;
 }
 
-export function ServerCard({ server, onOpenDialog, onQuickAdd, targetLabel, targetKey }: ServerCardProps) {
-  const navigate = useViewStore(state => state.navigate);
+export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, targetKey }: ServerCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [addedTarget, setAddedTarget] = useState<string | null>(null);
   const addingRef = useRef(false);
@@ -26,7 +24,7 @@ export function ServerCard({ server, onOpenDialog, onQuickAdd, targetLabel, targ
   const handleAdd = async () => {
     if (addingRef.current) return;
     if (!canQuickAdd) {
-      onOpenDialog(server);
+      onOpenDetails(server);
       return;
     }
     addingRef.current = true;
@@ -43,7 +41,7 @@ export function ServerCard({ server, onOpenDialog, onQuickAdd, targetLabel, targ
     <div className="flex min-w-0 items-center gap-3 rounded-lg border bg-card px-3 py-3 transition-colors hover:bg-muted/30">
       <button
         type="button"
-        onClick={() => navigate(`/servers/${encodeURIComponent(server.id)}`)}
+        onClick={() => onOpenDetails(server)}
         aria-label={`View details for ${server.name}`}
         className="flex min-w-0 flex-1 items-center gap-3 text-left rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >

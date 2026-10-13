@@ -13,7 +13,6 @@ server/
 │   ├── StdioConfigSection.tsx
 │   └── index.ts
 ├── dialog/           # Dialog components
-│   ├── ServerConfigDialog.tsx
 │   ├── ServerConfigDialogFooter.tsx
 │   ├── ServerConfigDialogHeader.tsx
 │   ├── ServerTemplateDialog.tsx
@@ -53,7 +52,6 @@ All components can be imported from the main index file:
 ```typescript
 import {
   ServerList,
-  ServerConfigDialog,
   useServerConfig,
 } from "@/components/server";
 ```

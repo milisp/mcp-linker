@@ -13,7 +13,6 @@ export * from "./input/CommandInput";
 export * from "./input/EnvEditor";
 
 // Dialog components
-export * from "./dialog/ServerConfigDialog";
 export * from "./dialog/ServerConfigDialogFooter";
 export * from "./dialog/ServerConfigDialogHeader";
 export * from "./dialog/ServerTemplateDialog";
