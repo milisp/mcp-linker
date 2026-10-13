@@ -1,3 +1,4 @@
+import { requiresConfigFile } from "@/lib/clients";
 import { normalizeServerConfig } from "../utils/normalizeServerConfig";
 import { defaultServerName } from "../utils/quickInstall";
 import { useCCProjectStore } from "@/stores/ccProject";
@@ -46,7 +47,7 @@ export function useServerEditor(server: ServerType) {
             const entry = list.find(entry => entry.name === initial.name);
             if (entry) existing = normalizeServerConfig(entry);
           }
-        } else if (!(selectedClient === "custom" && !selectedPath)) {
+        } else if (!(requiresConfigFile(selectedClient) && !selectedPath)) {
           const data = await invoke<{ mcpServers?: Record<string, Record<string, unknown>> }>("read_json_file", { clientName: selectedClient, path: selectedPath || undefined });
           if (data.mcpServers?.[initial.name]) existing = normalizeServerConfig(data.mcpServers[initial.name]);
         }

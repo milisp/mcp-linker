@@ -12,6 +12,7 @@ mod claude_code_commands;
 mod claude_tools;
 mod claude_disabled;
 mod client;
+mod clients;
 mod cmd;
 mod codex;
 mod config;
@@ -49,6 +50,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
+            clients::list_clients,
             app_settings::read_app_settings,
             app_settings::save_project_preferences,
             cmd::read_json_file,

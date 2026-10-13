@@ -13,7 +13,7 @@ import { useMcpRefresh } from "@/contexts/McpRefreshContext";
 import { LicenseRequiredError } from "@/lib/claude";
 import { toast } from "sonner";
 import { uninstallServer } from "./utils/installedServer";
-import { clientOptions } from "@/constants/clients";
+import { clientLabel as labelOf } from "@/lib/clients";
 import { InstallationTarget } from "@/components/settings/InstallationTarget";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -28,7 +28,7 @@ export function ServerWorkspace({ server, onSaved, onUninstalled, initialTab = "
   const config = useMemo(() => editor.config, [editor.config]);
   const complete = !!quickInstallConfig({ ...server, requiresConfiguration: false, configs: [config] });
   const installed = editor.draft.persistedName === editor.draft.name;
-  const clientLabel = clientOptions.find(client => client.value === editor.selectedClient)?.label ?? editor.selectedClient;
+  const clientLabel = labelOf(editor.selectedClient);
   const targetPath = editor.selectedClient === "claude_code" ? editor.selectedProject : editor.selectedPath;
   const projectName = targetPath?.split(/[\\/]/).filter(Boolean).pop();
   const targetLabel = editor.selectedClient === "claude_code"

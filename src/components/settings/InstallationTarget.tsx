@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useCCProjectStore } from "@/stores/ccProject";
 import { useProjectPreferences } from "@/stores/projectPreferences";
-import { mustHavePathClients, needspathClient, pickClientPath } from "@/lib/data";
+import { requiresConfigFile, takesPath } from "@/lib/clients";
+import { pickClientPath } from "@/lib/data";
 import { ClientSelector } from "./client-selector";
 
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() || path;
@@ -33,9 +34,9 @@ export function InstallationTarget({ allowClientChange = true, sidebar = false, 
   const [query, setQuery] = useState("");
   const [operationError, setOperationError] = useState<string | null>(null);
   const claude = selectedClient === "claude_code";
-  const supportsProject = claude || needspathClient.includes(selectedClient);
-  const pathRequired = mustHavePathClients.includes(selectedClient);
-  const fileTarget = selectedClient === "custom";
+  const supportsProject = claude || takesPath(selectedClient);
+  const pathRequired = requiresConfigFile(selectedClient);
+  const fileTarget = pathRequired;
   const path = claude ? selectedProject : selectedPath;
   const saved = preferences[selectedClient]?.visibleProjects;
   const visible = saved ?? (path ? [path] : []);

@@ -1,3 +1,4 @@
+use crate::clients::{self, Location, Storage};
 use crate::json_manager::file_io::parse_jsonc;
 use dirs::home_dir;
 use serde_json::{json, Value};
@@ -26,20 +27,26 @@ impl ClientConfig {
 
     /// Pure path lookup; `new` adds the one-time Copilot migration on top.
     fn resolve(home: &Path, name: &str, path: Option<&str>) -> Result<PathBuf, String> {
+        let client = clients::find(name).ok_or_else(|| format!("Unknown client '{name}'"))?;
+        if client.storage != Storage::Json {
+            return Err(format!("{} does not use a JSON config file", client.label));
+        }
         let project = path.filter(|p| !p.is_empty()).map(PathBuf::from);
+        if client.location == Location::File {
+            return Self::custom_file(project);
+        }
+        if let (Some(dir), Some(file)) = (&project, client.project_file) {
+            return Ok(dir.join(file));
+        }
         Ok(match name {
             "claude" => Self::app_support_dir(home).join("Claude/claude_desktop_config.json"),
             "cline" => Self::vscode_user_dir(home)
                 .join("globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"),
-            "copilot" => match project {
-                Some(dir) => dir.join(".vscode/mcp.json"),
-                None => Self::vscode_user_dir(home).join("mcp.json"),
-            },
-            "cursor" => project.unwrap_or_else(|| home.to_path_buf()).join(".cursor/mcp.json"),
+            "copilot" => Self::vscode_user_dir(home).join("mcp.json"),
+            "cursor" => home.join(".cursor/mcp.json"),
             "mcphub" => home.join(".config/mcphub/servers.json"),
             "mcplinker" => home.join(".config/mcplinker/mcp.json"),
-            "custom" => Self::custom_file(project)?,
-            other => return Err(format!("Unknown client '{other}'")),
+            other => return Err(format!("No user config location for '{other}'")),
         })
     }
 
@@ -197,6 +204,21 @@ mod tests {
     #[test]
     fn unknown_client_is_an_error() {
         assert!(path_of("vscode", None).is_err());
+    }
+
+    #[test]
+    fn non_json_clients_have_no_config_file() {
+        assert!(path_of("codex", None).is_err());
+        assert!(path_of("claude_code", Some("/work/app")).is_err());
+    }
+
+    #[test]
+    fn every_json_client_resolves_a_user_path() {
+        for client in clients::CLIENTS {
+            if client.storage == Storage::Json && client.location != Location::File {
+                assert!(path_of(client.id, None).is_ok(), "{}", client.id);
+            }
+        }
     }
 
     mod legacy_copilot {
