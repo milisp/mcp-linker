@@ -16,6 +16,25 @@ import { availableClients } from "@/constants/clients";
 import { LicenseRequiredError, claudeWrite, clientWrite, toClaudeRequest } from "@/lib/claude";
 import { needspathClient } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import {
+  SCOPE_LABEL,
+  type ServerMap,
+  type Staged,
+  basename,
+  buildSourceOptions,
+  ccLabel,
+  ccSource,
+  describe,
+  isCCSource,
+  missingNames,
+  parseCCSource,
+  rightNamesOf,
+  sanitize,
+  sidebarProjects,
+  stageCopy,
+  targetValueOf,
+  toggleDelete as toggleDeleteStaged,
+} from "./localSync";
 import { type ClaudeCodeScope, useCCProjectStore } from "@/stores/ccProject";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useProjectPreferences } from "@/stores/projectPreferences";
@@ -27,33 +46,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-type ServerMap = Record<string, Record<string, any>>;
-
 const clientLabel = (value: string) =>
   availableClients.find(client => client.value === value)?.label ?? value;
 
-const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() || path;
-const SCOPE_LABEL: Record<ClaudeCodeScope, string> = { local: "Local", project: "Project", user: "User" };
-
-// Claude Code sources are a project and scope, encoded as "claude_code|<scope>|<dir>".
-const ccSource = (scope: ClaudeCodeScope, dir: string) => `claude_code|${scope}|${scope === "user" ? "" : dir}`;
-const parseCCSource = (value: string) => {
-  const [, scope, dir] = value.split("|");
-  return { scope: scope as ClaudeCodeScope, dir: dir ?? "" };
-};
-const ccLabel = (scope: ClaudeCodeScope, dir: string) =>
-  scope === "user" ? "Claude Code · User" : `Claude Code · ${basename(dir)} · ${SCOPE_LABEL[scope]}`;
-
-// Bookkeeping keys that should not travel to another client.
-const sanitize = ({ disabled: _d, _creator, updated_at, name: _n, ...rest }: Record<string, any>) => rest;
-
-const describe = (config: Record<string, any>) =>
-  config.command
-    ? [config.command, ...(config.args ?? [])].join(" ")
-    : (config.url ?? config.serverUrl ?? config.httpUrl ?? "");
-
 async function readServers(client: string, path: string | null): Promise<ServerMap> {
-  if (client.startsWith("claude_code|")) {
+  if (isCCSource(client)) {
     const { scope, dir } = parseCCSource(client);
     const list = await invoke<any[]>("claude_mcp_list", { workingDir: dir, scope });
     return Object.fromEntries((list || []).map(({ name, ...rest }) => [name, rest]));
@@ -74,18 +71,12 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
   const visibleProjects = useProjectPreferences(state => state.preferences.claude_code?.visibleProjects);
 
   // Other clients, plus every Claude Code project (as listed in the sidebar) and scope; never the target itself.
-  const targetValue = selectedClient === "claude_code" ? ccSource(selectedScope, selectedProject ?? "") : selectedClient;
-  const { projects, others, sourceOptions } = useMemo(() => {
-    const projects = [...new Set([...(visibleProjects ?? []), ...(selectedProject ? [selectedProject] : [])])];
-    const cc = [
-      ...projects.flatMap(dir => (["local", "project"] as const).map(scope => ({ value: ccSource(scope, dir), label: ccLabel(scope, dir) }))),
-      { value: ccSource("user", ""), label: ccLabel("user", "") },
-    ];
-    const others = availableClients
-      .filter(client => client.value !== "claude_code" && client.value !== targetValue)
-      .map(client => ({ value: client.value, label: client.label }));
-    return { projects, others, sourceOptions: [...cc.filter(option => option.value !== targetValue), ...others] };
-  }, [visibleProjects, selectedProject, targetValue]);
+  const targetValue = targetValueOf(selectedClient, selectedScope, selectedProject);
+  const projects = useMemo(() => sidebarProjects(visibleProjects, selectedProject), [visibleProjects, selectedProject]);
+  const { others, sourceOptions } = useMemo(
+    () => buildSourceOptions(projects, availableClients.map(({ value, label }) => ({ value, label })), targetValue),
+    [projects, targetValue],
+  );
   const sourceLabel = (value: string) => sourceOptions.find(option => option.value === value)?.label ?? clientLabel(value);
   const targetLabel = selectedClient === "claude_code" ? ccLabel(selectedScope, selectedProject ?? "") : clientLabel(selectedClient);
 
@@ -143,26 +134,19 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
   );
 
   const leftNames = useMemo(() => Object.keys(source), [source]);
-  const rightNames = useMemo(() => [...new Set([...Object.keys(target), ...toCopy])], [target, toCopy]);
-  const missing = leftNames.filter(name => !(name in target) && !toCopy.has(name));
+  const rightNames = useMemo(() => rightNamesOf(target, toCopy), [target, toCopy]);
+  const missing = missingNames(source, target, toCopy);
 
+  const applyStaged = (next: Staged) => {
+    setToCopy(next.toCopy);
+    setToDelete(next.toDelete);
+  };
   const copy = (names: string[]) => {
-    setToCopy(prev => new Set([...prev, ...names]));
-    // A copy replaces the server, so a staged delete of the same name is moot.
-    setToDelete(prev => new Set([...prev].filter(name => !names.includes(name))));
+    applyStaged(stageCopy({ toCopy, toDelete }, names));
     setLeftSel(new Set());
   };
-
-  // Unstage a copy, restore a staged delete, or stage a delete of an existing server.
   const toggleDelete = (names: string[]) => {
-    const copies = new Set(toCopy);
-    const deletes = new Set(toDelete);
-    for (const name of names) {
-      if (copies.delete(name)) continue;
-      if (!deletes.delete(name)) deletes.add(name);
-    }
-    setToCopy(copies);
-    setToDelete(deletes);
+    applyStaged(toggleDeleteStaged({ toCopy, toDelete }, names));
     setRightSel(new Set());
   };
 
@@ -201,10 +185,10 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
     }
   };
 
-  const cc = fromClient.startsWith("claude_code|") ? parseCCSource(fromClient) : null;
+  const cc = isCCSource(fromClient) ? parseCCSource(fromClient) : null;
   const pickClient = (value: string) => {
     if (value !== "claude_code") return setFromClient(value);
-    setFromClient(sourceOptions.find(option => option.value.startsWith("claude_code|"))?.value ?? "");
+    setFromClient(sourceOptions.find(option => isCCSource(option.value))?.value ?? "");
   };
   const pickScope = (scope: ClaudeCodeScope) =>
     setFromClient(ccSource(scope, scope === "user" ? "" : cc?.dir || selectedProject || projects[0] || ""));
