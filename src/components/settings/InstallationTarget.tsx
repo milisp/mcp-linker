@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronRight, Plus, Settings2 } from "lucide-react";
+import { ChevronRight, FolderPlus, Settings2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -74,7 +74,7 @@ export function InstallationTarget({ allowClientChange = true, sidebar = false, 
       <div className="flex h-8 items-center gap-1">
         <CollapsibleTrigger asChild><Button type="button" variant="ghost" size="sm" className="h-8 flex-1 justify-start gap-2 px-2 text-xs text-muted-foreground">Projects<ChevronRight className={`size-4 transition-transform ${expanded ? "rotate-90" : ""}`} /></Button></CollapsibleTrigger>
         <Button type="button" variant="ghost" size="icon" className="size-7" aria-label="Manage visible projects" disabled={!loaded} onClick={() => setManage(true)}><Settings2 className="size-3.5" /></Button>
-        <Button type="button" variant="ghost" size="icon" className="size-7" aria-label="Browse and add project" disabled={!loaded} onClick={browse}><Plus className="size-3.5" /></Button>
+        <Button type="button" variant="ghost" size="icon" className="size-7" aria-label="Browse and add project" disabled={!loaded} onClick={browse}><FolderPlus className="size-3.5" /></Button>
       </div>
       <CollapsibleContent className="space-y-0.5">
         {!needsProject && !["custom", "vscode"].includes(selectedClient) && <Button type="button" variant="ghost" size="sm" className={`h-8 w-full justify-start pl-8 pr-2 text-xs ${!path ? "bg-accent" : ""}`} onClick={() => choose("")}>User configuration</Button>}
