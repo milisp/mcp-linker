@@ -22,7 +22,7 @@ export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, ins
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const canQuickAdd = quickInstallConfig(server) !== null;
   const labels = serverTransportLabels(server);
-  const showAddIcon = canQuickAdd && !installed && !isAdding;
+  const showAddIcon = !installed && !isAdding;
 
   const handleAdd = async () => {
     if (addingRef.current) return;
@@ -77,7 +77,7 @@ export function ServerCard({ server, onOpenDetails, onQuickAdd, targetLabel, ins
         aria-label={isAdding ? `Adding ${server.name}` : installed ? `${server.name} installed in ${targetLabel}. Open details` : canQuickAdd ? `Add ${server.name} to ${targetLabel}` : `Configure ${server.name}`}
       >
         {isAdding ? <Loader2 className="size-3.5 animate-spin" /> : installed ? <Check className="size-3.5" /> : showAddIcon ? <Plus className="size-3.5" /> : null}
-        {isAdding ? "Adding" : installed ? "Installed" : canQuickAdd ? null : "Configure"}
+        {isAdding ? "Adding" : installed ? "Installed" : null}
       </Button>
       {onRemove && <DeleteAlertDialog
         itemName={`the saved configuration "${server.name}"`}
