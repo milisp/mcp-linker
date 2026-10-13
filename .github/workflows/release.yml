@@ -12,7 +12,52 @@ env:
   TAURI_BUNDLE: all
 
 jobs:
+  # Runs once before the build matrix: fail fast on version mismatches and
+  # extract this version's CHANGELOG.md section as the release body.
+  # tauri-action also writes the body to latest.json `notes`, which the
+  # in-app updater displays.
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.notes.outputs.body }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check versions match
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          CARGO_VERSION=$(sed -n 's/^version = "\(.*\)"$/\1/p' src-tauri/Cargo.toml | head -n 1)
+          echo "package.json: $VERSION, Cargo.toml: $CARGO_VERSION"
+          if [ "$CARGO_VERSION" != "$VERSION" ]; then
+            echo "::error::src-tauri/Cargo.toml version ($CARGO_VERSION) does not match package.json ($VERSION)"
+            exit 1
+          fi
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version v$VERSION"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Extract release notes
+        id: notes
+        run: |
+          awk -v header="## [$VERSION]" '
+            index($0, header) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for [$VERSION]"
+            exit 1
+          fi
+          {
+            echo "body<<__RELEASE_NOTES__"
+            cat release-notes.md
+            echo "__RELEASE_NOTES__"
+          } >> "$GITHUB_OUTPUT"
+
   publish-tauri:
+    needs: verify
     permissions:
       contents: write
       packages: write
@@ -92,7 +137,7 @@ jobs:
         with:
           tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: 'v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
+          releaseBody: ${{ needs.verify.outputs.notes }}
           generateReleaseNotes: true
           releaseDraft: false
           prerelease: false

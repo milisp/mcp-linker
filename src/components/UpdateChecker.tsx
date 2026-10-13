@@ -33,6 +33,40 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+// Release notes come from the CHANGELOG.md section; render only the subset it uses
+// (### headings, "- " bullets, **bold**) instead of pulling in a markdown library
+const renderInline = (text: string) =>
+  text.split(/\*\*(.+?)\*\*/g).map((part, i) =>
+    i % 2 === 1 ? <strong key={i} className="font-medium text-foreground">{part}</strong> : part
+  );
+
+function ReleaseNotes({ body }: { body: string }) {
+  return (
+    <div className="space-y-1">
+      {body.split("\n").map((raw, i) => {
+        const line = raw.trim();
+        if (!line) return null;
+        if (line.startsWith("#")) {
+          return (
+            <h5 key={i} className="pt-2 first:pt-0 font-medium text-foreground">
+              {line.replace(/^#+\s*/, "")}
+            </h5>
+          );
+        }
+        if (/^[-*]\s+/.test(line)) {
+          return (
+            <div key={i} className="flex gap-2">
+              <span aria-hidden>•</span>
+              <span>{renderInline(line.replace(/^[-*]\s+/, ""))}</span>
+            </div>
+          );
+        }
+        return <p key={i}>{renderInline(line)}</p>;
+      })}
+    </div>
+  );
+}
+
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
@@ -306,8 +340,8 @@ export function UpdateChecker() {
             {update?.body && (
               <div className="mt-4">
                 <h4 className="text-sm font-medium mb-2">What's new:</h4>
-                <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md max-h-40 overflow-y-auto whitespace-pre-wrap">
-                  {update.body}
+                <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md max-h-60 overflow-y-auto">
+                  <ReleaseNotes body={update.body} />
                 </div>
               </div>
             )}
