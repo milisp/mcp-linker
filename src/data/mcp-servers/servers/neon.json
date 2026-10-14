@@ -1,0 +1,48 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/neon",
+  "title": "Neon",
+  "description": "Manage Neon projects, branches, and Postgres databases",
+  "version": "1.0.0",
+  "websiteUrl": "https://neon.com/docs/ai/neon-mcp-server",
+  "repository": {
+    "url": "https://github.com/neondatabase/mcp-server-neon",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/neon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.neon.tech/mcp",
+      "headers": [
+        {
+          "description": "Optional Bearer token with a Neon API key.",
+          "isSecret": true,
+          "name": "Authorization"
+        },
+        {
+          "description": "Optional header to enable read-only mode for tool filtering.",
+          "format": "boolean",
+          "default": "false",
+          "name": "x-read-only"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "neon",
+        "category": "Database & Data"
+      }
+    }
+  }
+}

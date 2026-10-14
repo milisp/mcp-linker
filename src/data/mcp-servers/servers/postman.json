@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/postman",
+  "title": "Postman",
+  "description": "Work with Postman collections, APIs, and workspaces",
+  "version": "1.0.0",
+  "websiteUrl": "https://www.postman.com/product/mcp-server/",
+  "repository": {
+    "url": "https://github.com/postmanlabs/postman-mcp-server",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/postman.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.postman.com/mcp",
+      "headers": [
+        {
+          "description": "A Bearer token and a valid Postman API key for authentication.",
+          "isRequired": true,
+          "isSecret": true,
+          "name": "Authorization"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "postman",
+        "category": "Development & Testing"
+      }
+    }
+  }
+}

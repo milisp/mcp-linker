@@ -1,9 +1,9 @@
-use chrono::Utc;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::path::Path;
 
+use super::disabled_list;
 use super::file_io::{read_json_file, write_json_file};
-use super::utils::{get_key_by_client, normalize_response_key};
+use super::utils::{get_key_by_client, is_disabled_list_client, is_per_server_disabled_client, normalize_response_key, without_markers};
 
 /// Add a new MCP server
 pub async fn add_mcp_server(
@@ -27,13 +27,13 @@ pub async fn add_mcp_server(
         return Err(format!("Server '{}' already exists in '{}'", name, key));
     }
 
-    let mut config = config.clone();
-    config["_creator"] = json!("mcp_linker");
-    config["updated_at"] = json!(Utc::now().to_rfc3339());
-
-    json[key][name] = config;
+    json[key][name] = without_markers(config);
 
     write_json_file(path, &json).await?;
+    if is_disabled_list_client(client) {
+        // A stale entry from an earlier server of the same name would start it disabled.
+        disabled_list::set(path, &[name], false).await?;
+    }
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
 }
@@ -43,15 +43,17 @@ pub async fn remove_mcp_server(path: &Path, client: &str, name: &str) -> Result<
     let mut json = read_json_file(path).await?;
     let key = get_key_by_client(client);
 
-    if json.is_object()
-        && json.as_object().unwrap().contains_key(key)
-        && json[key].is_object()
-        && json[key].as_object().unwrap().contains_key(name)
-    {
-        json[key].as_object_mut().unwrap().remove(name);
+    // A disabled server lives under "__disabled", so look there too.
+    for section in [key, "__disabled"] {
+        if let Some(servers) = json.get_mut(section).and_then(Value::as_object_mut) {
+            servers.remove(name);
+        }
     }
 
     write_json_file(path, &json).await?;
+    if is_disabled_list_client(client) {
+        disabled_list::set(path, &[name], false).await?;
+    }
 
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
@@ -71,36 +73,29 @@ pub async fn update_mcp_server(
         json = json!({});
     }
 
-    // Check if server exists in active servers
-    if json.as_object().unwrap().contains_key(key)
-        && json[key].is_object()
-        && json[key].as_object().unwrap().contains_key(name)
-    {
-        let mut config = config.clone();
-        config["_creator"] = json!("mcp_linker");
-        config["updated_at"] = json!(Utc::now().to_rfc3339());
-        json[key][name] = config;
-    }
-    // Check if server exists in disabled servers
-    else if json.as_object().unwrap().contains_key("__disabled")
-        && json["__disabled"].is_object()
-        && json["__disabled"].as_object().unwrap().contains_key(name)
-    {
-        let mut config = config.clone();
-        config["_creator"] = json!("mcp_linker");
-        config["updated_at"] = json!(Utc::now().to_rfc3339());
-        json["__disabled"][name] = config;
-    }
-    // If server doesn't exist in either section, add to active servers
-    else {
-        if !json.as_object().unwrap().contains_key(key) {
-            json[key] = json!({});
+    let mut config = without_markers(config);
+
+    let in_section = |json: &Value, section: &str| {
+        json.get(section)
+            .and_then(Value::as_object)
+            .is_some_and(|servers| servers.contains_key(name))
+    };
+    // A disabled server stays disabled when its config is replaced.
+    let section = if !in_section(&json, key) && in_section(&json, "__disabled") {
+        "__disabled"
+    } else {
+        if is_per_server_disabled_client(client)
+            && json[key][name]["disabled"].as_bool() == Some(true)
+            && config.get("disabled").is_none()
+        {
+            config["disabled"] = json!(true);
         }
-        let mut config = config.clone();
-        config["_creator"] = json!("mcp_linker");
-        config["updated_at"] = json!(Utc::now().to_rfc3339());
-        json[key][name] = config;
+        key
+    };
+    if !json[section].is_object() {
+        json[section] = json!({});
     }
+    json[section][name] = config;
 
     write_json_file(path, &json).await?;
 
@@ -114,13 +109,16 @@ pub async fn batch_delete_mcp_servers(
     client: &str,
     server_names: Vec<String>,
 ) -> Result<Value, String> {
-    use super::utils::is_per_server_disabled_client;
 
     let mut json = read_json_file(path).await?;
     let key = get_key_by_client(client);
 
     if !json.is_object() {
         return Err("Invalid JSON structure".to_string());
+    }
+    if is_disabled_list_client(client) {
+        let names: Vec<&str> = server_names.iter().map(String::as_str).collect();
+        disabled_list::set(path, &names, false).await?;
     }
 
     if is_per_server_disabled_client(client) {
@@ -184,4 +182,193 @@ pub async fn batch_delete_mcp_servers(
 
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    async fn write_fixture(path: &Path, value: Value) {
+        write_json_file(path, &value).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn update_inserts_missing_server_and_keeps_others() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        write_fixture(&path, json!({"mcpServers":{"existing":{"command":"keep"}}})).await;
+
+        update_mcp_server(
+            &path,
+            "claude",
+            "new",
+            json!({"command":"npx","args":["x"]}),
+        )
+        .await
+        .unwrap();
+
+        let saved = read_json_file(&path).await.unwrap();
+        assert_eq!(saved["mcpServers"]["new"]["command"], "npx");
+        assert_eq!(saved["mcpServers"]["new"]["args"], json!(["x"]));
+        assert_eq!(saved["mcpServers"]["new"], json!({"command":"npx","args":["x"]}));
+        assert_eq!(saved["mcpServers"]["existing"], json!({"command":"keep"}));
+    }
+
+    #[tokio::test]
+    async fn update_overwrites_active_server_and_drops_stale_fields() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        write_fixture(
+            &path,
+            json!({"mcpServers":{"demo":{"command":"old","env":{"A":"1"}},"other":{"command":"o"}}}),
+        )
+        .await;
+
+        update_mcp_server(&path, "claude", "demo", json!({"command":"new","_creator":"mcp_linker","updated_at":"2025-01-01T00:00:00Z"}))
+            .await
+            .unwrap();
+
+        let saved = read_json_file(&path).await.unwrap();
+        assert_eq!(saved["mcpServers"]["demo"]["command"], "new");
+        assert_eq!(saved["mcpServers"]["demo"], json!({"command":"new"}));
+        assert_eq!(saved["mcpServers"]["other"], json!({"command":"o"}));
+    }
+
+    #[tokio::test]
+    async fn update_disabled_server_stays_disabled() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        write_fixture(
+            &path,
+            json!({"mcpServers":{"a":{"command":"a"}},"__disabled":{"off":{"command":"old"}}}),
+        )
+        .await;
+
+        update_mcp_server(&path, "claude", "off", json!({"command":"new"}))
+            .await
+            .unwrap();
+
+        let saved = read_json_file(&path).await.unwrap();
+        assert_eq!(saved["__disabled"]["off"], json!({"command":"new"}));
+        assert!(saved["mcpServers"].get("off").is_none());
+        assert_eq!(saved["mcpServers"]["a"], json!({"command":"a"}));
+    }
+
+    #[tokio::test]
+    async fn remove_deletes_only_named_server() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        write_fixture(
+            &path,
+            json!({"mcpServers":{"a":{"command":"a"},"b":{"command":"b"}}}),
+        )
+        .await;
+
+        remove_mcp_server(&path, "claude", "a").await.unwrap();
+
+        let saved = read_json_file(&path).await.unwrap();
+        assert!(saved["mcpServers"].get("a").is_none());
+        assert_eq!(saved["mcpServers"]["b"], json!({"command":"b"}));
+    }
+
+    #[tokio::test]
+    async fn remove_deletes_disabled_server() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        write_json_file(
+            &path,
+            &json!({
+                "mcpServers": { "active": { "command": "a" } },
+                "__disabled": { "off": { "command": "b" } }
+            }),
+        )
+        .await
+        .unwrap();
+
+        remove_mcp_server(&path, "claude", "off").await.unwrap();
+
+        let json = read_json_file(&path).await.unwrap();
+        assert!(json["__disabled"].get("off").is_none());
+        assert_eq!(json["mcpServers"]["active"]["command"], "a");
+    }
+
+    #[tokio::test]
+    async fn remove_missing_server_is_not_an_error_and_keeps_file() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("config.json");
+        let original = json!({"theme":"dark","mcpServers":{"a":{"command":"a"}}});
+        write_fixture(&path, original.clone()).await;
+
+        remove_mcp_server(&path, "claude", "ghost").await.unwrap();
+
+        assert_eq!(read_json_file(&path).await.unwrap(), original);
+    }
+
+    #[tokio::test]
+    async fn copilot_client_uses_servers_key() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("mcp.json");
+        write_fixture(&path, json!({"servers":{"a":{"command":"a"}}})).await;
+
+        update_mcp_server(&path, "copilot", "b", json!({"command":"b"}))
+            .await
+            .unwrap();
+
+        let saved = read_json_file(&path).await.unwrap();
+        assert_eq!(saved["servers"]["b"]["command"], "b");
+        assert_eq!(saved["servers"]["a"], json!({"command":"a"}));
+        assert!(saved.get("mcpServers").is_none());
+
+        remove_mcp_server(&path, "copilot", "a").await.unwrap();
+        let saved = read_json_file(&path).await.unwrap();
+        assert!(saved["servers"].get("a").is_none());
+        assert!(saved["servers"].get("b").is_some());
+    }
+
+    #[tokio::test]
+    async fn update_on_missing_file_creates_it() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("nested").join("config.json");
+        assert!(!path.exists());
+
+        update_mcp_server(&path, "claude", "demo", json!({"command":"x"}))
+            .await
+            .unwrap();
+
+        assert!(path.exists());
+        let saved = read_json_file(&path).await.unwrap();
+        assert_eq!(saved["mcpServers"]["demo"]["command"], "x");
+    }
+
+    #[tokio::test]
+    async fn update_keeps_per_server_disabled_flag() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("cline_mcp_settings.json");
+        write_fixture(&path, json!({
+            "mcpServers": { "off": { "command": "old", "disabled": true } }
+        }))
+        .await;
+
+        update_mcp_server(&path, "cline", "off", json!({ "command": "new" })).await.unwrap();
+
+        let json = read_json_file(&path).await.unwrap();
+        assert_eq!(json["mcpServers"]["off"]["command"], "new");
+        assert_eq!(json["mcpServers"]["off"]["disabled"], true);
+    }
+
+    #[tokio::test]
+    async fn update_honors_an_explicit_disabled_flag() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("servers.json");
+        write_fixture(&path, json!({
+            "mcpServers": { "off": { "command": "old", "disabled": true } }
+        }))
+        .await;
+
+        update_mcp_server(&path, "mcphub", "off", json!({ "command": "new", "disabled": false })).await.unwrap();
+
+        let json = read_json_file(&path).await.unwrap();
+        assert_eq!(json["mcpServers"]["off"]["disabled"], false);
+    }
 }

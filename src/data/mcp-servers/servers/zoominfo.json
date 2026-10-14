@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/zoominfo",
+  "title": "ZoomInfo",
+  "description": "Search and enrich companies, contacts, and buyer intent signals",
+  "version": "1.0.0",
+  "websiteUrl": "https://www.zoominfo.com",
+  "repository": {
+    "url": "https://github.com/Zoominfo/zoominfo-mcp-plugin",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/zoominfo.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.zoominfo.com/mcp",
+      "headers": [
+        {
+          "description": "OAuth 2.0 Bearer access token (format: Bearer <token>). See /.well-known/oauth-protected-resource and /.well-known/oauth-authorization-server for the discovery/authorization endpoints.",
+          "isRequired": true,
+          "isSecret": true,
+          "name": "Authorization"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "zoominfo",
+        "category": "Sales & Marketing"
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
-import { CURATED_SERVER_IDS, FEATURED_SERVER_IDS } from "@/data/mcp-servers/catalog";
+import { CollectionCarousel } from "@/components/collection/CollectionCarousel";
+import { CATALOG_COLLECTIONS, CURATED_SERVER_IDS, FEATURED_SERVER_IDS } from "@/data/mcp-servers/catalog";
 import { ServerList } from "@/components/server";
 import { useMcpServers } from "@/hooks/useMcpServers";
 import { Search } from "lucide-react";
@@ -145,6 +146,10 @@ export default function Discovery() {
           ))}
         </div>
       </div>
+
+      {!deferredSearchTerm && !search.category && transport === "all" && CATALOG_COLLECTIONS.length > 0 && (
+        <CollectionCarousel collections={CATALOG_COLLECTIONS} />
+      )}
 
       {featuredServers.length > 0 && (
         <section className="space-y-4" aria-labelledby="featured-servers-title">

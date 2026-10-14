@@ -1,8 +1,8 @@
+import { addToClaudeCode, clientWrite, LicenseRequiredError } from "@/lib/claude";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useClientPathStore } from "@/stores";
 import { useViewStore } from "@/stores/viewStore";
-import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -66,7 +66,8 @@ export function InstallAppPage() {
     }
 
     try {
-      await invoke("add_mcp_server", {
+      if (selectedClient === "claude_code") await addToClaudeCode(serverName, serverConfig);
+      else await clientWrite("add_mcp_server", {
         clientName: selectedClient,
         path: selectedPath || undefined,
         serverName: serverName,
@@ -75,7 +76,7 @@ export function InstallAppPage() {
       toast.success(`Successfully added server ${serverName}`);
     } catch (error) {
       console.error("Failed to add server:", error);
-      toast.error(`Failed to add server: ${JSON.stringify(error)}`);
+      if (!(error instanceof LicenseRequiredError)) toast.error(`Failed to add server: ${error instanceof Error ? error.message : String(error)}`);
     }
   }, [selectedClient, selectedPath, serverName, editableConfig]);
 

@@ -20,7 +20,29 @@ pub struct CodexConfig {
     pub profiles: HashMap<String, serde_json::Value>,
 }
 
+/// `$CODEX_HOME/config.toml`, as Codex itself resolves it, else `~/.codex/config.toml`.
 pub fn get_config_path() -> Result<PathBuf, String> {
-    let home = home_dir().ok_or_else(|| "Failed to get home directory".to_string())?;
-    Ok(home.join(".codex").join("config.toml"))
+    config_path_from(std::env::var_os("CODEX_HOME"), home_dir())
+}
+
+fn config_path_from(codex_home: Option<std::ffi::OsString>, home: Option<PathBuf>) -> Result<PathBuf, String> {
+    match codex_home.filter(|dir| !dir.is_empty()) {
+        Some(dir) => Ok(PathBuf::from(dir).join("config.toml")),
+        None => Ok(home.ok_or("Failed to get home directory")?.join(".codex/config.toml")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::config_path_from;
+    use std::path::PathBuf;
+
+    #[test]
+    fn honors_codex_home_like_codex_does() {
+        let home = Some(PathBuf::from("/home/u"));
+        assert_eq!(config_path_from(Some("/opt/codex".into()), home.clone()).unwrap(), PathBuf::from("/opt/codex/config.toml"));
+        assert_eq!(config_path_from(Some("".into()), home.clone()).unwrap(), PathBuf::from("/home/u/.codex/config.toml"));
+        assert_eq!(config_path_from(None, home).unwrap(), PathBuf::from("/home/u/.codex/config.toml"));
+        assert!(config_path_from(None, None).is_err());
+    }
 }

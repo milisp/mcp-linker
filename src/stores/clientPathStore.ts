@@ -1,75 +1,65 @@
 import { create } from "zustand";
 
+/** Whether a project-capable client (Cursor, VS Code) targets its user config or a project folder. */
+export type TargetScope = "user" | "project";
+
 interface ClientPathState {
   selectedClient: string;
+  /** The path operations use: null while the user config is targeted. */
   selectedPath: string | null;
+  selectedScope: TargetScope;
   setSelectedClient: (client: string) => void;
+  /** A path selects the project scope; null selects the user config. */
   setSelectedPath: (path: string | null) => void;
+  /** Switches to the user config, or back to the remembered project path if there is one. */
+  setSelectedScope: (scope: TargetScope) => void;
   getClientPath: (client: string) => string | null;
   setClientPath: (client: string, path: string | null) => void;
 }
 
-// Get initial client from localStorage or use default
-const getInitialClient = () => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("selectedClient") || "claude";
-  }
-  return "claude";
+const read = (key: string) => (typeof window !== "undefined" ? localStorage.getItem(key) : null);
+const write = (key: string, value: string | null) => {
+  if (typeof window === "undefined") return;
+  if (value) localStorage.setItem(key, value);
+  else localStorage.removeItem(key);
 };
 
-// Get path for a specific client from localStorage
-const getClientPathFromStorage = (client: string): string | null => {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem(`clientPath_${client}`);
-  }
-  return null;
+const getInitialClient = () => read("selectedClient") || "claude";
+// The last chosen path is remembered per client even while the user config is targeted.
+const getClientPathFromStorage = (client: string) => read(`clientPath_${client}`);
+const getScope = (client: string): TargetScope => {
+  const saved = read(`clientScope_${client}`);
+  if (saved === "user" || saved === "project") return saved;
+  return getClientPathFromStorage(client) ? "project" : "user";
 };
-
-// Set path for a specific client in localStorage
-const setClientPathInStorage = (client: string, path: string | null) => {
-  if (typeof window !== "undefined") {
-    if (path) {
-      localStorage.setItem(`clientPath_${client}`, path);
-    } else {
-      localStorage.removeItem(`clientPath_${client}`);
-    }
-  }
+// The project scope always has a path; without one the user config is the target.
+const targetOf = (client: string): { selectedScope: TargetScope; selectedPath: string | null } => {
+  const path = getClientPathFromStorage(client);
+  return getScope(client) === "project" && path ? { selectedScope: "project", selectedPath: path } : { selectedScope: "user", selectedPath: null };
 };
 
 export const useClientPathStore = create<ClientPathState>((set, get) => ({
   selectedClient: getInitialClient(),
-  selectedPath: getClientPathFromStorage(getInitialClient()),
-  setSelectedClient: (client) =>
-    set((state) => {
-      if (state.selectedClient !== client) {
-        // Save to localStorage when client changes
-        if (typeof window !== "undefined") {
-          localStorage.setItem("selectedClient", client);
-        }
-        // Load the path for the new client
-        const newPath = getClientPathFromStorage(client);
-        return { selectedClient: client, selectedPath: newPath };
-      }
-      return {};
-    }),
-  setSelectedPath: (path) =>
-    set((state) => {
-      if (state.selectedPath !== path) {
-        // Save the path for the current client
-        setClientPathInStorage(state.selectedClient, path);
-        return { selectedPath: path };
-      }
-      return {};
-    }),
-  getClientPath: (client: string) => {
-    return getClientPathFromStorage(client);
+  ...targetOf(getInitialClient()),
+  setSelectedClient: (client) => {
+    if (get().selectedClient === client) return;
+    write("selectedClient", client);
+    set({ selectedClient: client, ...targetOf(client) });
   },
-  setClientPath: (client: string, path: string | null) => {
-    setClientPathInStorage(client, path);
-    // If this is the currently selected client, update the state
-    const state = get();
-    if (state.selectedClient === client) {
-      set({ selectedPath: path });
-    }
+  setSelectedPath: (path) => {
+    const { selectedClient } = get();
+    if (path) write(`clientPath_${selectedClient}`, path);
+    write(`clientScope_${selectedClient}`, path ? "project" : "user");
+    set(targetOf(selectedClient));
+  },
+  setSelectedScope: (scope) => {
+    const { selectedClient } = get();
+    write(`clientScope_${selectedClient}`, scope);
+    set(targetOf(selectedClient));
+  },
+  getClientPath: (client) => getClientPathFromStorage(client),
+  setClientPath: (client, path) => {
+    write(`clientPath_${client}`, path);
+    if (get().selectedClient === client) set(targetOf(client));
   },
 }));

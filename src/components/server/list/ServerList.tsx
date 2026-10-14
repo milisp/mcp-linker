@@ -1,50 +1,87 @@
-import { availableClients } from "@/constants/clients";
+import { clientLabel } from "@/lib/clients";
 import { useCCProjectStore } from "@/stores/ccProject";
 import { useClientPathStore } from "@/stores/clientPathStore";
-import { useRepoUrlStore } from "@/stores/repoUrl";
+import { useViewStore } from "@/stores/viewStore";
 import type { ServerType } from "@/types";
-import { useState } from "react";
-import { ServerConfigDialog } from "../dialog";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useSaveServerConfig } from "../hooks/useSaveServerConfig";
+import { fetchInstalledNames } from "../utils/installedServer";
+import { defaultServerName as serverName, quickInstallConfig } from "../utils/quickInstall";
 import { ServerCard } from "./ServerCard";
 
 interface ServerListProps {
   mcpServers: ServerType[];
+  onRemove?: (server: ServerType) => Promise<void>;
+  emptyMessage?: string;
 }
 
-export function ServerList({ mcpServers }: ServerListProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentServer, setCurrentServer] = useState<ServerType | null>(null);
-  const setRepoUrl = useRepoUrlStore(state => state.setRepoUrl);
+export function ServerList({ mcpServers, onRemove, emptyMessage = "No servers match your criteria." }: ServerListProps) {
+  const navigate = useViewStore(state => state.navigate);
   const { selectedClient, selectedPath } = useClientPathStore();
   const selectedProject = useCCProjectStore(state => state.selectedProject);
   const selectedScope = useCCProjectStore(state => state.selectedScope);
-  const targetLabel = availableClients.find(client => client.value === selectedClient)?.label ?? selectedClient;
+  const { saveServerConfig } = useSaveServerConfig();
+  const targetLabel = clientLabel(selectedClient);
   const targetKey = JSON.stringify([selectedClient, selectedPath, selectedClient === "claude_code" ? [selectedProject, selectedScope] : null]);
+  // Installed names belong to one target; ignore them once the target changes.
+  const [installed, setInstalled] = useState<{ targetKey: string; names: Set<string> } | null>(null);
+  const installedNames = installed?.targetKey === targetKey ? installed.names : null;
+  const markInstalled = (name: string) => setInstalled(current => current?.targetKey === targetKey ? { targetKey, names: new Set(current.names).add(name) } : current);
 
-  const openDialog = (server: ServerType) => {
-    setCurrentServer(server);
-    setRepoUrl(server.source);
-    setIsDialogOpen(true);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => fetchInstalledNames(selectedClient, selectedPath, selectedProject, selectedScope)
+      .then(names => { if (!cancelled) setInstalled({ targetKey, names }); })
+      .catch(() => { if (!cancelled) setInstalled(null); });
+    void load();
+    window.addEventListener("mcpServerListChanged", load);
+    return () => { cancelled = true; window.removeEventListener("mcpServerListChanged", load); };
+  }, [targetKey]);
+
+  const openDetails = (server: ServerType) => {
+    navigate(`/servers/${encodeURIComponent(server.id)}`);
   };
 
   const quickAdd = async (server: ServerType): Promise<boolean> => {
-    // Confirm the destination before writing, without navigating to details.
-    openDialog(server);
-    return false;
+    const config = quickInstallConfig(server);
+    if (!config) {
+      openDetails(server);
+      return false;
+    }
+    const name = serverName(server);
+    // Adding overwrites a server with the same name, so check the target again
+    // instead of trusting names loaded when the list opened.
+    try {
+      const names = await fetchInstalledNames(selectedClient, selectedPath, selectedProject, selectedScope);
+      setInstalled({ targetKey, names });
+      if (names.has(name)) {
+        toast.info(`${name} is already installed in ${targetLabel}`);
+        return false;
+      }
+    } catch {
+      // Unreadable or missing config: saving reports the real problem.
+    }
+    const saved = await saveServerConfig({
+      selectedClient,
+      selectedPath: selectedPath || "",
+      currentServer: server,
+      serverName: name,
+      config,
+      setIsDialogOpen: () => {},
+      clearDraftOnSuccess: false,
+    });
+    if (saved) markInstalled(name);
+    return saved;
   };
 
-  if (mcpServers.length === 0) return <p className="text-sm text-muted-foreground">No servers match your criteria.</p>;
+  if (mcpServers.length === 0) return <p className="text-sm text-muted-foreground">{emptyMessage}</p>;
 
   return (
-    <div>
-      <div className="grid w-full grid-cols-1 gap-2 xl:grid-cols-2">
-        {mcpServers.map(server => (
-          <ServerCard key={server.id} server={server} onOpenDialog={openDialog} onQuickAdd={quickAdd} targetLabel={targetLabel} targetKey={targetKey} />
-        ))}
-      </div>
-      {currentServer && (
-        <ServerConfigDialog isOpen={isDialogOpen} setIsDialogOpen={setIsDialogOpen} currentServer={currentServer} />
-      )}
+    <div className="grid w-full grid-cols-1 gap-2 xl:grid-cols-2">
+      {mcpServers.map(server => (
+        <ServerCard key={server.id} server={server} installed={!!installedNames?.has(serverName(server))} onOpenDetails={openDetails} onQuickAdd={quickAdd} targetLabel={targetLabel} onRemove={onRemove} />
+      ))}
     </div>
   );
 }

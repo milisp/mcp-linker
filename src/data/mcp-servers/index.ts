@@ -1,48 +1,23 @@
 import type { RegistryServer } from "@/lib/registry/types";
-import sentry from "./sentry.json";
-import socket from "./socket.json";
-import parallelSearch from "./parallel-search.json";
-import asana from "./asana.json";
-import atlassian from "./atlassian.json";
-import clickup from "./clickup.json";
-import intercom from "./intercom.json";
-import linear from "./linear.json";
-import notion from "./notion.json";
-import airtable from "./airtable.json";
-import paypal from "./paypal.json";
-import stripe from "./stripe.json";
-import square from "./square.json";
-import plaid from "./plaid.json";
-import figma from "./figma.json";
-import invideo from "./invideo.json";
-import cloudflare from "./cloudflare.json";
-import cohesivity from "./cohesivity.json";
-import workato from "./workato.json";
-import zapier from "./zapier.json";
-import looot from "./looot.json";
+import catalogIndex from "./index.json";
 
 export type { RegistryServer } from "@/lib/registry/types";
 
-export const MCP_REGISTRY_SERVERS = [
-  sentry,
-  socket,
-  parallelSearch,
-  asana,
-  atlassian,
-  clickup,
-  intercom,
-  linear,
-  notion,
-  airtable,
-  paypal,
-  stripe,
-  square,
-  plaid,
-  figma,
-  invideo,
-  cloudflare,
-  cohesivity,
-  workato,
-  zapier,
-  looot,
-] as RegistryServer[];
+export interface CollectionFile {
+  title: string;
+  description: string;
+  servers: string[];
+}
+
+// Files are synced from milisp/mcp-servers; index.json sets the display order.
+const serverFiles = import.meta.glob<RegistryServer>("./servers/*.json", { eager: true, import: "default" });
+const collectionFiles = import.meta.glob<CollectionFile>("./collections/*.json", { eager: true, import: "default" });
+
+export const MCP_REGISTRY_SERVERS: RegistryServer[] = catalogIndex.servers.flatMap(id => serverFiles[`./servers/${id}.json`] ?? []);
+
+export const MCP_COLLECTIONS: Record<string, CollectionFile> = Object.fromEntries(
+  (catalogIndex.collections ?? []).flatMap(id => {
+    const collection = collectionFiles[`./collections/${id}.json`];
+    return collection ? [[id, collection]] : [];
+  }),
+);

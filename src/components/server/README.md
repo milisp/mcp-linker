@@ -1,77 +1,39 @@
-# Server Components Directory Structure
+# Server Components
 
-This directory contains all components related to server configuration and management.
+Components for finding, adding, editing and inspecting MCP servers. There are
+no server dialogs: Discover cards, installed servers and custom servers all
+open a page (`/servers/<id>`, `/servers/new`) built on `ServerWorkspace`.
 
 ## Directory Structure
 
 ```
 server/
-├── config/           # Configuration related components
-│   ├── ConfigTabs.tsx
-│   ├── ServerInfoSection.tsx
-│   ├── ServerTypeSelector.tsx
-│   ├── StdioConfigSection.tsx
-│   └── index.ts
-├── dialog/           # Dialog components
-│   ├── ServerConfigDialog.tsx
-│   ├── ServerConfigDialogFooter.tsx
-│   ├── ServerConfigDialogHeader.tsx
-│   ├── ServerTemplateDialog.tsx
-│   └── index.ts
-├── form/             # Form components
-│   ├── HeaderEditor.tsx
-│   ├── NetworkConfigSection.tsx
-│   ├── ServerTemplateForm.tsx
-│   ├── SseConfigForm.tsx
-│   ├── StdioConfigForm.tsx
-│   └── index.ts
-├── hooks/            # Custom hooks
+├── ServerWorkspace.tsx  # Configure / Tools tabs, Save, Uninstall, install target
+├── form/                # Field sections rendered inside the workspace card
+│   ├── ArgumentsInput.tsx
+│   ├── ConnectionFields.tsx
+│   └── StringMapEditor.tsx
+├── hooks/
 │   ├── useLocalDraft.ts
+│   ├── useMcpInspector.ts
 │   ├── useSaveServerConfig.ts
-│   ├── useServerConfig.ts
-│   ├── useServerConfigDialog.ts
-│   └── index.ts
-├── input/            # Input components
-│   ├── ArgsTextarea.tsx
-│   ├── CommandInput.tsx
-│   ├── EnvEditor.tsx
-│   └── index.ts
-├── list/             # List and card components
+│   └── useServerEditor.ts   # Draft per server and target; loads the installed config
+├── list/                # Discover cards with one-click Add
 │   ├── ServerCard.tsx
-│   ├── ServerList.tsx
-│   └── index.ts
-├── utils/            # Utility functions
-│   ├── transformConfig.ts
-│   └── index.ts
-└── index.ts          # Main export file
+│   └── ServerList.tsx
+├── tools/               # Live tool inspection
+├── ui/
+├── utils/
+│   ├── arguments.ts
+│   ├── importServerJson.ts  # Server configs from pasted JSON or a README
+│   ├── installedServer.ts   # Read, list and uninstall servers in the selected target
+│   ├── normalizeServerConfig.ts
+│   └── quickInstall.ts      # Which configs can be added without editing
+└── index.ts
 ```
 
-## Usage
+## Pages
 
-All components can be imported from the main index file:
-
-```typescript
-import {
-  ServerList,
-  ServerConfigDialog,
-  useServerConfig,
-} from "@/components/server";
-```
-
-Or imported from specific subdirectories:
-
-```typescript
-import { ServerCard } from "@/components/server/list";
-import { ConfigTabs } from "@/components/server/config";
-import { useLocalDraft } from "@/components/server/hooks";
-```
-
-## Component Categories
-
-- **config/**: Components for server configuration UI
-- **dialog/**: Modal dialogs for server management
-- **form/**: Form-specific components
-- **hooks/**: Custom React hooks for server logic
-- **input/**: Input field components
-- **list/**: Components for displaying server lists
-- **utils/**: Utility functions and helpers
+- `src/pages/ServerPage.tsx`: catalog, registry and installed servers.
+- `src/pages/NewServerPage.tsx`: Add custom server, with a type switch,
+  command shortcuts, and import from pasted JSON or a GitHub README.

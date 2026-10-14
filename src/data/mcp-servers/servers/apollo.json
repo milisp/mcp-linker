@@ -1,0 +1,35 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/apollo",
+  "title": "Apollo",
+  "description": "Prospect, enrich leads, and manage outreach sequences",
+  "version": "1.0.0",
+  "websiteUrl": "https://www.apollo.io/",
+  "repository": {
+    "url": "https://github.com/apolloio/apollo-mcp-plugin.git",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/apollo.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.apollo.io/mcp"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "apollo",
+        "category": "Sales & Marketing"
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/supabase",
+  "title": "Supabase",
+  "description": "Manage projects, query Postgres, run migrations",
+  "version": "1.0.0",
+  "websiteUrl": "https://supabase.com/mcp",
+  "repository": {
+    "url": "https://github.com/supabase/mcp",
+    "source": "github",
+    "subfolder": "packages/mcp-server-supabase"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/supabase.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.supabase.com/mcp"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "supabase",
+        "category": "Database & Data"
+      }
+    }
+  }
+}

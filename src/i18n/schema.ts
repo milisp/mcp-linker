@@ -80,4 +80,98 @@ export interface TranslationSchema {
   general: string;
   language: string;
   encryption: string;
+  license: {
+    title: string;
+    active: string;
+    inactive: string;
+    placeholder: string;
+    activate: string;
+    activated: string;
+    deactivate: string;
+    deactivated: string;
+    device: string;
+    buy: string;
+    updatesUntil: string;
+    updatesLifetime: string;
+    updatesExpired: string;
+    renew: string;
+  };
+  upgrade: {
+    description: string;
+    enterKey: string;
+    buy: string;
+    features: {
+      claudeScope: string;
+      claudeCopy: string;
+      sync: string;
+      batch: string;
+      inspection: string;
+    };
+  };
+  manage: {
+    title: string;
+    subtitle: string;
+    savedSubtitle: string;
+    savedEmpty: string;
+    refresh: string;
+    installed: string;
+    saved: string;
+    total: string;
+    enabled: string;
+    disabled: string;
+    localSync: string;
+    sync: {
+      back: string;
+      from: string;
+      to: string;
+      pickSource: string;
+      pickTarget: string;
+      pathPlaceholder: string;
+      targetPathPlaceholder: string;
+      browse: string;
+      available: string;
+      chosen: string;
+      filter: string;
+      adding: string;
+      removing: string;
+      copy: string;
+      copyMissing: string;
+      deleteSelected: string;
+      exists: string;
+      queued: string;
+      overwrite: string;
+      sameSide: string;
+      empty: string;
+      pending: string;
+      reset: string;
+      saved: string;
+    };
+    name: string;
+    actions: string;
+    tools: string;
+    copyToProject: string;
+    copyTo: string;
+    selectAll: string;
+    selectRow: string;
+    enableSelected: string;
+    disableSelected: string;
+    deleteSelected: string;
+  };
+  table: {
+    search: string;
+    previous: string;
+    next: string;
+    noResults: string;
+  };
+  collections: {
+    title: string;
+    label: string;
+    curated: string;
+    explore: string;
+    previous: string;
+    next: string;
+    serverCount_one: string;
+    serverCount_other: string;
+    notFound: string;
+  };
 }

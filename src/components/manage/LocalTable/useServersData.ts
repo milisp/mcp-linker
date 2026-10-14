@@ -1,5 +1,6 @@
 // Custom hook to get servers data and update stats
 // Always use English comments for code
+import { usesDisabledFlag } from "@/lib/clients";
 import { useStatsStore } from "@/stores/statsStore";
 import { ServerTableData } from "@/types";
 import { useEffect, useMemo } from "react";
@@ -16,7 +17,8 @@ export function useServersData(
       .filter(([_, serverConfig]) => {
         if (typeof serverConfig !== "object" || serverConfig === null)
           return false;
-        if (selectedClient === "cline") {
+        // Flag clients keep disabled entries in the list; they are shown under disabled instead.
+        if (usesDisabledFlag(selectedClient)) {
           return !(
             "disabled" in serverConfig && (serverConfig as any).disabled
           );

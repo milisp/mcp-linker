@@ -1,4 +1,7 @@
 use crate::client::ClientConfig;
+use crate::clients::Storage;
+use crate::json_manager::disabled_list;
+use crate::json_manager::utils::{get_key_by_client, is_disabled_list_client};
 use crate::codex as codex_cmds;
 use crate::json_manager::JsonManager;
 use serde_json::{json, Value};
@@ -6,14 +9,14 @@ use std::path::PathBuf;
 
 #[tauri::command]
 pub async fn read_json_file(client_name: String, path: Option<String>) -> Result<Value, String> {
-    if client_name == "codex" {
+    if crate::clients::find(&client_name).is_some_and(|c| c.storage == Storage::CodexToml) {
         let servers = codex_cmds::read_mcp_servers().await?;
         let disabled = codex_cmds::list_disabled().await?;
         let json = json!({ "mcpServers": servers, "__disabled": disabled });
         return Ok(json);
     }
 
-    let app_config = ClientConfig::new(&client_name, path.as_deref());
+    let app_config = ClientConfig::new(&client_name, path.as_deref())?;
     let file_path = app_config.get_path();
 
     // Remove the file existence check - let JsonManager handle it
@@ -24,19 +27,19 @@ pub async fn read_json_file(client_name: String, path: Option<String>) -> Result
         json = json!({});
     }
 
-    // Handle client-specific key normalization
-    if client_name == "copilot" {
-        // For VS Code, ensure both "servers" and "mcpServers" exist
-        if !json.as_object().unwrap().contains_key("servers") {
-            json["servers"] = json!({});
-        }
-        if !json.as_object().unwrap().contains_key("mcpServers") {
-            json["mcpServers"] = json["servers"].clone();
-        }
-    } else {
-        // For other clients, ensure "mcpServers" exists
-        if !json.as_object().unwrap().contains_key("mcpServers") {
-            json["mcpServers"] = json!({});
+    // Callers always read "mcpServers"; mirror clients that use another key.
+    let key = get_key_by_client(&client_name);
+    if !json[key].is_object() {
+        json[key] = json!({});
+    }
+    if key != "mcpServers" {
+        json["mcpServers"] = json[key].clone();
+    }
+    // Copilot CLI's disabled servers stay in the file; list_disabled_servers reports them.
+    if is_disabled_list_client(&client_name) {
+        let disabled = disabled_list::read(file_path).await?;
+        if let Some(servers) = json["mcpServers"].as_object_mut() {
+            servers.retain(|name, _| !disabled.contains(name));
         }
     }
 
@@ -49,7 +52,7 @@ pub async fn write_json_file(
     path: Option<String>,
     content: Value,
 ) -> Result<(), String> {
-    let app_config = ClientConfig::new(&client_name, path.as_deref());
+    let app_config = ClientConfig::new(&client_name, path.as_deref())?;
     let file_path = app_config.get_path();
 
     JsonManager::write_json_file(file_path, &content).await
@@ -57,7 +60,7 @@ pub async fn write_json_file(
 
 #[tauri::command]
 pub async fn get_app_path(client_name: String, path: Option<String>) -> Result<String, String> {
-    let app_config = ClientConfig::new(&client_name, path.as_deref());
+    let app_config = ClientConfig::new(&client_name, path.as_deref())?;
     let file_path = app_config.get_path();
 
     Ok(file_path.to_string_lossy().to_string())

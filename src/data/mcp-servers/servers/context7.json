@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.milisp.mcp-linker/context7",
+  "title": "Context7",
+  "description": "Up-to-date code docs for any prompt",
+  "version": "1.0.0",
+  "websiteUrl": "https://context7.com",
+  "repository": {
+    "url": "https://github.com/upstash/context7",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/milisp/mcp-servers@main/icons/context7.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": [
+        {
+          "description": "API key for authentication. Accepts \"Bearer <key>\" or the raw key.",
+          "isSecret": true,
+          "name": "Authorization"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "io.github.milisp.mcp-linker": {
+        "configName": "context7",
+        "category": "Development & Testing"
+      }
+    }
+  }
+}

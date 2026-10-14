@@ -1,4 +1,5 @@
 import { fetchInstalledServer } from "@/components/server/utils/installedServer";
+import { fetchSavedServers } from "@/components/server/utils/savedServer";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useCCProjectStore } from "@/stores/ccProject";
 import { ServerWorkspace } from "@/components/server/ServerWorkspace";
@@ -49,6 +50,13 @@ export function ServerPage() {
             if (!cancelled) setServer(entry);
             return;
           }
+          if (serverId.startsWith("saved:")) {
+            const name = serverId.slice("saved:".length);
+            const entry = (await fetchSavedServers()).find(item => item.name === name);
+            if (!entry) throw new Error(`No saved configuration named '${name}'.`);
+            if (!cancelled) setServer(entry);
+            return;
+          }
           serverData = findCatalogServer(serverId)
             ?? useFavoriteServers.getState().favoriteServers.find(item => item.id === serverId)
             ?? await fetchRegistryServer(serverId);
@@ -64,7 +72,7 @@ export function ServerPage() {
         // deep link exactly like the install-app page. Adding a server
         // must always be an explicit click.
       } catch (e: any) {
-        if (id && decodeURIComponent(id).startsWith("installed:")) {
+        if (id && /^(installed|saved):/.test(decodeURIComponent(id))) {
           if (!cancelled) setError(e instanceof Error ? e.message : String(e));
           return;
         }
@@ -148,8 +156,8 @@ export function ServerPage() {
             <span className="min-w-0 break-words">{server.name}</span>
             <div className="flex shrink-0 items-center gap-2">
             {serverTransportLabels(server).map(label => <Badge key={label} variant="secondary">{label === "Remote" && <Cloud aria-hidden="true" />}{label}</Badge>)}
-            {server.installed ? <span className="text-xs text-muted-foreground">{server.installed.disabled ? "Disabled" : "Installed"}</span> : <ServerBadge isOfficial={server.isOfficial} />}
-            {!server.installed && <Button variant="ghost" size="icon" onClick={() => toggleFavorite(server)} aria-label={favoriteServers.some(item => item.id === server.id) ? "Remove favorite" : "Add favorite"} aria-pressed={favoriteServers.some(item => item.id === server.id)}>
+            {server.installed ? <span className="text-xs text-muted-foreground">{server.installed.disabled ? "Disabled" : "Installed"}</span> : server.source === "saved" ? <span className="text-xs text-muted-foreground">Saved</span> : <ServerBadge isOfficial={server.isOfficial} />}
+            {!server.installed && server.source !== "saved" && <Button variant="ghost" size="icon" onClick={() => toggleFavorite(server)} aria-label={favoriteServers.some(item => item.id === server.id) ? "Remove favorite" : "Add favorite"} aria-pressed={favoriteServers.some(item => item.id === server.id)}>
               <Star className={favoriteServers.some(item => item.id === server.id) ? "fill-yellow-400 text-yellow-500" : ""} />
             </Button>}
             </div>
@@ -173,7 +181,7 @@ export function ServerPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-6"><ServerWorkspace key={server.id} server={server} initialTab={search.tab === "tools" ? "tools" : "connection"} /></div>
+      <div className="mt-6"><ServerWorkspace key={server.id} server={server} initialTab={search.tab === "tools" ? "tools" : "connection"} onUninstalled={installedRoute ? () => navigate("/manage", { replace: true }) : undefined} /></div>
     </div>
   );
 }

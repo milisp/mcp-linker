@@ -8,12 +8,14 @@
   "author": "milisp",
   "license": "AGPL-3.0, Commercial",
   "private": true,
-  "version": "2.4.0",
+  "version": "2.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "sync-catalog": "sh scripts/sync-catalog.sh",
     "preview": "vite preview",
     "tauri": "tauri"
   },
@@ -84,7 +86,8 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "~7.0.2",
     "vite": "^8.3.2",
-    "vite-plugin-svgr": "^5.2.0"
+    "vite-plugin-svgr": "^5.2.0",
+    "vitest": "^5.0.4"
   },
   "engines": {
     "node": ">=20"

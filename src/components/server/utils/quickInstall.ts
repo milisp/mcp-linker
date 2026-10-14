@@ -25,6 +25,13 @@ export function quickInstallConfig(server: ServerType): ServerConfig | null {
   return config;
 }
 
+/** The key a server is added under: registry ids are reverse-DNS, so use the last segment. */
+export function defaultServerName(server: ServerType): string {
+  if (server.installed) return server.installed.name;
+  if (server.source === "saved" || server.source === "custom") return server.name;
+  return server.id.split("/").pop() || server.name;
+}
+
 export function serverTransportLabels(server: ServerType): string[] {
   const configs = server.configs ?? [];
   const labels = [];

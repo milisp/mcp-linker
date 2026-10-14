@@ -10,7 +10,8 @@ export type ViewName =
   | "server"
   | "install-app"
   | "notes"
-  | "favorites";
+  | "favorites"
+  | "collection";
 
 export type ViewParams = Record<string, string>;
 export type ViewSearch = Record<string, string>;
@@ -36,6 +37,7 @@ const ROUTES: Array<{ re: RegExp; view: ViewName; keys: string[] }> = [
     keys: ["owner", "repo"],
   },
   { re: /^\/servers\/([^/?]+)/, view: "server", keys: ["id"] },
+  { re: /^\/collections\/([^/?]+)/, view: "collection", keys: ["id"] },
 ];
 
 export function parsePath(path: string): ViewEntry {
@@ -76,6 +78,9 @@ export function entryToPath({ view, params, search }: ViewEntry): string {
       path = params.owner
         ? `/servers/${params.owner}/${params.repo}`
         : `/servers/${params.id ?? ""}`;
+      break;
+    case "collection":
+      path = `/collections/${params.id ?? ""}`;
       break;
     case "discover":
       path = "/";

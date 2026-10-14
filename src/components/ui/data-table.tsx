@@ -11,7 +11,9 @@ import {
   Table,
   useReactTable,
 } from "@tanstack/react-table"
+import { Search } from "lucide-react"
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 
 import { BatchActionsDropdown } from "@/components/manage/BatchActionsDropdown"
 import { Button } from "@/components/ui/button"
@@ -43,6 +45,7 @@ interface DataTableProps<TData, TValue> {
   setRowSelection: React.Dispatch<React.SetStateAction<RowSelectionState>>;
   onTableInstanceChange?: (table: Table<TData>) => void;
   batchActions?: BatchActionsProps;
+  toolbar?: React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -53,7 +56,9 @@ export function DataTable<TData, TValue>({
   setRowSelection,
   onTableInstanceChange,
   batchActions,
+  toolbar,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation()
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
 
@@ -83,18 +88,22 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      {(searchKey || batchActions) && (
-        <div className="flex items-center justify-between py-4">
+      {(searchKey || batchActions || toolbar) && (
+        <div className="flex items-center gap-2 pb-3">
           {searchKey && (
-            <Input
-              placeholder="Search..."
-              value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
-              }
-              className="max-w-sm"
-            />
+            <div className="relative w-full max-w-sm">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={t("table.search")}
+                value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  table.getColumn(searchKey)?.setFilterValue(event.target.value)
+                }
+                className="pl-8"
+              />
+            </div>
           )}
+          <div className="ml-auto flex items-center gap-2">
           {batchActions && (
             <BatchActionsDropdown
               hasSelectedRows={Object.keys(rowSelection).length > 0}
@@ -104,6 +113,8 @@ export function DataTable<TData, TValue>({
               isDeleting={batchActions.isDeleting}
             />
           )}
+          {toolbar}
+          </div>
         </div>
       )}
       <div className="rounded-md border">
@@ -149,21 +160,21 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  No results.
+                  {t("table.noResults")}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </ShadcnTable>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      {table.getPageCount() > 1 && <div className="flex items-center justify-end space-x-2 py-4">
         <Button
           variant="outline"
           size="sm"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
         >
-          Previous
+          {t("table.previous")}
         </Button>
         <Button
           variant="outline"
@@ -171,9 +182,9 @@ export function DataTable<TData, TValue>({
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
         >
-          Next
+          {t("table.next")}
         </Button>
-      </div>
+      </div>}
     </div>
   )
 } 

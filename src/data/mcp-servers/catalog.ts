@@ -1,6 +1,6 @@
 import { entryToServerType } from "@/lib/registry";
 import type { ServerConfig, ServerType } from "@/types";
-import { MCP_REGISTRY_SERVERS } from "./index";
+import { MCP_COLLECTIONS, MCP_REGISTRY_SERVERS } from "./index";
 
 export const CURATED_SERVERS: ServerType[] = MCP_REGISTRY_SERVERS.map(server => {
   const publisher = server._meta?.["io.modelcontextprotocol.registry/publisher-provided"] as
@@ -57,4 +57,23 @@ export function mergeCatalogServers(registryServers: ServerType[], keyword = "")
 
 export function findCatalogServer(id: string): ServerType | undefined {
   return CURATED_SERVERS.find(server => server.id === id);
+}
+
+export interface CatalogCollection {
+  id: string;
+  title: string;
+  description: string;
+  servers: ServerType[];
+}
+
+/** Collections reference catalog entries by file id, e.g. "figma". */
+export const CATALOG_COLLECTIONS: CatalogCollection[] = Object.entries(MCP_COLLECTIONS).map(([id, collection]) => ({
+  id,
+  title: collection.title,
+  description: collection.description,
+  servers: collection.servers.flatMap(serverId => CURATED_SERVERS.find(server => server.id.endsWith(`/${serverId}`)) ?? []),
+}));
+
+export function findCollection(id: string): CatalogCollection | undefined {
+  return CATALOG_COLLECTIONS.find(collection => collection.id === id);
 }

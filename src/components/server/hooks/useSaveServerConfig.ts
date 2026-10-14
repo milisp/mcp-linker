@@ -1,9 +1,9 @@
-import { mustHavePathClients } from "@/lib/data";
+import { claudeWrite, clientWrite, LicenseRequiredError } from "@/lib/claude";
+import { requiresConfigFile } from "@/lib/clients";
 // useSaveServerConfig.ts
 import { useMcpRefresh } from "@/contexts/McpRefreshContext";
 import { requireLocalClaudeScope, useCCProjectStore } from "@/stores/ccProject";
 import type { ServerConfig, ServerType } from "@/types";
-import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import { LOCAL_STORAGE_KEY } from "./useLocalDraft";
 
@@ -46,24 +46,25 @@ export function useSaveServerConfig() {
           req.command = (value as any).command;
           req.args = (value as any).args || [];
           if ((value as any).env) req.env = (value as any).env;
-        } else if ((value as any).url) {
+        } else if ((value as any).url || (value as any).serverUrl || (value as any).httpUrl) {
+          // Rust normalizes streamable-http spellings to Claude Code's "http".
           req.type = (value as any).type || "http";
-          req.url = (value as any).url;
+          req.url = (value as any).url || (value as any).serverUrl || (value as any).httpUrl;
           if ((value as any).headers) req.headers = (value as any).headers;
         } else {
           throw new Error("Unsupported config for Claude Code");
         }
         if (disabled) {
           requireLocalClaudeScope(selectedScope);
-          await invoke("claude_update_disabled", { workingDir: selectedProject, scope: selectedScope, name: selectedServer, serverConfig: value });
+          await claudeWrite("claude_update_disabled", { workingDir: selectedProject, scope: selectedScope, name: selectedServer, serverConfig: value });
         }
-        else await invoke("claude_mcp_add", {
+        else await claudeWrite("claude_mcp_add", {
           request: req,
           workingDir: selectedProject || "",
           scope: selectedScope,
         });
       } else {
-        await invoke(disabled ? "update_disabled_mcp_server" : mode === "update" ? "update_mcp_server" : "add_mcp_server", {
+        await clientWrite(disabled ? "update_disabled_mcp_server" : mode === "update" ? "update_mcp_server" : "add_mcp_server", {
           clientName: selectedClient,
           path: selectedPath,
           serverName: selectedServer,
@@ -72,7 +73,7 @@ export function useSaveServerConfig() {
       }
       // Always append to mcplinker history
       try {
-        await invoke("add_mcp_server", {
+        await clientWrite("add_mcp_server", {
           clientName: "mcplinker",
           path: "",
           serverName: selectedServer,
@@ -99,7 +100,7 @@ export function useSaveServerConfig() {
     mode = "add",
     disabled = false,
   }: SaveServerConfigParams): Promise<boolean> => {
-    if (mustHavePathClients.includes(selectedClient) && !selectedPath) {
+    if (requiresConfigFile(selectedClient) && !selectedPath) {
       toast.error("Path is required");
       return false;
     }
@@ -156,7 +157,7 @@ export function useSaveServerConfig() {
       } catch (error) {
         console.error("Failed to update config:", error);
         const message = error instanceof Error ? error.message : String(error);
-        toast.error(`Failed to update configuration: ${message}`);
+        if (!(error instanceof LicenseRequiredError)) toast.error(`Failed to update configuration: ${message}`);
         return false;
       }
     }

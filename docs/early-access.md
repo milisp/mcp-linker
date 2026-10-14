@@ -1,21 +1,11 @@
-# 🧾 MCP-Linker Pro / Pricing Plans
+# Pricing
 
-MCP-Linker is free and open source.
+MCP Linker is free and open source (AGPL-3.0). Managing servers in every
+client is free.
 
-We’re also working on **Pro** and **Team** versions, with advanced features:
+Personal and Pro are one-time purchases that unlock linking: Claude
+Code Project and User scope, copying between projects, sync between clients,
+batch actions, and live tool inspection. Personal includes a year of updates; Pro includes
+lifetime updates and a commercial use license.
 
-- 🔐 Encrypted server sync
-- 📡 Remote server management
-- 📊 Real-time dashboards
-- 🔧 Team-based permission control
-- ✨ More coming...
-
----
-
-## 💌 Get Early Access
-
-Want to try MCP-Linker Pro early or be notified when it launches?
-
-➡️ **[Sign up here](https://mcp-linker.milisp.dev/early-access)** (we’ll email you when it’s ready)
-
-We won’t spam you.
+See [mcp-linker.milisp.dev/pricing](https://mcp-linker.milisp.dev/pricing).

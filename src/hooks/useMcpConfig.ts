@@ -1,5 +1,5 @@
-import { mustHavePathClients } from "@/lib/data";
-import { useClientPathStore } from "@/stores/clientPathStore";
+import { LicenseRequiredError, claudeWrite, clientWrite } from "@/lib/claude";
+import { requiresConfigFile } from "@/lib/clients";
 import { requireLocalClaudeScope, useCCProjectStore } from "@/stores/ccProject";
 import { ConfigType } from "@/types/mcpConfig";
 import { invoke } from "@tauri-apps/api/core";
@@ -16,7 +16,6 @@ export function useMcpConfig(
   const [disabledServers, setDisabledServers] = useState<Record<string, any>>(
     {},
   );
-  const { getClientPath } = useClientPathStore();
   const { selectedProject, selectedScope } = useCCProjectStore();
 
   // Helper to centralize common operation logic
@@ -49,7 +48,8 @@ export function useMcpConfig(
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : errorMessagePrefix;
-        toast.error(errorMessage);
+        // The upgrade dialog already explains a missing license.
+        if (!(error instanceof LicenseRequiredError)) toast.error(errorMessage);
         throw error; // Re-throw to allow caller to handle
       }
     },
@@ -66,7 +66,7 @@ export function useMcpConfig(
     setIsLoading(true);
     setError(null);
     try {
-      if (mustHavePathClients.includes(selectedClient) && !selectedPath) {
+      if (requiresConfigFile(selectedClient) && !selectedPath) {
         toast("Path is required for custom client");
       }
 
@@ -166,7 +166,7 @@ export function useMcpConfig(
           requireLocalClaudeScope(selectedScope);
           if (!selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_update_disabled", {
+            claudeWrite("claude_update_disabled", {
               workingDir: selectedProject,
               scope: selectedScope,
               name: key,
@@ -178,7 +178,7 @@ export function useMcpConfig(
         } else if (selectedClient === "claude_code") {
           if (selectedScope !== "user" && !selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_mcp_add", {
+            claudeWrite("claude_mcp_add", {
               request: {
                 name: key,
                 ...(updatedConfig as any).command
@@ -202,7 +202,7 @@ export function useMcpConfig(
           );
         } else if (isDisabled) {
           await executeMcpOperation(
-            invoke("update_disabled_mcp_server", {
+            clientWrite("update_disabled_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -213,7 +213,7 @@ export function useMcpConfig(
           );
         } else {
           await executeMcpOperation(
-            invoke("update_mcp_server", {
+            clientWrite("update_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -237,7 +237,7 @@ export function useMcpConfig(
 
   const deleteConfig = useCallback(
     async (key: string) => {
-      if (selectedClient === "custom" && !selectedPath) {
+      if (requiresConfigFile(selectedClient) && !selectedPath) {
         toast.error(
           "Cannot delete config: selectedPath is required for custom app",
         );
@@ -247,7 +247,7 @@ export function useMcpConfig(
         if (selectedClient === "claude_code") {
           if (selectedScope !== "user" && !selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_mcp_remove", {
+            claudeWrite("claude_mcp_remove", {
               name: key,
               workingDir: selectedProject || "",
               scope: selectedScope,
@@ -257,7 +257,7 @@ export function useMcpConfig(
           );
         } else {
           await executeMcpOperation(
-            invoke("remove_mcp_server", {
+            clientWrite("remove_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -285,7 +285,7 @@ export function useMcpConfig(
           requireLocalClaudeScope(selectedScope);
           if (!selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_enable_server", {
+            claudeWrite("claude_enable_server", {
               workingDir: selectedProject,
               scope: selectedScope,
               name: key,
@@ -295,7 +295,7 @@ export function useMcpConfig(
           );
         } else {
           await executeMcpOperation(
-            invoke("enable_mcp_server", {
+            clientWrite("enable_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -321,7 +321,7 @@ export function useMcpConfig(
           requireLocalClaudeScope(selectedScope);
           if (!selectedProject) throw new Error("Please select a Claude Code project");
           await executeMcpOperation(
-            invoke("claude_disable_server", {
+            claudeWrite("claude_disable_server", {
               workingDir: selectedProject,
               scope: selectedScope,
               name: key,
@@ -331,7 +331,7 @@ export function useMcpConfig(
           );
         } else {
           await executeMcpOperation(
-            invoke("disable_mcp_server", {
+            clientWrite("disable_mcp_server", {
               clientName: selectedClient,
               path: selectedPath || undefined,
               serverName: key,
@@ -350,59 +350,9 @@ export function useMcpConfig(
     [selectedClient, selectedPath, selectedProject, selectedScope, executeMcpOperation, loadConfig],
   );
 
-  const syncConfig = useCallback(
-    async (fromClient: string, toClient: string, overrideAll: boolean) => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Get paths for both clients
-        if (fromClient === "claude_code" || toClient === "claude_code") {
-          requireLocalClaudeScope(selectedScope);
-        }
-        if ((fromClient === "claude_code" || toClient === "claude_code") && !selectedProject) {
-          throw new Error("Please select a Claude Code project");
-        }
-        const fromPath = fromClient === "claude_code" ? selectedProject : getClientPath(fromClient);
-        const toPath = toClient === "claude_code" ? selectedProject : getClientPath(toClient);
-
-        await executeMcpOperation(
-          invoke("sync_mcp_config", {
-            fromClient,
-            toClient,
-            fromPath,
-            toPath,
-            overrideAll,
-          }),
-          `Configuration synced from ${fromClient} to ${toClient} successfully`,
-          "Failed to sync configuration",
-        );
-        await loadConfig();
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to sync configuration";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [
-      selectedClient,
-      selectedPath,
-      executeMcpOperation,
-      loadConfig,
-      getClientPath,
-      selectedScope,
-      selectedProject,
-    ],
-  );
-
   const batchDeleteServers = useCallback(
     async (keys: string[]) => {
-      if (selectedClient === "custom" && !selectedPath) {
+      if (requiresConfigFile(selectedClient) && !selectedPath) {
         toast.error(
           "Cannot delete config: selectedPath is required for custom app",
         );
@@ -414,7 +364,7 @@ export function useMcpConfig(
 
       try {
         await executeMcpOperation(
-          selectedClient === "claude_code" ? Promise.all(keys.map(name => invoke("claude_mcp_remove", {
+          selectedClient === "claude_code" ? Promise.all(keys.map(name => claudeWrite("claude_mcp_remove", {
             name, workingDir: selectedProject || "", scope: selectedScope,
           }))) : invoke("batch_delete_mcp_servers", {
             clientName: selectedClient,
@@ -453,7 +403,6 @@ export function useMcpConfig(
     disabledServers,
     enableServer,
     disableServer,
-    syncConfig,
     batchDeleteServers,
   };
 }

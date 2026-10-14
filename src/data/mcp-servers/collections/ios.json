@@ -1,0 +1,5 @@
+{
+  "title": "iOS development",
+  "description": "Build and run apps in the Simulator, turn Figma designs into views, triage crashes, and track the work.",
+  "servers": ["mobilebuildmcp", "figma", "sentry", "linear"]
+}

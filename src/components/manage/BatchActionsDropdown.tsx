@@ -6,6 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
+import { useTranslation } from "react-i18next";
 
 interface BatchActionsDropdownProps {
   handleBatchEnable?: () => void;
@@ -22,13 +23,14 @@ export const BatchActionsDropdown = ({
   isDeleting,
   hasSelectedRows,
 }: BatchActionsDropdownProps) => {
+  const { t } = useTranslation();
   return (
     <>
       {hasSelectedRows && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="ml-auto">
-              Actions <ChevronDownIcon className="ml-2 h-4 w-4" />
+            <Button variant="outline" size="sm" >
+              {t("manage.actions")} <ChevronDownIcon className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -36,18 +38,18 @@ export const BatchActionsDropdown = ({
               <DropdownMenuItem
                 onClick={() => handleBatchEnable()}
               >
-                Enable Selected
+                {t("manage.enableSelected")}
               </DropdownMenuItem>
             )}
             {handleBatchDisable && (
               <DropdownMenuItem
                 onClick={() => handleBatchDisable()}
               >
-                Disable Selected
+                {t("manage.disableSelected")}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={handleBatchDelete} disabled={isDeleting}>
-              Delete Selected
+              {t("manage.deleteSelected")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
