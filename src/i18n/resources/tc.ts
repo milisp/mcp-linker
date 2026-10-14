@@ -101,7 +101,7 @@ const tc: { translation: TranslationSchema } = {
       renew: "續費",
     },
     upgrade: {
-      description: "此功能需要 MCP Linker 授權（Personal 或 Commercial，一次性購買）。",
+      description: "此功能需要 MCP Linker 授權（Personal 或 Pro，一次性購買）。",
       enterKey: "輸入授權金鑰",
       buy: "購買授權",
       features: {

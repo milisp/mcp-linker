@@ -90,7 +90,7 @@ pub fn require(feature: &str) -> Result<(), String> {
     if is_licensed(&lock()) {
         Ok(())
     } else {
-        Err(format!("{feature} requires an MCP Linker Personal or Commercial license."))
+        Err(format!("{feature} requires an MCP Linker Personal or Pro license."))
     }
 }
 

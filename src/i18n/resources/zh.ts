@@ -100,7 +100,7 @@ const zh: { translation: TranslationSchema } = {
       renew: "续费",
     },
     upgrade: {
-      description: "此功能需要 MCP Linker 许可证（Personal 或 Commercial，一次性购买）。",
+      description: "此功能需要 MCP Linker 许可证（Personal 或 Pro，一次性购买）。",
       enterKey: "输入许可证密钥",
       buy: "购买许可证",
       features: {

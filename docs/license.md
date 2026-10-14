@@ -1,7 +1,7 @@
 # License activation
 
-Personal and Commercial are one-time purchases on Polar. They unlock the
-same features. Personal includes a year of updates; Commercial adds lifetime
+Personal and Pro are one-time purchases on Polar. They unlock the
+same features. Personal includes a year of updates; Pro adds lifetime
 updates, the commercial use license, and priority support. Polar issues a license key
 (the product's License Key benefit) and emails it to the buyer. MCP Linker
 activates the key directly with Polar; the website and no other server are
@@ -36,7 +36,7 @@ DRM.
 A Personal key covers builds made within a year of purchase. At activation,
 `license.rs` reads the key's `benefit_id` and `created_at` from Polar's
 response: for the Personal benefit it stores `updatesUntil` = purchase + 365
-days; for any other benefit (Commercial, keys issued to pre-license buyers) it
+days; for any other benefit (Pro, keys issued to pre-license buyers) it
 stores nothing, meaning lifetime updates.
 
 `build.rs` bakes the build time into the binary (`MCP_LINKER_BUILD_TIME`). A
@@ -147,7 +147,7 @@ MCP_LINKER_POLAR_ORG_ID". The release workflow refuses to run when the
 
 ## Polar setup
 
-1. Create the Personal and Commercial products as one-time purchases.
+1. Create the Personal and Pro products as one-time purchases.
 2. Add the License Key benefit to both, with an activation limit per key and
    no expiry. The app enforces Personal's year of updates itself; a Polar
    expiry would stop the key from activating on a new device at all.

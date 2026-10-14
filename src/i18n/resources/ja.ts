@@ -100,7 +100,7 @@ const ja: { translation: TranslationSchema } = {
       renew: "更新する",
     },
     upgrade: {
-      description: "この機能には MCP Linker のライセンス（Personal または Commercial、買い切り）が必要です。",
+      description: "この機能には MCP Linker のライセンス（Personal または Pro、買い切り）が必要です。",
       enterKey: "ライセンスキーを入力",
       buy: "ライセンスを購入",
       features: {

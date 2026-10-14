@@ -100,7 +100,7 @@ const de: { translation: TranslationSchema } = {
       renew: "Verlängern",
     },
     upgrade: {
-      description: "Dafür brauchst du eine MCP Linker Lizenz, Personal oder Commercial, als Einmalkauf.",
+      description: "Dafür brauchst du eine MCP Linker Lizenz, Personal oder Pro, als Einmalkauf.",
       enterKey: "Lizenzschlüssel eingeben",
       buy: "Lizenz kaufen",
       features: {
