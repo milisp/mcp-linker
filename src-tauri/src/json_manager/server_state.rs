@@ -5,7 +5,7 @@ use super::disabled_list;
 use super::file_io::{read_json_file, write_json_file};
 use super::utils::{
     get_key_by_client, is_disabled_list_client, is_per_server_disabled_client,
-    normalize_response_key,
+    normalize_response_key, without_markers,
 };
 
 fn has_server(json: &Value, key: &str, name: &str) -> bool {
@@ -21,6 +21,7 @@ pub async fn update_disabled_mcp_server(
 ) -> Result<Value, String> {
     let mut json = read_json_file(path).await?;
     let key = get_key_by_client(client);
+    let config = without_markers(config);
 
     if is_disabled_list_client(client) {
         if !json.is_object() {

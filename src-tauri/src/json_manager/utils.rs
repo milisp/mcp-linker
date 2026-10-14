@@ -19,6 +19,16 @@ pub fn normalize_response_key(mut json: Value, client: &str) -> Result<Value, St
     Ok(json)
 }
 
+/// Drops the `_creator` / `updated_at` fields older versions added to every entry;
+/// clients do not know them and some validate their config strictly.
+pub fn without_markers(mut config: Value) -> Value {
+    if let Some(entry) = config.as_object_mut() {
+        entry.remove("_creator");
+        entry.remove("updated_at");
+    }
+    config
+}
+
 /// The JSON object that holds the client's servers.
 pub fn get_key_by_client(client: &str) -> &'static str {
     crate::clients::find(client).map_or("mcpServers", |c| c.servers_key)
