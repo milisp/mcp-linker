@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { clientLabel, getClients, takesPath } from "@/lib/clients";
+import { clientLabel, getClients, hasProjectConfig, requiresConfigFile, takesPath } from "@/lib/clients";
+import { listWorkspaces } from "@/components/settings/InstallationTarget";
 import { LicenseRequiredError, claudeWrite, clientWrite, toClaudeRequest } from "@/lib/claude";
 import { pickClientPath } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,7 @@ import { type ClaudeCodeScope, useCCProjectStore } from "@/stores/ccProject";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useProjectPreferences } from "@/stores/projectPreferences";
 import { invoke } from "@tauri-apps/api/core";
-import { ArrowLeft, Check, ChevronRight, ChevronsUpDown, ChevronsRight, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, ChevronsUpDown, ChevronsRight, FolderOpen, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -113,9 +114,8 @@ export function LocalSyncPanel({ onClose, onSaved }: {
     setToPath(pathOf(value));
   };
 
-  // A side can't be the other side, except for path-based clients, where the path tells them apart.
+  // The source list leaves out the target, except for path-based clients, where the path tells them apart.
   const excludeFrom = takesPath(toClient) ? "" : toClient;
-  const excludeTo = takesPath(fromClient) ? "" : fromClient;
   const fromOptions = useMemo(
     () => buildSourceOptions(projects, getClients().map(({ id, label }) => ({ value: id, label })), excludeFrom).sourceOptions,
     [projects, excludeFrom],
@@ -213,7 +213,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>
           <ArrowLeft className="size-4" />
@@ -237,7 +237,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
 
       {sameSide && <p className="text-sm text-destructive">{t("manage.sync.sameSide")}</p>}
 
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3">
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
         <ServerBox
           header={
             <SidePicker
@@ -245,7 +245,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
               onChange={chooseFrom}
               path={fromPath}
               onPathChange={setFromPath}
-              exclude={excludeFrom}
+              other={{ client: toClient, path: toPath }}
               projects={projects}
               defaultProject={selectedProject}
               placeholder={t("manage.sync.pickSource")}
@@ -275,7 +275,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
           }
         />
 
-        <div className="flex flex-col items-center justify-center">
+        <div className="row-start-2 flex flex-col items-center justify-center">
           <Button
             variant="outline"
             size="icon"
@@ -295,7 +295,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
               onChange={chooseTo}
               path={toPath}
               onPathChange={setToPath}
-              exclude={excludeTo}
+              other={{ client: fromClient, path: fromPath }}
               projects={projects}
               defaultProject={selectedProject}
               placeholder={t("manage.sync.pickTarget")}
@@ -331,13 +331,94 @@ export function LocalSyncPanel({ onClose, onSaved }: {
   );
 }
 
-/** Picks one side: a client, or a Claude Code scope and project, plus a config path for clients that take one. */
-function SidePicker({ value, onChange, path, onPathChange, exclude, projects, defaultProject, placeholder, pathPlaceholder, side, disabled }: {
+type PathItem = { value: string; title: string; detail?: string };
+
+/** One searchable list of project folders (or the user config) to choose a side's location from. */
+function PathCombobox({ value, placeholder, items, isBlocked, onSelect, onBrowse, ariaLabel, disabled }: {
+  value: string;
+  placeholder: string;
+  items: PathItem[];
+  isBlocked: (value: string) => boolean;
+  onSelect: (value: string) => void;
+  onBrowse?: () => void;
+  ariaLabel: string;
+  disabled: boolean;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const current = items.find(item => item.value === value);
+  const pick = (next: string) => { onSelect(next); setOpen(false); };
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" aria-expanded={open} aria-label={ariaLabel} className="min-w-0 flex-1 justify-between font-normal" disabled={disabled}>
+          <span className="min-w-0 truncate">{current?.title ?? (value ? basename(value) : placeholder)}</span>
+          <ChevronsUpDown className="size-4 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-(--radix-popover-trigger-width) min-w-80 p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Filter projects" />
+          <CommandList>
+            <CommandEmpty>No matching project.</CommandEmpty>
+            <CommandGroup>
+              {items.map(item => (
+                <CommandItem
+                  key={item.value || "user"}
+                  value={`${item.title} ${item.detail ?? ""} ${item.value}`}
+                  disabled={isBlocked(item.value)}
+                  onSelect={() => pick(item.value)}
+                >
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate">{item.title}</span>
+                    {item.detail && <span className="break-all text-xs text-muted-foreground">{item.detail}</span>}
+                  </span>
+                  {item.value === value && <Check className="ml-auto" />}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            {onBrowse && (
+              <CommandGroup>
+                <CommandItem value="browse" forceMount onSelect={() => { setOpen(false); onBrowse(); }}>
+                  <FolderOpen />
+                  {t("manage.sync.browse")}…
+                </CommandItem>
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const projectItem = (dir: string): PathItem => ({ value: dir, title: basename(dir), detail: dir });
+
+/** The folders the sidebar offers for an editor client: the user's list, else recent folders that have a config. */
+function useEditorProjects(client: string, current: string) {
+  const editor = hasProjectConfig(client);
+  const saved = useProjectPreferences(state => state.preferences[client]?.visibleProjects);
+  const [recent, setRecent] = useState<{ client: string; list: string[] }>({ client: "", list: [] });
+  useEffect(() => {
+    if (!editor || saved) return;
+    let cancelled = false;
+    listWorkspaces(client)
+      .then(list => { if (!cancelled) setRecent({ client, list: list.filter(item => item.hasConfig).map(item => item.path) }); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [editor, saved, client]);
+  if (!editor) return [];
+  return [...new Set([...(saved ?? (recent.client === client ? recent.list : [])), ...(current ? [current] : [])])];
+}
+
+/** Picks one side: a client, or a Claude Code scope and project, plus the project folder or config file for clients that take one. */
+function SidePicker({ value, onChange, path, onPathChange, other, projects, defaultProject, placeholder, pathPlaceholder, side, disabled }: {
   value: string;
   onChange: (value: string) => void;
   path: string;
   onPathChange: (path: string) => void;
-  exclude: string;
+  /** The other side, which this side may not be. */
+  other: { client: string; path: string };
   projects: string[];
   defaultProject: string | null;
   placeholder: string;
@@ -346,10 +427,12 @@ function SidePicker({ value, onChange, path, onPathChange, exclude, projects, de
   disabled: boolean;
 }) {
   const { t } = useTranslation();
-  const [projectPickerOpen, setProjectPickerOpen] = useState(false);
   const [draft, setDraft] = useState(path);
   useEffect(() => setDraft(path), [path]);
+  const editorProjects = useEditorProjects(value, path);
 
+  // Path-based clients are told apart by their path, so only the path is blocked for them.
+  const exclude = takesPath(other.client) ? "" : other.client;
   const { others, sourceOptions } = useMemo(
     () => buildSourceOptions(projects, getClients().map(({ id, label }) => ({ value: id, label })), exclude),
     [projects, exclude],
@@ -402,42 +485,31 @@ function SidePicker({ value, onChange, path, onPathChange, exclude, projects, de
             </SelectContent>
           </Select>
           {cc.scope !== "user" && (
-            <Popover open={projectPickerOpen} onOpenChange={setProjectPickerOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" aria-expanded={projectPickerOpen} aria-label={`${side} project`} className="min-w-0 flex-1 justify-between font-normal" disabled={disabled}>
-                  <span className="min-w-0 truncate">{cc.dir ? basename(cc.dir) : "Choose a project"}</span>
-                  <ChevronsUpDown className="size-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-(--radix-popover-trigger-width) min-w-80 p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Filter projects" />
-                  <CommandList>
-                    <CommandEmpty>No matching project.</CommandEmpty>
-                    <CommandGroup>
-                      {projects.map(dir => (
-                        <CommandItem
-                          key={dir}
-                          value={dir}
-                          disabled={isExcluded(cc.scope, dir)}
-                          onSelect={() => { onChange(ccSource(cc.scope, dir)); setProjectPickerOpen(false); }}
-                        >
-                          <span className="flex min-w-0 flex-col">
-                            <span className="truncate">{basename(dir)}</span>
-                            <span className="break-all text-xs text-muted-foreground">{dir}</span>
-                          </span>
-                          {cc.dir === dir && <Check className="ml-auto" />}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <PathCombobox
+              value={cc.dir}
+              placeholder="Choose a project"
+              items={projects.map(projectItem)}
+              isBlocked={dir => isExcluded(cc.scope, dir)}
+              onSelect={dir => onChange(ccSource(cc.scope, dir))}
+              ariaLabel={`${side} project`}
+              disabled={disabled}
+            />
           )}
         </div>
       )}
-      {takesPath(value) && (
+      {hasProjectConfig(value) && (
+        <PathCombobox
+          value={path}
+          placeholder={pathPlaceholder}
+          items={[{ value: "", title: "User config", detail: "Global configuration" }, ...editorProjects.map(projectItem)]}
+          isBlocked={dir => other.client === value && other.path === dir}
+          onSelect={onPathChange}
+          onBrowse={browse}
+          ariaLabel={`${side} project`}
+          disabled={disabled}
+        />
+      )}
+      {requiresConfigFile(value) && (
         <div className="flex gap-2">
           <Input
             value={draft}
@@ -480,14 +552,14 @@ function ServerBox({ header, title, names, filter, onFilter, selected, onSelect,
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-2">
+    <div className="row-span-2 grid min-w-0 grid-rows-subgrid">
       {header}
       <div className="flex min-h-0 flex-col overflow-hidden rounded-md border">
         <div className="border-b bg-muted/50 px-3 py-2 text-sm font-medium">{title}</div>
         <div className="border-b p-2">
           <Input value={filter} onChange={e => onFilter(e.target.value)} placeholder={t("manage.sync.filter")} className="h-8" />
         </div>
-        <ul className="h-80 overflow-y-auto p-1" role="listbox" aria-multiselectable>
+        <ul className="min-h-40 flex-1 overflow-y-auto p-1" role="listbox" aria-multiselectable>
           {visible.length === 0 && <li className="px-3 py-6 text-center text-sm text-muted-foreground">{empty}</li>}
           {visible.map(name => {
             const badge = badgeOf(name);

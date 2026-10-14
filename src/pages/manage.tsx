@@ -19,7 +19,7 @@ export default function McpManage() {
   const saved = view === "recently" || search.tab === "saved";
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-8 text-foreground">
+    <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 p-8 text-foreground">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">{t("manage.title")}</h1>

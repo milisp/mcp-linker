@@ -20,7 +20,7 @@ const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() || 
 type Workspace = { path: string; hasConfig: boolean };
 // Editor history does not change while choosing a target; read it once per client.
 const workspaceCache = new Map<string, Promise<Workspace[]>>();
-const listWorkspaces = (client: string) => {
+export const listWorkspaces = (client: string) => {
   let list = workspaceCache.get(client);
   if (!list) {
     list = invoke<Workspace[]>("list_workspaces", { clientName: client });

@@ -1,4 +1,5 @@
 // Main LocalTable component, refactored to use hooks and header component
+import { cn } from "@/lib/utils";
 import { LocalSyncPanel } from "@/components/manage/LocalSyncPanel";
 import { RefreshMcpConfig } from "@/components/manage/RefreshMcpConfig";
 import { Button } from "@/components/ui/button";
@@ -118,7 +119,7 @@ export const LocalTable = () => {
   }, [selectedClient, selectedPath, loadConfig]);
 
   return (
-    <div className="flex flex-col">
+    <div className={cn("flex flex-col", syncOpen && "min-h-0 flex-1")}>
       {error ? (
         <RefreshMcpConfig error={error} onRetry={loadConfig} />
       ) : syncOpen ? (
