@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### New Features
-- **License activation** — activate a Personal or Commercial license key in Settings → License
+- **License activation** — activate a Personal or Pro license key in Settings → License. Personal includes a year of updates; Pro includes lifetime updates
 - **Copy Claude Code servers between projects** — copy a server's full configuration to another project or scope, with confirmation before replacing one of the same name
-- **Licensed features** — changing Claude Code and Codex servers, sync between clients, batch actions, and live tool inspection now require a license; viewing their servers and managing every other client stay free
+- **Licensed features** — managing servers stays free in every client, including Claude Code (Local scope) and Codex; a license unlocks Claude Code Project and User scope, copying between projects, sync between clients, batch actions, and live tool inspection
 
 ### Fixes
 - Streamable HTTP servers added to Claude Code are written with the `http` type Claude Code expects, and `serverUrl`/`httpUrl` configs are recognized

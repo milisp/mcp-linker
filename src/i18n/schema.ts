@@ -91,14 +91,18 @@ export interface TranslationSchema {
     deactivated: string;
     device: string;
     buy: string;
+    updatesUntil: string;
+    updatesLifetime: string;
+    updatesExpired: string;
+    renew: string;
   };
   upgrade: {
     description: string;
     enterKey: string;
     buy: string;
     features: {
-      claudeCode: string;
-      codex: string;
+      claudeScope: string;
+      claudeCopy: string;
       sync: string;
       batch: string;
       inspection: string;

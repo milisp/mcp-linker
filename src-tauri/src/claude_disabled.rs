@@ -98,8 +98,7 @@ pub async fn claude_disable_server(
     name: String,
     scope: Option<ClaudeMcpScope>,
 ) -> Result<Value, String> {
-    crate::license::require(crate::claude_code_commands::LICENSED_FEATURE)?;
-    require_local(scope)?;
+        require_local(scope)?;
     let mut config = read_config()?;
     let project = project_mut(&mut config, &working_dir);
 
@@ -126,8 +125,7 @@ pub async fn claude_enable_server(
     name: String,
     scope: Option<ClaudeMcpScope>,
 ) -> Result<Value, String> {
-    crate::license::require(crate::claude_code_commands::LICENSED_FEATURE)?;
-    require_local(scope)?;
+        require_local(scope)?;
     let mut config = read_config()?;
     let project = project_mut(&mut config, &working_dir);
 
@@ -145,8 +143,7 @@ pub async fn claude_update_disabled(
     server_config: Value,
     scope: Option<ClaudeMcpScope>,
 ) -> Result<Value, String> {
-    crate::license::require(crate::claude_code_commands::LICENSED_FEATURE)?;
-    require_local(scope)?;
+        require_local(scope)?;
     let mut config = read_config()?;
     let project = project_mut(&mut config, &working_dir);
 

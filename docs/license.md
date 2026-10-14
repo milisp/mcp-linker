@@ -1,33 +1,60 @@
 # License activation
 
-Personal and Commercial are one-time purchases on Polar. They unlock the
-same features; Commercial adds the commercial use license and priority support. Polar issues a license key
+Personal and Pro are one-time purchases on Polar. They unlock the
+same features. Personal includes a year of updates; Pro adds lifetime
+updates, the commercial use license, and priority support. Polar issues a license key
 (the product's License Key benefit) and emails it to the buyer. MCP Linker
 activates the key directly with Polar; the website and no other server are
 involved.
 
 ## What a license unlocks
 
-Free: adding, editing, enabling, disabling, and deleting servers one at a
-time in every client except Claude Code and Codex, Discover, and viewing
-Claude Code and Codex servers. A license unlocks:
+Managing is free, linking is paid. Free: adding, editing, enabling, disabling,
+and deleting servers one at a time in every client (Claude Code in Local scope
+only), viewing every client, and Discover. A license unlocks what the clients'
+own settings can't do:
 
 | Feature | UI gate | Command check |
 |---|---|---|
-| Changing Claude Code servers (add, edit, remove, enable, disable, copy) | `claudeWrite` in `src/lib/claude.ts` | `claude_mcp_add`, `claude_mcp_remove`, `claude_mcp_copy`, `claude_disable_server`, `claude_enable_server`, `claude_update_disabled` |
-| Changing Codex servers | `clientWrite` in `src/lib/claude.ts` | `license::require_for_client` in `add_mcp_server`, `update_mcp_server`, `remove_mcp_server`, `enable_mcp_server`, `disable_mcp_server`, `update_disabled_mcp_server`; `codex_set_tool_policy` |
-| Sync between clients | `LocalTable` Local Sync | `sync_mcp_config` |
+| Claude Code Project and User scope | `claudeWrite` (`claudeScope`) in `src/lib/claude.ts` | `license::require_for_claude_code` in `claude_mcp_add`, `claude_mcp_remove` |
+| Copying Claude Code servers between projects | `claudeWrite` (`claudeCopy`) | `claude_mcp_copy` |
+| Sync between clients | `LocalTable` Local Sync | — (each write it makes is an ordinary free write) |
 | Batch actions | `LocalTable` batch handlers | `batch_delete_mcp_servers` |
-| Live tool inspection | `ToolsPanel` | `mcp_inspector_connect`, `claude_mcp_tools` |
+| Live tool inspection, including Codex tool policy | `ToolsPanel` | `mcp_inspector_connect`, `claude_mcp_tools`, `codex_set_tool_policy` |
 
 The UI calls `requirePro(feature)` from `src/stores/license.ts` (directly, or
 through `claudeWrite`), which opens the upgrade dialog when unlicensed.
-Commands call `license::require`, which reads a flag kept in step with
-`license.json`. Add both when gating a new feature. Reading Claude Code
-configuration is never gated.
+Commands call `license::require` or `require_for_claude_code`, which read the
+license kept in memory in step with `license.json`. Add both when gating a new
+feature. Reading configuration is never gated.
 
 The source is AGPL-3.0, so these checks keep honest users honest; they are not
 DRM.
+
+## Update window
+
+A Personal key covers builds made within a year of purchase. At activation,
+`license.rs` reads the key's `benefit_id` and `created_at` from Polar's
+response: for the Personal benefit it stores `updatesUntil` = purchase + 365
+days; for any other benefit (Pro, keys issued to pre-license buyers) it
+stores nothing, meaning lifetime updates.
+
+`build.rs` bakes the build time into the binary (`MCP_LINKER_BUILD_TIME`). A
+license counts only when the build time is on or before `updatesUntil`, so an
+older build keeps every paid feature forever, and a newer one runs as the free
+version with a renew prompt in Settings → License. The update dialog warns
+before installing a version released after `updatesUntil`. An unparseable date
+fails open.
+
+Renewing is buying Personal again (at a returning-customer discount) and
+activating the new key, which carries a new purchase date.
+
+The Personal benefit id defaults to the production one. Debug builds talk to
+the Polar sandbox, so set its id to test the window:
+
+```sh
+MCP_LINKER_POLAR_PERSONAL_BENEFIT_ID=<sandbox benefit id> bun tauri dev
+```
 
 ## The model: activate once, then never check again
 
@@ -47,11 +74,13 @@ next to `settings.json`:
   "key": "…",
   "activationId": "…",
   "displayKey": "****-ABCD",
-  "activatedAt": "2026-10-13T12:00:00+00:00"
+  "activatedAt": "2026-10-13T12:00:00+00:00",
+  "updatesUntil": "2027-10-13T12:00:00+00:00"
 }
 ```
 
-`licensed` is simply `activationId` being present. There is **no background
+`licensed` is `activationId` being present and the build falling inside
+`updatesUntil` (see Update window). There is **no background
 re-validation, no expiry, no offline grace period, and no trial countdown**.
 Any recurring check is only a way for a paying customer to get locked out
 because they were offline, Polar was down, or a response was misparsed. The
@@ -118,6 +147,10 @@ MCP_LINKER_POLAR_ORG_ID". The release workflow refuses to run when the
 
 ## Polar setup
 
-1. Create the Personal and Commercial products as one-time purchases.
-2. Add the License Key benefit to both, with an activation limit per key.
-3. Add the `MCP_LINKER_POLAR_ORG_ID` secret to the GitHub repository.
+1. Create the Personal and Pro products as one-time purchases.
+2. Add the License Key benefit to both, with an activation limit per key and
+   no expiry. The app enforces Personal's year of updates itself; a Polar
+   expiry would stop the key from activating on a new device at all.
+3. Keys for pre-license buyers come from a separate benefit, never the
+   Personal one, so they get lifetime updates.
+4. Add the `MCP_LINKER_POLAR_ORG_ID` secret to the GitHub repository.

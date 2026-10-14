@@ -27,9 +27,6 @@ pub struct ClaudeCodeResponse {
     pub message: String,
 }
 
-/// Reading Claude Code configuration is free; changing it needs a license.
-pub const LICENSED_FEATURE: &str = "Managing Claude Code servers";
-
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ClaudeMcpScope {
@@ -144,8 +141,9 @@ pub async fn claude_mcp_add(
     working_dir: String,
     scope: Option<ClaudeMcpScope>,
 ) -> Result<ClaudeCodeResponse, String> {
-    crate::license::require(LICENSED_FEATURE)?;
-    let (claude_config_path, keys) = scope_target(&working_dir, scope.unwrap_or_default())?;
+    let scope = scope.unwrap_or_default();
+    crate::license::require_for_claude_code(scope)?;
+    let (claude_config_path, keys) = scope_target(&working_dir, scope)?;
 
     // Create backup if config file exists
     let backup_path = if claude_config_path.exists() {
@@ -198,8 +196,9 @@ pub async fn claude_mcp_remove(
     working_dir: String,
     scope: Option<ClaudeMcpScope>,
 ) -> Result<ClaudeCodeResponse, String> {
-    crate::license::require(LICENSED_FEATURE)?;
-    let (claude_config_path, keys) = scope_target(&working_dir, scope.unwrap_or_default())?;
+    let scope = scope.unwrap_or_default();
+    crate::license::require_for_claude_code(scope)?;
+    let (claude_config_path, keys) = scope_target(&working_dir, scope)?;
 
     if !claude_config_path.exists() {
         return Err("Claude config file not found".to_string());
@@ -444,7 +443,7 @@ pub async fn claude_mcp_copy(
     to_scope: ClaudeMcpScope,
     overwrite: bool,
 ) -> Result<ClaudeCodeResponse, String> {
-    crate::license::require(LICENSED_FEATURE)?;
+    crate::license::require("Copying servers between Claude Code projects")?;
     let (source_path, source_keys) = scope_target(&from_dir, from_scope)?;
     let (target_path, target_keys) = scope_target(&to_dir, to_scope)?;
     if source_path == target_path && source_keys == target_keys {

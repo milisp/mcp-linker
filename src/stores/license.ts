@@ -2,7 +2,7 @@ import { getLicenseStatus, type LicenseStatus } from "@/lib/license";
 import { create } from "zustand";
 
 /** Paid features. Keep in step with `license::require` calls in src-tauri. */
-export type ProFeature = "claudeCode" | "codex" | "sync" | "batch" | "inspection";
+export type ProFeature = "claudeScope" | "claudeCopy" | "sync" | "batch" | "inspection";
 
 interface LicenseState {
   status: LicenseStatus | null;
@@ -29,3 +29,4 @@ export function requirePro(feature: ProFeature): boolean {
   useLicense.setState({ upgradeFor: feature });
   return false;
 }
+

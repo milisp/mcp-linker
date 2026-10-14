@@ -13,10 +13,17 @@ type ClaudeWriteCommand =
   | "claude_disable_server"
   | "claude_update_disabled";
 
-/** Reading Claude Code config is free; every change goes through here. */
+/**
+ * Every Claude Code change goes through here. Local scope is free; Project and
+ * User scope and copying between projects are paid.
+ */
 export function claudeWrite<T = unknown>(command: ClaudeWriteCommand, args?: InvokeArgs): Promise<T> {
-  if (!requirePro("claudeCode")) {
-    return Promise.reject(new LicenseRequiredError("A license is required to change Claude Code servers."));
+  const scope = (args as { scope?: string } | undefined)?.scope ?? "local";
+  const allowed = command === "claude_mcp_copy"
+    ? requirePro("claudeCopy")
+    : scope === "local" || requirePro("claudeScope");
+  if (!allowed) {
+    return Promise.reject(new LicenseRequiredError("A license is required for this Claude Code change."));
   }
   return invoke<T>(command, args);
 }
@@ -29,13 +36,10 @@ type ClientWriteCommand =
   | "disable_mcp_server"
   | "update_disabled_mcp_server";
 
-/** Writes for the JSON/TOML clients; Codex changes need a license. */
+/** Writes for the JSON/TOML clients. */
 export function clientWrite<T = unknown>(command: ClientWriteCommand, args: InvokeArgs & { clientName: string }): Promise<T> {
   if (args.clientName === "claude_code") {
     return Promise.reject(new Error("Claude Code servers must be written with the Claude Code commands."));
-  }
-  if (args.clientName === "codex" && !requirePro("codex")) {
-    return Promise.reject(new LicenseRequiredError("A license is required to change Codex servers."));
   }
   return invoke<T>(command, args);
 }
