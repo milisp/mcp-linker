@@ -239,6 +239,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
         <ServerBox
+          className="col-start-1"
           header={
             <SidePicker
               value={fromClient}
@@ -275,7 +276,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
           }
         />
 
-        <div className="row-start-2 flex flex-col items-center justify-center">
+        <div className="col-start-2 row-start-2 flex flex-col items-center justify-center">
           <Button
             variant="outline"
             size="icon"
@@ -289,6 +290,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
         </div>
 
         <ServerBox
+          className="col-start-3"
           header={
             <SidePicker
               value={toClient}
@@ -525,7 +527,8 @@ function SidePicker({ value, onChange, path, onPathChange, other, projects, defa
   );
 }
 
-function ServerBox({ header, title, names, filter, onFilter, selected, onSelect, onActivate, configOf, badgeOf, struck, empty, footer }: {
+function ServerBox({ className, header, title, names, filter, onFilter, selected, onSelect, onActivate, configOf, badgeOf, struck, empty, footer }: {
+  className?: string;
   header: React.ReactNode;
   title: string;
   names: string[];
@@ -552,7 +555,7 @@ function ServerBox({ header, title, names, filter, onFilter, selected, onSelect,
   };
 
   return (
-    <div className="row-span-2 grid min-w-0 grid-rows-subgrid">
+    <div className={cn("row-span-2 row-start-1 grid min-w-0 grid-rows-subgrid", className)}>
       {header}
       <div className="flex min-h-0 flex-col overflow-hidden rounded-md border">
         <div className="border-b bg-muted/50 px-3 py-2 text-sm font-medium">{title}</div>
