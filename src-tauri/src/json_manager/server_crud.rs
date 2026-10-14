@@ -2,8 +2,9 @@ use chrono::Utc;
 use serde_json::{Value, json};
 use std::path::Path;
 
+use super::disabled_list;
 use super::file_io::{read_json_file, write_json_file};
-use super::utils::{get_key_by_client, is_per_server_disabled_client, normalize_response_key};
+use super::utils::{get_key_by_client, is_disabled_list_client, is_per_server_disabled_client, normalize_response_key};
 
 /// Add a new MCP server
 pub async fn add_mcp_server(
@@ -34,6 +35,10 @@ pub async fn add_mcp_server(
     json[key][name] = config;
 
     write_json_file(path, &json).await?;
+    if is_disabled_list_client(client) {
+        // A stale entry from an earlier server of the same name would start it disabled.
+        disabled_list::set(path, &[name], false).await?;
+    }
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
 }
@@ -51,6 +56,9 @@ pub async fn remove_mcp_server(path: &Path, client: &str, name: &str) -> Result<
     }
 
     write_json_file(path, &json).await?;
+    if is_disabled_list_client(client) {
+        disabled_list::set(path, &[name], false).await?;
+    }
 
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
@@ -114,6 +122,10 @@ pub async fn batch_delete_mcp_servers(
 
     if !json.is_object() {
         return Err("Invalid JSON structure".to_string());
+    }
+    if is_disabled_list_client(client) {
+        let names: Vec<&str> = server_names.iter().map(String::as_str).collect();
+        disabled_list::set(path, &names, false).await?;
     }
 
     if is_per_server_disabled_client(client) {

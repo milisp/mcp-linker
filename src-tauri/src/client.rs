@@ -43,6 +43,7 @@ impl ClientConfig {
             "cline" => Self::vscode_user_dir(home)
                 .join("globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"),
             "copilot" => Self::vscode_user_dir(home).join("mcp.json"),
+            "copilot_cli" => Self::copilot_home(home, std::env::var_os("COPILOT_HOME")).join("mcp-config.json"),
             "cursor" => home.join(".cursor/mcp.json"),
             "mcphub" => home.join(".config/mcphub/servers.json"),
             "mcplinker" => home.join(".config/mcplinker/mcp.json"),
@@ -73,6 +74,11 @@ impl ClientConfig {
         } else {
             home.join(".config")
         }
+    }
+
+    /// `$COPILOT_HOME`, as Copilot CLI itself resolves it, else `~/.copilot`.
+    fn copilot_home(home: &Path, copilot_home: Option<std::ffi::OsString>) -> PathBuf {
+        copilot_home.filter(|dir| !dir.is_empty()).map_or_else(|| home.join(".copilot"), PathBuf::from)
     }
 
     fn vscode_user_dir(home: &Path) -> PathBuf {
@@ -165,6 +171,21 @@ mod tests {
         assert!(path_of("copilot", None).unwrap().ends_with("Code/User/mcp.json"));
         assert!(path_of("copilot", Some("")).unwrap().ends_with("Code/User/mcp.json"));
         assert_eq!(path_of("copilot", Some("/work/app")).unwrap(), PathBuf::from("/work/app/.vscode/mcp.json"));
+    }
+
+    #[test]
+    fn copilot_cli_uses_only_its_user_config() {
+        let user = path_of("copilot_cli", None).unwrap();
+        assert!(user.ends_with("mcp-config.json"));
+        assert_eq!(path_of("copilot_cli", Some("/work/app")).unwrap(), user);
+    }
+
+    #[test]
+    fn copilot_cli_honors_copilot_home() {
+        let home = Path::new("/home/test");
+        assert_eq!(ClientConfig::copilot_home(home, Some("/opt/copilot".into())), PathBuf::from("/opt/copilot"));
+        assert_eq!(ClientConfig::copilot_home(home, Some("".into())), PathBuf::from("/home/test/.copilot"));
+        assert_eq!(ClientConfig::copilot_home(home, None), PathBuf::from("/home/test/.copilot"));
     }
 
     #[test]

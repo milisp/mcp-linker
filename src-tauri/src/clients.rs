@@ -37,6 +37,9 @@ pub enum Disable {
     /// The client has no flag, so the entry is parked under `__disabled` in the
     /// same file, a key the client ignores.
     Stash,
+    /// Names listed in the client's `settings.json` next to its config
+    /// (Copilot CLI's `disabledMcpServers`); entries stay in the config file.
+    List,
     /// The client's own mechanism (Codex `enabled = false`, Claude Code's store).
     Native,
 }
@@ -100,6 +103,10 @@ pub const CLIENTS: &[ClientInfo] = &[
         location: Location::UserOrProject,
         project_file: Some(".vscode/mcp.json"),
         ..json("copilot", "GitHub Copilot (VS Code)", "https://code.visualstudio.com/docs/copilot/customization/mcp-servers")
+    },
+    ClientInfo {
+        disable: Disable::List,
+        ..json("copilot_cli", "GitHub Copilot CLI", "https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli")
     },
     ClientInfo {
         disable: Disable::Flag,

@@ -13,6 +13,7 @@ const clientIcons: Record<string, string> = {
   codex: codexIcon,
   cursor: cursorIcon,
   copilot: copilotIcon,
+  copilot_cli: copilotIcon,
 };
 
 /** Decorative client logo; renders nothing for clients without one. */

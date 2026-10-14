@@ -30,3 +30,8 @@ pub fn is_per_server_disabled_client(client: &str) -> bool {
     crate::clients::find(client).is_some_and(|c| c.disable == crate::clients::Disable::Flag)
 }
 
+/// Clients that list disabled names in a settings file (see `disabled_list`).
+pub fn is_disabled_list_client(client: &str) -> bool {
+    crate::clients::find(client).is_some_and(|c| c.disable == crate::clients::Disable::List)
+}
+

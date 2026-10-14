@@ -12,8 +12,8 @@ export type ClientInfo = {
   /** user: fixed file · userOrProject: or a project's `projectFile` · file: user picks the file · claudeCode: project + scope. */
   location: "user" | "userOrProject" | "file" | "claudeCode";
   projectFile: string | null;
-  /** flag: `"disabled": true` · stash: parked under `__disabled` · native: the client's own mechanism. */
-  disable: "flag" | "stash" | "native";
+  /** flag: `"disabled": true` · stash: parked under `__disabled` · list: names in the client's settings.json (Copilot CLI) · native: the client's own mechanism. */
+  disable: "flag" | "stash" | "list" | "native";
 };
 
 let clients: ClientInfo[] = [];
