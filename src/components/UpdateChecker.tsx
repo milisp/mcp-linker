@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { useLicense } from "@/stores/license";
 import { useUpdateStore } from "@/stores/useUpdateStore";
 import { listen } from "@tauri-apps/api/event";
 import { relaunch } from '@tauri-apps/plugin-process';
@@ -67,10 +68,17 @@ function ReleaseNotes({ body }: { body: string }) {
   );
 }
 
+// The updater reports dates like "2026-10-13 12:00:00.0 +00:00:00"; keep the day.
+const releaseDay = (date: string | undefined) => {
+  const time = date ? Date.parse(date.slice(0, 10)) : NaN;
+  return Number.isNaN(time) ? null : time;
+};
+
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
 export function UpdateChecker() {
+  const updatesUntil = useLicense(state => state.status?.updatesUntil);
   const {
     status,
     update,
@@ -336,6 +344,20 @@ export function UpdateChecker() {
                 Version {update?.version} is available. Would you like to download and install it?
               </DialogDescription>
             </DialogHeader>
+
+            {(() => {
+              // Personal keys cover a year of updates; a newer version runs as the free version.
+              const released = releaseDay(update?.date);
+              const until = updatesUntil ? Date.parse(updatesUntil) : NaN;
+              if (released === null || Number.isNaN(until) || released <= until) return null;
+              return (
+                <p className="flex gap-2 text-sm text-muted-foreground">
+                  <TriangleAlert className="h-4 w-4 shrink-0 text-amber-500" />
+                  Your license includes updates until {new Date(until).toLocaleDateString()}. This version
+                  runs as the free version unless you renew. You can skip it and keep your current version.
+                </p>
+              );
+            })()}
 
             {update?.body && (
               <div className="mt-4">

@@ -31,6 +31,8 @@ export default function LicenseCard() {
     useLicense.getState().load().catch(error => toast.error(String(error)));
   }, []);
 
+  const updatesDate = status?.updatesUntil ? new Date(status.updatesUntil).toLocaleDateString() : null;
+
   const run = async (action: () => Promise<LicenseStatus>, success: string) => {
     setBusy(true);
     try {
@@ -57,9 +59,16 @@ export default function LicenseCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {status?.licensed ? (
+        {status?.displayKey && (
           <div className="flex items-center justify-between gap-4">
-            <code className="text-sm">{status.displayKey}</code>
+            <div className="space-y-1">
+              <code className="text-sm">{status.displayKey}</code>
+              {!status.updatesExpired && (
+                <p className="text-xs text-muted-foreground">
+                  {updatesDate ? t("license.updatesUntil", { date: updatesDate }) : t("license.updatesLifetime")}
+                </p>
+              )}
+            </div>
             <Button
               variant="outline"
               disabled={busy}
@@ -68,7 +77,16 @@ export default function LicenseCard() {
               {t("license.deactivate")}
             </Button>
           </div>
-        ) : (
+        )}
+        {status?.updatesExpired && updatesDate && (
+          <p className="text-sm text-muted-foreground">
+            {t("license.updatesExpired", { date: updatesDate })}{" "}
+            <Button variant="link" size="sm" className="h-auto p-0" onClick={() => openUrl(PRICING_URL)}>
+              {t("license.renew")}
+            </Button>
+          </p>
+        )}
+        {!status?.licensed && (
           <form
             className="flex gap-2"
             onSubmit={event => {

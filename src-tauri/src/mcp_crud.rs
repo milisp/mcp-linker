@@ -76,7 +76,6 @@ pub async fn add_mcp_server(
     server_name: String,
     server_config: Value,
 ) -> Result<Value, String> {
-    crate::license::require_for_client(&client_name)?;
     if client_name == "claude_code" {
         // ClientAdapter would write a stray <project>/mcp.json that Claude Code never reads.
         return Err("Use the Claude Code commands for Claude Code servers.".into());
@@ -91,7 +90,6 @@ pub async fn remove_mcp_server(
     path: Option<String>,
     server_name: String,
 ) -> Result<Value, String> {
-    crate::license::require_for_client(&client_name)?;
     if client_name == "claude_code" {
         // ClientAdapter would write a stray <project>/mcp.json that Claude Code never reads.
         return Err("Use the Claude Code commands for Claude Code servers.".into());
@@ -107,7 +105,6 @@ pub async fn update_mcp_server(
     server_name: String,
     server_config: Value,
 ) -> Result<Value, String> {
-    crate::license::require_for_client(&client_name)?;
     if client_name == "claude_code" {
         // ClientAdapter would write a stray <project>/mcp.json that Claude Code never reads.
         return Err("Use the Claude Code commands for Claude Code servers.".into());

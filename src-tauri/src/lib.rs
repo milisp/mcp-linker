@@ -96,7 +96,7 @@ pub fn run() {
         .manage(Arc::new(Mutex::new(None::<String>)))
         .setup(|_app| {
             use tauri::Manager;
-            _app.manage(license::LicenseStore(std::sync::Mutex::new(license::load(_app.handle()))));
+            license::init(_app.handle());
             let inspector = _app.state::<mcp_inspector::InspectorState>().inner().clone();
             tauri::async_runtime::spawn(async move {
                 let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
