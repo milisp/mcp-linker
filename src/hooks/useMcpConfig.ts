@@ -1,5 +1,5 @@
 import { LicenseRequiredError, claudeWrite, clientWrite } from "@/lib/claude";
-import { mustHavePathClients } from "@/lib/data";
+import { requiresConfigFile } from "@/lib/clients";
 import { requireLocalClaudeScope, useCCProjectStore } from "@/stores/ccProject";
 import { ConfigType } from "@/types/mcpConfig";
 import { invoke } from "@tauri-apps/api/core";
@@ -66,7 +66,7 @@ export function useMcpConfig(
     setIsLoading(true);
     setError(null);
     try {
-      if (mustHavePathClients.includes(selectedClient) && !selectedPath) {
+      if (requiresConfigFile(selectedClient) && !selectedPath) {
         toast("Path is required for custom client");
       }
 
@@ -237,7 +237,7 @@ export function useMcpConfig(
 
   const deleteConfig = useCallback(
     async (key: string) => {
-      if (selectedClient === "custom" && !selectedPath) {
+      if (requiresConfigFile(selectedClient) && !selectedPath) {
         toast.error(
           "Cannot delete config: selectedPath is required for custom app",
         );
@@ -352,7 +352,7 @@ export function useMcpConfig(
 
   const batchDeleteServers = useCallback(
     async (keys: string[]) => {
-      if (selectedClient === "custom" && !selectedPath) {
+      if (requiresConfigFile(selectedClient) && !selectedPath) {
         toast.error(
           "Cannot delete config: selectedPath is required for custom app",
         );

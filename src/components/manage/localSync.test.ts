@@ -132,6 +132,11 @@ group("convertServer", () => {
     expect(convertServer("codex", stdio)).toMatchObject({ type: "stdio" });
   });
 
+  it("writes Copilot CLI stdio servers with the type its config uses", () => {
+    expect(convertServer("copilot_cli", stdio)).toMatchObject({ type: "stdio", command: "npx" });
+    expect(convertServer("copilot_cli", remote)).toEqual({ type: "http", ...remote });
+  });
+
   it("spells streamable HTTP the way Cline requires", () => {
     expect(convertServer("cline", remote)).toEqual({ type: "streamableHttp", ...remote });
     expect(convertServer("cline", { ...remote, type: "sse" })).toMatchObject({ type: "sse" });

@@ -1,5 +1,5 @@
 import { claudeWrite, clientWrite, LicenseRequiredError } from "@/lib/claude";
-import { mustHavePathClients } from "@/lib/data";
+import { requiresConfigFile } from "@/lib/clients";
 // useSaveServerConfig.ts
 import { useMcpRefresh } from "@/contexts/McpRefreshContext";
 import { requireLocalClaudeScope, useCCProjectStore } from "@/stores/ccProject";
@@ -100,7 +100,7 @@ export function useSaveServerConfig() {
     mode = "add",
     disabled = false,
   }: SaveServerConfigParams): Promise<boolean> => {
-    if (mustHavePathClients.includes(selectedClient) && !selectedPath) {
+    if (requiresConfigFile(selectedClient) && !selectedPath) {
       toast.error("Path is required");
       return false;
     }

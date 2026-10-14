@@ -2,7 +2,7 @@ use serde_json::Value;
 
 /// Normalize response key to mcpServers for consistent client API
 pub fn normalize_response_key(mut json: Value, client: &str) -> Result<Value, String> {
-    if client == "copilot" && json.is_object() {
+    if get_key_by_client(client) == "servers" && json.is_object() {
         let servers_key = "servers";
         let mcp_servers_key = "mcpServers";
 
@@ -19,20 +19,29 @@ pub fn normalize_response_key(mut json: Value, client: &str) -> Result<Value, St
     Ok(json)
 }
 
-/// Get the appropriate key name based on client type
-pub fn get_key_by_client(client: &str) -> &str {
-    if client == "copilot" {
-        "servers"
-    } else {
-        "mcpServers"
+/// Drops the `_creator` / `updated_at` fields older versions added to every entry;
+/// clients do not know them and some validate their config strictly.
+pub fn without_markers(mut config: Value) -> Value {
+    if let Some(entry) = config.as_object_mut() {
+        entry.remove("_creator");
+        entry.remove("updated_at");
     }
+    config
 }
 
-/// Clients that read a per-server `"disabled": true`. Clients without a native
-/// flag (Claude Desktop, Cursor, VS Code) cannot be told to skip a server, so a
-/// disabled server is parked under `__disabled` in the same file instead: it
-/// stays with the config, and those clients ignore the unknown key.
+/// The JSON object that holds the client's servers.
+pub fn get_key_by_client(client: &str) -> &'static str {
+    crate::clients::find(client).map_or("mcpServers", |c| c.servers_key)
+}
+
+/// Clients that honor a per-server `"disabled": true`; the others park disabled
+/// entries under `__disabled` (see `clients::Disable`).
 pub fn is_per_server_disabled_client(client: &str) -> bool {
-    matches!(client, "cline" | "mcphub")
+    crate::clients::find(client).is_some_and(|c| c.disable == crate::clients::Disable::Flag)
+}
+
+/// Clients that list disabled names in a settings file (see `disabled_list`).
+pub fn is_disabled_list_client(client: &str) -> bool {
+    crate::clients::find(client).is_some_and(|c| c.disable == crate::clients::Disable::List)
 }
 

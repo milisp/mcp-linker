@@ -12,9 +12,9 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { availableClients } from "@/constants/clients";
+import { clientLabel, getClients, takesPath } from "@/lib/clients";
 import { LicenseRequiredError, claudeWrite, clientWrite, toClaudeRequest } from "@/lib/claude";
-import { needspathClient, pickClientPath } from "@/lib/data";
+import { pickClientPath } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import {
   SCOPE_LABEL,
@@ -45,9 +45,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-const clientLabel = (value: string) =>
-  availableClients.find(client => client.value === value)?.label ?? value;
-
 async function readServers(client: string, path: string | null): Promise<ServerMap> {
   if (isCCSource(client)) {
     const { scope, dir } = parseCCSource(client);
@@ -73,7 +70,7 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
   const targetValue = targetValueOf(selectedClient, selectedScope, selectedProject);
   const projects = useMemo(() => sidebarProjects(visibleProjects, selectedProject), [visibleProjects, selectedProject]);
   const { others, sourceOptions } = useMemo(
-    () => buildSourceOptions(projects, availableClients.map(({ value, label }) => ({ value, label })), targetValue),
+    () => buildSourceOptions(projects, getClients().map(({ id, label }) => ({ value: id, label })), targetValue),
     [projects, targetValue],
   );
   const sourceLabel = (value: string) => sourceOptions.find(option => option.value === value)?.label ?? clientLabel(value);
@@ -305,7 +302,7 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
                   )}
                 </div>
               )}
-              {needspathClient.includes(fromClient) && (
+              {takesPath(fromClient) && (
                 <div className="flex gap-2">
                   <Input
                     value={fromPath}

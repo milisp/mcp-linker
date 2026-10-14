@@ -86,7 +86,8 @@ export function fromPortable(client: string, server: PortableServer): Record<str
     const { command, args, env, cwd } = server;
     const base = { command, args, ...(env && { env }) };
     switch (client) {
-      case "copilot": return { type: "stdio", ...base, ...(cwd && { cwd }) };
+      case "copilot":
+      case "copilot_cli": return { type: "stdio", ...base, ...(cwd && { cwd }) };
       case "codex": return { type: "stdio", ...base };
       case "claude":
       case "claude_code": return base;

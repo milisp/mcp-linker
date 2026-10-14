@@ -2,6 +2,7 @@ use serde_json::Value;
 use std::path::Path;
 
 // Module declarations
+pub mod disabled_list;
 pub mod file_io;
 pub mod server_crud;
 pub mod server_state;

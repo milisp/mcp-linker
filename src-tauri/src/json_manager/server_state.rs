@@ -1,11 +1,16 @@
 use serde_json::{json, Value};
 use std::path::Path;
 
+use super::disabled_list;
 use super::file_io::{read_json_file, write_json_file};
 use super::utils::{
-    get_key_by_client, is_per_server_disabled_client,
-    normalize_response_key,
+    get_key_by_client, is_disabled_list_client, is_per_server_disabled_client,
+    normalize_response_key, without_markers,
 };
+
+fn has_server(json: &Value, key: &str, name: &str) -> bool {
+    json.get(key).and_then(Value::as_object).is_some_and(|servers| servers.contains_key(name))
+}
 
 /// Update a disabled MCP server configuration
 pub async fn update_disabled_mcp_server(
@@ -16,6 +21,20 @@ pub async fn update_disabled_mcp_server(
 ) -> Result<Value, String> {
     let mut json = read_json_file(path).await?;
     let key = get_key_by_client(client);
+    let config = without_markers(config);
+
+    if is_disabled_list_client(client) {
+        if !json.is_object() {
+            json = json!({});
+        }
+        if !json[key].is_object() {
+            json[key] = json!({});
+        }
+        json[key][name] = config;
+        write_json_file(path, &json).await?;
+        disabled_list::set(path, &[name], true).await?;
+        return normalize_response_key(json, client);
+    }
 
     if is_per_server_disabled_client(client) {
         // For clients like 'cline', update the server config and set disabled: true
@@ -58,6 +77,14 @@ pub async fn disable_mcp_server(path: &Path, client: &str, name: &str) -> Result
 
     if !json.is_object() {
         return Err("Invalid JSON structure".to_string());
+    }
+
+    if is_disabled_list_client(client) {
+        if !has_server(&json, key, name) {
+            return Err(format!("Server '{}' not found in active servers", name));
+        }
+        disabled_list::set(path, &[name], true).await?;
+        return normalize_response_key(json, client);
     }
 
     if is_per_server_disabled_client(client) {
@@ -109,6 +136,13 @@ pub async fn enable_mcp_server(path: &Path, client: &str, name: &str) -> Result<
 
     if !json.is_object() {
         return Err("Invalid JSON structure".to_string());
+    }
+    if is_disabled_list_client(client) {
+        if !disabled_list::read(path).await?.iter().any(|n| n == name) {
+            return Err(format!("Server '{}' is not disabled", name));
+        }
+        disabled_list::set(path, &[name], false).await?;
+        return normalize_response_key(json, client);
     }
     if is_per_server_disabled_client(client) {
         // For clients like 'cline', remove disabled: true from the server object
@@ -174,6 +208,16 @@ pub async fn list_disabled_servers(path: &Path, client: &str) -> Result<Value, S
     let json = read_json_file(path).await?;
     let key = get_key_by_client(client);
 
+    if is_disabled_list_client(client) {
+        let names = disabled_list::read(path).await?;
+        let disabled = json
+            .get(key)
+            .and_then(Value::as_object)
+            .map(|servers| servers.iter().filter(|(name, _)| names.contains(name)).map(|(n, c)| (n.clone(), c.clone())).collect())
+            .unwrap_or_default();
+        return Ok(Value::Object(disabled));
+    }
+
     if is_per_server_disabled_client(client) {
         // For clients like 'cline', collect all servers with disabled: true
         let mut disabled = serde_json::Map::new();
@@ -199,5 +243,47 @@ pub async fn list_disabled_servers(path: &Path, client: &str) -> Result<Value, S
         Ok(json["__disabled"].clone())
     } else {
         Ok(json!({}))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::server_crud::{add_mcp_server, remove_mcp_server};
+    use super::*;
+    use tempfile::tempdir;
+
+    #[tokio::test]
+    async fn copilot_cli_disables_through_settings_and_keeps_the_entry() {
+        let dir = tempdir().unwrap();
+        let config = dir.path().join("mcp-config.json");
+        let settings = dir.path().join("settings.json");
+        write_json_file(&config, &json!({ "mcpServers": { "a": { "command": "a" } } })).await.unwrap();
+
+        disable_mcp_server(&config, "copilot_cli", "a").await.unwrap();
+        assert_eq!(read_json_file(&settings).await.unwrap()["disabledMcpServers"], json!(["a"]));
+        assert_eq!(read_json_file(&config).await.unwrap()["mcpServers"]["a"]["command"], "a");
+        assert_eq!(list_disabled_servers(&config, "copilot_cli").await.unwrap(), json!({ "a": { "command": "a" } }));
+
+        update_disabled_mcp_server(&config, "copilot_cli", "a", json!({ "command": "b" })).await.unwrap();
+        assert_eq!(list_disabled_servers(&config, "copilot_cli").await.unwrap(), json!({ "a": { "command": "b" } }));
+
+        enable_mcp_server(&config, "copilot_cli", "a").await.unwrap();
+        assert_eq!(read_json_file(&settings).await.unwrap()["disabledMcpServers"], json!([]));
+        assert!(enable_mcp_server(&config, "copilot_cli", "a").await.is_err());
+    }
+
+    #[tokio::test]
+    async fn copilot_cli_remove_and_add_clear_the_disabled_name() {
+        let dir = tempdir().unwrap();
+        let config = dir.path().join("mcp-config.json");
+        write_json_file(&config, &json!({ "mcpServers": { "a": { "command": "a" } } })).await.unwrap();
+        disable_mcp_server(&config, "copilot_cli", "a").await.unwrap();
+
+        remove_mcp_server(&config, "copilot_cli", "a").await.unwrap();
+        assert_eq!(list_disabled_servers(&config, "copilot_cli").await.unwrap(), json!({}));
+
+        write_json_file(&dir.path().join("settings.json"), &json!({ "disabledMcpServers": ["b"] })).await.unwrap();
+        add_mcp_server(&config, "copilot_cli", "b", json!({ "command": "b" })).await.unwrap();
+        assert_eq!(list_disabled_servers(&config, "copilot_cli").await.unwrap(), json!({}));
     }
 }

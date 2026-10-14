@@ -1,4 +1,4 @@
-import { availableClients } from "@/constants/clients";
+import { clientLabel } from "@/lib/clients";
 import { useCCProjectStore } from "@/stores/ccProject";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useViewStore } from "@/stores/viewStore";
@@ -22,7 +22,7 @@ export function ServerList({ mcpServers, onRemove, emptyMessage = "No servers ma
   const selectedProject = useCCProjectStore(state => state.selectedProject);
   const selectedScope = useCCProjectStore(state => state.selectedScope);
   const { saveServerConfig } = useSaveServerConfig();
-  const targetLabel = availableClients.find(client => client.value === selectedClient)?.label ?? selectedClient;
+  const targetLabel = clientLabel(selectedClient);
   const targetKey = JSON.stringify([selectedClient, selectedPath, selectedClient === "claude_code" ? [selectedProject, selectedScope] : null]);
   // Installed names belong to one target; ignore them once the target changes.
   const [installed, setInstalled] = useState<{ targetKey: string; names: Set<string> } | null>(null);
