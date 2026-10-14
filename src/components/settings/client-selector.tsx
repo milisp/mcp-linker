@@ -6,7 +6,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ClientIcon } from "@/components/ClientIcon";
-import { clientOptions } from "@/constants/clients";
+import { getClients } from "@/lib/clients";
 import { useClientPathStore } from "@/stores/clientPathStore";
 export function ClientSelector() {
   const { selectedClient, setSelectedClient } = useClientPathStore();
@@ -18,10 +18,10 @@ export function ClientSelector() {
           <SelectValue placeholder="Select a client" />
         </SelectTrigger>
         <SelectContent>
-          {clientOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value} textValue={option.label}>
-              <ClientIcon client={option.value} />
-              {option.label}
+          {getClients().map((client) => (
+            <SelectItem key={client.id} value={client.id} textValue={client.label}>
+              <ClientIcon client={client.id} />
+              {client.label}
             </SelectItem>
           ))}
         </SelectContent>

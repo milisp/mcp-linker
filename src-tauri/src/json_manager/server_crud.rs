@@ -1,9 +1,9 @@
-use chrono::Utc;
 use serde_json::{Value, json};
 use std::path::Path;
 
+use super::disabled_list;
 use super::file_io::{read_json_file, write_json_file};
-use super::utils::{get_key_by_client, is_per_server_disabled_client, normalize_response_key};
+use super::utils::{get_key_by_client, is_disabled_list_client, is_per_server_disabled_client, normalize_response_key, without_markers};
 
 /// Add a new MCP server
 pub async fn add_mcp_server(
@@ -27,13 +27,13 @@ pub async fn add_mcp_server(
         return Err(format!("Server '{}' already exists in '{}'", name, key));
     }
 
-    let mut config = config.clone();
-    config["_creator"] = json!("mcp_linker");
-    config["updated_at"] = json!(Utc::now().to_rfc3339());
-
-    json[key][name] = config;
+    json[key][name] = without_markers(config);
 
     write_json_file(path, &json).await?;
+    if is_disabled_list_client(client) {
+        // A stale entry from an earlier server of the same name would start it disabled.
+        disabled_list::set(path, &[name], false).await?;
+    }
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
 }
@@ -51,6 +51,9 @@ pub async fn remove_mcp_server(path: &Path, client: &str, name: &str) -> Result<
     }
 
     write_json_file(path, &json).await?;
+    if is_disabled_list_client(client) {
+        disabled_list::set(path, &[name], false).await?;
+    }
 
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
@@ -70,9 +73,7 @@ pub async fn update_mcp_server(
         json = json!({});
     }
 
-    let mut config = config;
-    config["_creator"] = json!("mcp_linker");
-    config["updated_at"] = json!(Utc::now().to_rfc3339());
+    let mut config = without_markers(config);
 
     let in_section = |json: &Value, section: &str| {
         json.get(section)
@@ -114,6 +115,10 @@ pub async fn batch_delete_mcp_servers(
 
     if !json.is_object() {
         return Err("Invalid JSON structure".to_string());
+    }
+    if is_disabled_list_client(client) {
+        let names: Vec<&str> = server_names.iter().map(String::as_str).collect();
+        disabled_list::set(path, &names, false).await?;
     }
 
     if is_per_server_disabled_client(client) {
@@ -206,8 +211,7 @@ mod tests {
         let saved = read_json_file(&path).await.unwrap();
         assert_eq!(saved["mcpServers"]["new"]["command"], "npx");
         assert_eq!(saved["mcpServers"]["new"]["args"], json!(["x"]));
-        assert_eq!(saved["mcpServers"]["new"]["_creator"], "mcp_linker");
-        assert!(saved["mcpServers"]["new"]["updated_at"].is_string());
+        assert_eq!(saved["mcpServers"]["new"], json!({"command":"npx","args":["x"]}));
         assert_eq!(saved["mcpServers"]["existing"], json!({"command":"keep"}));
     }
 
@@ -221,14 +225,13 @@ mod tests {
         )
         .await;
 
-        update_mcp_server(&path, "claude", "demo", json!({"command":"new"}))
+        update_mcp_server(&path, "claude", "demo", json!({"command":"new","_creator":"mcp_linker","updated_at":"2025-01-01T00:00:00Z"}))
             .await
             .unwrap();
 
         let saved = read_json_file(&path).await.unwrap();
         assert_eq!(saved["mcpServers"]["demo"]["command"], "new");
-        assert!(saved["mcpServers"]["demo"].get("env").is_none());
-        assert_eq!(saved["mcpServers"]["demo"]["_creator"], "mcp_linker");
+        assert_eq!(saved["mcpServers"]["demo"], json!({"command":"new"}));
         assert_eq!(saved["mcpServers"]["other"], json!({"command":"o"}));
     }
 
@@ -247,8 +250,7 @@ mod tests {
             .unwrap();
 
         let saved = read_json_file(&path).await.unwrap();
-        assert_eq!(saved["__disabled"]["off"]["command"], "new");
-        assert_eq!(saved["__disabled"]["off"]["_creator"], "mcp_linker");
+        assert_eq!(saved["__disabled"]["off"], json!({"command":"new"}));
         assert!(saved["mcpServers"].get("off").is_none());
         assert_eq!(saved["mcpServers"]["a"], json!({"command":"a"}));
     }

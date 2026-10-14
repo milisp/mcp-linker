@@ -1,3 +1,5 @@
+use crate::clients::{self, Location, Storage};
+use crate::json_manager::file_io::parse_jsonc;
 use dirs::home_dir;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
@@ -25,20 +27,27 @@ impl ClientConfig {
 
     /// Pure path lookup; `new` adds the one-time Copilot migration on top.
     fn resolve(home: &Path, name: &str, path: Option<&str>) -> Result<PathBuf, String> {
+        let client = clients::find(name).ok_or_else(|| format!("Unknown client '{name}'"))?;
+        if client.storage != Storage::Json {
+            return Err(format!("{} does not use a JSON config file", client.label));
+        }
         let project = path.filter(|p| !p.is_empty()).map(PathBuf::from);
+        if client.location == Location::File {
+            return Self::custom_file(project);
+        }
+        if let (Some(dir), Some(file)) = (&project, client.project_file) {
+            return Ok(dir.join(file));
+        }
         Ok(match name {
             "claude" => Self::app_support_dir(home).join("Claude/claude_desktop_config.json"),
             "cline" => Self::vscode_user_dir(home)
                 .join("globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"),
-            "copilot" => match project {
-                Some(dir) => dir.join(".vscode/mcp.json"),
-                None => Self::vscode_user_dir(home).join("mcp.json"),
-            },
-            "cursor" => project.unwrap_or_else(|| home.to_path_buf()).join(".cursor/mcp.json"),
+            "copilot" => Self::vscode_user_dir(home).join("mcp.json"),
+            "copilot_cli" => Self::copilot_home(home, std::env::var_os("COPILOT_HOME")).join("mcp-config.json"),
+            "cursor" => home.join(".cursor/mcp.json"),
             "mcphub" => home.join(".config/mcphub/servers.json"),
             "mcplinker" => home.join(".config/mcplinker/mcp.json"),
-            "custom" => Self::custom_file(project)?,
-            other => return Err(format!("Unknown client '{other}'")),
+            other => return Err(format!("No user config location for '{other}'")),
         })
     }
 
@@ -67,6 +76,11 @@ impl ClientConfig {
         }
     }
 
+    /// `$COPILOT_HOME`, as Copilot CLI itself resolves it, else `~/.copilot`.
+    fn copilot_home(home: &Path, copilot_home: Option<std::ffi::OsString>) -> PathBuf {
+        copilot_home.filter(|dir| !dir.is_empty()).map_or_else(|| home.join(".copilot"), PathBuf::from)
+    }
+
     fn vscode_user_dir(home: &Path) -> PathBuf {
         Self::app_support_dir(home).join("Code/User")
     }
@@ -74,6 +88,52 @@ impl ClientConfig {
     pub fn get_path(&self) -> &Path {
         &self.path
     }
+}
+
+/// A folder the client's editor has opened, from its workspace history.
+#[derive(serde::Serialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Workspace {
+    pub path: String,
+    /// The folder already has the client's project config file.
+    pub has_config: bool,
+}
+
+/// Recently opened folders for project-capable clients (Cursor, VS Code), newest
+/// first, so their workspace configs can be offered without browsing.
+#[tauri::command]
+pub fn list_workspaces(client_name: String) -> Result<Vec<Workspace>, String> {
+    let home = home_dir().ok_or("Failed to get home directory")?;
+    Ok(workspaces_in(&home, &client_name))
+}
+
+fn workspaces_in(home: &Path, name: &str) -> Vec<Workspace> {
+    let Some(project_file) = clients::find(name).and_then(|c| c.project_file) else { return Vec::new() };
+    let editor = match name {
+        "cursor" => "Cursor",
+        "copilot" => "Code",
+        _ => return Vec::new(),
+    };
+    let storage = ClientConfig::app_support_dir(home).join(editor).join("User/workspaceStorage");
+    let Ok(entries) = std::fs::read_dir(storage) else { return Vec::new() };
+    let mut found: Vec<(std::time::SystemTime, PathBuf)> = entries
+        .flatten()
+        .filter_map(|entry| {
+            let file = entry.path().join("workspace.json");
+            let modified = file.metadata().and_then(|m| m.modified()).ok()?;
+            let json: Value = serde_json::from_str(&std::fs::read_to_string(&file).ok()?).ok()?;
+            // Multi-root (.code-workspace) and remote folders have no single local folder.
+            let dir = url::Url::parse(json.get("folder")?.as_str()?).ok()?.to_file_path().ok()?;
+            dir.is_dir().then_some((modified, dir))
+        })
+        .collect();
+    found.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
+    let mut seen = std::collections::HashSet::new();
+    found
+        .into_iter()
+        .filter(|(_, dir)| seen.insert(dir.clone()))
+        .map(|(_, dir)| Workspace { has_config: dir.join(project_file).is_file(), path: dir.to_string_lossy().into_owned() })
+        .collect()
 }
 
 /// mcp-linker used to keep Copilot's user servers in ~/.vscode/mcp.json, which
@@ -86,7 +146,7 @@ fn migrate_legacy_copilot(legacy: &Path, user: &Path, marker: &Path) -> Result<(
     }
     let read = |path: &Path| -> Result<Value, String> {
         match std::fs::read_to_string(path) {
-            Ok(text) => serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display())),
+            Ok(text) => parse_jsonc(&text).map_err(|e| format!("{}: {e}", path.display())),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(json!({})),
             Err(e) => Err(format!("{}: {e}", path.display())),
         }
@@ -147,6 +207,34 @@ mod tests {
     use super::*;
     use tempfile::tempdir;
 
+    #[test]
+    fn workspaces_come_from_the_editor_history_newest_first() {
+        let home = tempdir().unwrap();
+        let storage = ClientConfig::app_support_dir(home.path()).join("Cursor/User/workspaceStorage");
+        let old = home.path().join("old");
+        let new = home.path().join("new dir");
+        std::fs::create_dir_all(new.join(".cursor")).unwrap();
+        std::fs::write(new.join(".cursor/mcp.json"), "{}").unwrap();
+        std::fs::create_dir_all(&old).unwrap();
+        let record = |id: &str, folder: String| {
+            std::fs::create_dir_all(storage.join(id)).unwrap();
+            std::fs::write(storage.join(id).join("workspace.json"), json!({ "folder": folder }).to_string()).unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        };
+        record("1", url::Url::from_file_path(&old).unwrap().to_string());
+        record("2", "vscode-remote://ssh-remote+box/srv/app".into());
+        record("3", url::Url::from_file_path(home.path().join("deleted")).unwrap().to_string());
+        record("4", url::Url::from_file_path(&new).unwrap().to_string());
+
+        let list = workspaces_in(home.path(), "cursor");
+        assert_eq!(list, [
+            Workspace { path: new.to_string_lossy().into_owned(), has_config: true },
+            Workspace { path: old.to_string_lossy().into_owned(), has_config: false },
+        ]);
+        assert!(workspaces_in(home.path(), "copilot").is_empty());
+        assert!(workspaces_in(home.path(), "claude").is_empty());
+    }
+
     // Never touch the real home: `new` would run the Copilot migration there.
     fn path_of(name: &str, path: Option<&str>) -> Result<PathBuf, String> {
         ClientConfig::resolve(Path::new("/home/test"), name, path)
@@ -157,6 +245,21 @@ mod tests {
         assert!(path_of("copilot", None).unwrap().ends_with("Code/User/mcp.json"));
         assert!(path_of("copilot", Some("")).unwrap().ends_with("Code/User/mcp.json"));
         assert_eq!(path_of("copilot", Some("/work/app")).unwrap(), PathBuf::from("/work/app/.vscode/mcp.json"));
+    }
+
+    #[test]
+    fn copilot_cli_uses_only_its_user_config() {
+        let user = path_of("copilot_cli", None).unwrap();
+        assert!(user.ends_with("mcp-config.json"));
+        assert_eq!(path_of("copilot_cli", Some("/work/app")).unwrap(), user);
+    }
+
+    #[test]
+    fn copilot_cli_honors_copilot_home() {
+        let home = Path::new("/home/test");
+        assert_eq!(ClientConfig::copilot_home(home, Some("/opt/copilot".into())), PathBuf::from("/opt/copilot"));
+        assert_eq!(ClientConfig::copilot_home(home, Some("".into())), PathBuf::from("/home/test/.copilot"));
+        assert_eq!(ClientConfig::copilot_home(home, None), PathBuf::from("/home/test/.copilot"));
     }
 
     #[test]
@@ -196,6 +299,21 @@ mod tests {
     #[test]
     fn unknown_client_is_an_error() {
         assert!(path_of("vscode", None).is_err());
+    }
+
+    #[test]
+    fn non_json_clients_have_no_config_file() {
+        assert!(path_of("codex", None).is_err());
+        assert!(path_of("claude_code", Some("/work/app")).is_err());
+    }
+
+    #[test]
+    fn every_json_client_resolves_a_user_path() {
+        for client in clients::CLIENTS {
+            if client.storage == Storage::Json && client.location != Location::File {
+                assert!(path_of(client.id, None).is_ok(), "{}", client.id);
+            }
+        }
     }
 
     mod legacy_copilot {

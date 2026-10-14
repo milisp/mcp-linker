@@ -13,7 +13,7 @@ pub enum ClientAdapter<'a> {
 
 impl<'a> ClientAdapter<'a> {
     pub fn new(client: &'a str, path: Option<&'a str>) -> Self {
-        if client == "codex" {
+        if crate::clients::find(client).is_some_and(|c| c.storage == crate::clients::Storage::CodexToml) {
             ClientAdapter::Codex
         } else {
             ClientAdapter::Json { client, path }

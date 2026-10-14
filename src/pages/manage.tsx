@@ -2,7 +2,7 @@ import { Dashboard } from "@/components/manage/Dashboard";
 import { LocalTable } from "@/components/manage/LocalTable/index";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { clientOptions } from "@/constants/clients";
+import { clientLabel as labelOf } from "@/lib/clients";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useStatsStore } from "@/stores/statsStore";
 import { useViewStore } from "@/stores/viewStore";
@@ -15,7 +15,7 @@ export default function McpManage() {
   const { personalStats } = useStatsStore();
   const { view, search, navigate } = useViewStore();
   const selectedClient = useClientPathStore(state => state.selectedClient);
-  const clientLabel = clientOptions.find(option => option.value === selectedClient)?.label ?? selectedClient;
+  const clientLabel = labelOf(selectedClient);
   const saved = view === "recently" || search.tab === "saved";
 
   return (
