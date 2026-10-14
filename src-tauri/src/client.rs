@@ -90,6 +90,52 @@ impl ClientConfig {
     }
 }
 
+/// A folder the client's editor has opened, from its workspace history.
+#[derive(serde::Serialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Workspace {
+    pub path: String,
+    /// The folder already has the client's project config file.
+    pub has_config: bool,
+}
+
+/// Recently opened folders for project-capable clients (Cursor, VS Code), newest
+/// first, so their workspace configs can be offered without browsing.
+#[tauri::command]
+pub fn list_workspaces(client_name: String) -> Result<Vec<Workspace>, String> {
+    let home = home_dir().ok_or("Failed to get home directory")?;
+    Ok(workspaces_in(&home, &client_name))
+}
+
+fn workspaces_in(home: &Path, name: &str) -> Vec<Workspace> {
+    let Some(project_file) = clients::find(name).and_then(|c| c.project_file) else { return Vec::new() };
+    let editor = match name {
+        "cursor" => "Cursor",
+        "copilot" => "Code",
+        _ => return Vec::new(),
+    };
+    let storage = ClientConfig::app_support_dir(home).join(editor).join("User/workspaceStorage");
+    let Ok(entries) = std::fs::read_dir(storage) else { return Vec::new() };
+    let mut found: Vec<(std::time::SystemTime, PathBuf)> = entries
+        .flatten()
+        .filter_map(|entry| {
+            let file = entry.path().join("workspace.json");
+            let modified = file.metadata().and_then(|m| m.modified()).ok()?;
+            let json: Value = serde_json::from_str(&std::fs::read_to_string(&file).ok()?).ok()?;
+            // Multi-root (.code-workspace) and remote folders have no single local folder.
+            let dir = url::Url::parse(json.get("folder")?.as_str()?).ok()?.to_file_path().ok()?;
+            dir.is_dir().then_some((modified, dir))
+        })
+        .collect();
+    found.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
+    let mut seen = std::collections::HashSet::new();
+    found
+        .into_iter()
+        .filter(|(_, dir)| seen.insert(dir.clone()))
+        .map(|(_, dir)| Workspace { has_config: dir.join(project_file).is_file(), path: dir.to_string_lossy().into_owned() })
+        .collect()
+}
+
 /// mcp-linker used to keep Copilot's user servers in ~/.vscode/mcp.json, which
 /// VS Code only reads when the home folder is opened as a workspace. Copy them
 /// once into the real user config. Entries already there win, and the old file
@@ -160,6 +206,34 @@ fn migrate_legacy_copilot(legacy: &Path, user: &Path, marker: &Path) -> Result<(
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    #[test]
+    fn workspaces_come_from_the_editor_history_newest_first() {
+        let home = tempdir().unwrap();
+        let storage = ClientConfig::app_support_dir(home.path()).join("Cursor/User/workspaceStorage");
+        let old = home.path().join("old");
+        let new = home.path().join("new dir");
+        std::fs::create_dir_all(new.join(".cursor")).unwrap();
+        std::fs::write(new.join(".cursor/mcp.json"), "{}").unwrap();
+        std::fs::create_dir_all(&old).unwrap();
+        let record = |id: &str, folder: String| {
+            std::fs::create_dir_all(storage.join(id)).unwrap();
+            std::fs::write(storage.join(id).join("workspace.json"), json!({ "folder": folder }).to_string()).unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        };
+        record("1", url::Url::from_file_path(&old).unwrap().to_string());
+        record("2", "vscode-remote://ssh-remote+box/srv/app".into());
+        record("3", url::Url::from_file_path(home.path().join("deleted")).unwrap().to_string());
+        record("4", url::Url::from_file_path(&new).unwrap().to_string());
+
+        let list = workspaces_in(home.path(), "cursor");
+        assert_eq!(list, [
+            Workspace { path: new.to_string_lossy().into_owned(), has_config: true },
+            Workspace { path: old.to_string_lossy().into_owned(), has_config: false },
+        ]);
+        assert!(workspaces_in(home.path(), "copilot").is_empty());
+        assert!(workspaces_in(home.path(), "claude").is_empty());
+    }
 
     // Never touch the real home: `new` would run the Copilot migration there.
     fn path_of(name: &str, path: Option<&str>) -> Result<PathBuf, String> {

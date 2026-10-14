@@ -57,6 +57,7 @@ This document describes the supported MCP clients and their configuration file p
 - **Paths**:
   - Global: `~/.cursor/mcp.json`
   - With base path: `<base_path>/.cursor/mcp.json`
+- **Projects**: Recent folders come from Cursor's `User/workspaceStorage/*/workspace.json`; ones that already have `.cursor/mcp.json` are shown by default.
 - **Note**: The `cursor-agent` CLI reads the same global file (checked with `cursor-agent mcp list`), so it needs no separate entry.
 
 ---

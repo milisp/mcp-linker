@@ -51,6 +51,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
             clients::list_clients,
+            client::list_workspaces,
             app_settings::read_app_settings,
             app_settings::save_project_preferences,
             cmd::read_json_file,
