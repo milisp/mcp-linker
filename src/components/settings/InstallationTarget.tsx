@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChevronRight, FolderPlus, Info, Settings2 } from "lucide-react";
+import { ChevronRight, FolderPlus, Settings2 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useCCProjectStore } from "@/stores/ccProject";
@@ -79,17 +79,22 @@ function useProjectChoices() {
   return { path, visible, candidates, choices, choose, browse, loaded, error: error || operationError, operationError, load, setVisibleProjects };
 }
 
-function ScopeHelp({ items }: { items: [string, string][] }) {
-  return <Tooltip>
-    <TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" className="size-7 shrink-0 text-muted-foreground" aria-label="What do the scopes mean?"><Info className="size-3.5" /></Button></TooltipTrigger>
-    <TooltipContent side="bottom" className="max-w-xs space-y-2 py-2 text-xs">{items.map(([scope, text]) => <div key={scope}><p className="font-semibold">{scope}</p><p className="opacity-80">{text}</p></div>)}</TooltipContent>
-  </Tooltip>;
+type ScopeOption = { value: string; label: string; description: string };
+
+/** Each option explains itself in the list; the trigger shows only the scope name. */
+function ScopeSelect({ value, options, onChange, ariaLabel }: { value: string; options: ScopeOption[]; onChange: (value: string) => void; ariaLabel: string }) {
+  return <Select value={value} onValueChange={onChange}>
+    <SelectTrigger className="h-8 w-auto gap-2 text-xs" aria-label={ariaLabel}><SelectValue>{options.find(option => option.value === value)?.label}</SelectValue></SelectTrigger>
+    <SelectContent className="max-w-xs"><SelectGroup><SelectLabel className="text-xs text-muted-foreground">Scope</SelectLabel>{options.map(option => <SelectItem key={option.value} value={option.value} textValue={option.label}>
+      <span className="flex flex-col items-start gap-0.5"><span className="font-medium">{option.label}</span><span className="whitespace-normal text-xs text-muted-foreground">{option.description}</span></span>
+    </SelectItem>)}</SelectGroup></SelectContent>
+  </Select>;
 }
 
-const claudeScopeHelp: [string, string][] = [
-  ["Local", "Only you, only in the selected project. Stored in ~/.claude.json under that project."],
-  ["Project", "Everyone working on the selected project. Stored in .mcp.json at the project root, so it can be committed."],
-  ["User", "Only you, in every project. Stored in ~/.claude.json."],
+const claudeScopes: ScopeOption[] = [
+  { value: "local", label: "Local", description: "Only you, only in the selected project. Stored in ~/.claude.json under that project." },
+  { value: "project", label: "Project", description: "Everyone working on the selected project. Stored in .mcp.json at the project root, so it can be committed." },
+  { value: "user", label: "User", description: "Only you, in every project. Stored in ~/.claude.json." },
 ];
 
 /** User or project config, as Claude Code's scope selector does; the project list then shows only folders. */
@@ -97,7 +102,7 @@ export function InstallationScope() {
   const { selectedClient, selectedScope: scope, setSelectedScope: setScope } = useClientPathStore();
   const { selectedScope, setSelectedScope } = useCCProjectStore();
   const { choices, choose, browse, operationError } = useProjectChoices();
-  if (selectedClient === "claude_code") return <div className="flex items-center"><Select value={selectedScope} onValueChange={value => setSelectedScope(value as "local" | "project" | "user")}><SelectTrigger className="h-8 w-auto gap-2 text-xs" aria-label="Claude Code scope"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="local">Local</SelectItem><SelectItem value="project">Project</SelectItem><SelectItem value="user">User</SelectItem></SelectContent></Select><ScopeHelp items={claudeScopeHelp} /></div>;
+  if (selectedClient === "claude_code") return <ScopeSelect value={selectedScope} options={claudeScopes} onChange={value => setSelectedScope(value as "local" | "project" | "user")} ariaLabel="Claude Code scope" />;
   if (!hasProjectConfig(selectedClient)) return null;
   const client = getClient(selectedClient);
   const change = async (value: string) => {
@@ -109,8 +114,10 @@ export function InstallationScope() {
     else await browse();
   };
   return <div className="flex items-center">
-    <Select value={scope} onValueChange={value => void change(value)}><SelectTrigger className="h-8 w-auto gap-2 text-xs" aria-label="Config scope"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="user">User</SelectItem><SelectItem value="project">Project</SelectItem></SelectContent></Select>
-    <ScopeHelp items={[["User", `Your own ${client?.label ?? selectedClient} settings, used in every project.`], ["Project", `Only the selected folder, in ${client?.projectFile ?? "its project config"}. Can be committed and shared.`]]} />
+    <ScopeSelect value={scope} onChange={value => void change(value)} ariaLabel="Config scope" options={[
+      { value: "user", label: "User", description: `Your own ${client?.label ?? selectedClient} settings, used in every project.` },
+      { value: "project", label: "Project", description: `Only the selected folder, in ${client?.projectFile ?? "its project config"}. Can be committed and shared.` },
+    ]} />
     {operationError && <span role="alert" className="text-xs text-destructive">{operationError}</span>}
   </div>;
 }
