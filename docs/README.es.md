@@ -28,7 +28,7 @@ Agrega, administra y sincroniza servidores MCP (Model Context Protocol) entre cl
 
 **La forma más rápida de mejorar tu flujo de trabajo con IA**
 
-![Demo](../images/demo.gif)
+![Demo](../images/sync-to-codex.webp)
 
 ### 🎯 Funcionalidades clave
 
@@ -63,9 +63,9 @@ Accede a sincronización en la nube y más
 
 ## 📸 Capturas de pantalla
 
-| Administrar                     | 🔍 Descubrir servidores         | ⚙️ aldoni servilon                |
+| Administrar                     | 🔍 Descubrir servidores         | 🔄 Sincronización local                |
 | ------------------------------- | ------------------------------- | ------------------------------- |
-| ![Manage](../images/manage.png) | ![Discover](../images/discover.png) | ![aldoni servilon](../images/add-server.png) |
+| ![Manage](../images/manage.webp) | ![Discover](../images/discover.webp) | ![Sincronización local](../images/sync-projects.webp) |
 
 ---
 

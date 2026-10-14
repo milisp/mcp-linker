@@ -28,7 +28,7 @@ Füge MCP-Server (Model Context Protocol) hinzu, verwalte und synchronisiere sie
 
 **Die schnellste Möglichkeit, deinen AI-Workflow zu verbessern**
 
-![Demo](../images/demo.gif)
+![Demo](../images/sync-to-codex.webp)
 
 ### 🎯 Hauptfunktionen
 
@@ -63,9 +63,9 @@ Nutze Cloud Sync und mehr!
 
 ## 📸 Screenshots
 
-| Verwalten                       | 🔍 Server entdecken             | ⚙️ Server hinzufügen                |
+| Verwalten                       | 🔍 Server entdecken             | 🔄 Lokale Synchronisierung                |
 | ------------------------------- | ------------------------------- | ------------------------------- |
-| ![Manage](../images/manage.png) | ![Discover](../images/discover.png) | ![Server hinzufügen](../images/add-server.png) |
+| ![Manage](../images/manage.webp) | ![Discover](../images/discover.webp) | ![Lokale Synchronisierung](../images/sync-projects.webp) |
 
 ---
 

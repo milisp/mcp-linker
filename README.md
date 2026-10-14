@@ -19,7 +19,7 @@ English · [简体中文](docs/README.zh-CN.md) · [繁體中文](docs/README.zh
 > [!TIP]
 > ⭐ Star the repo and follow **milisp** on [Twitter](https://x.com/lisp_mi) and [GitHub](https://github.com/milisp) for more!
 
-![demo](./images/demo.gif)
+![Local Sync: copy servers from Claude Code to Codex](./images/sync-to-codex.webp)
 
 ## 🚀 Why MCP Linker?
 
@@ -63,9 +63,9 @@ yay -S mcp-linker-bin
 
 ## Screenshots
 
-| Server Discovery | Add Configuration |
-|-----------------|-------------------|
-| ![Discover](./images/discover.png) | ![Add server](./images/add-server.png) |
+| Local Sync between projects | Server Discovery | Manage |
+|-----------------------------|------------------|--------|
+| ![Local Sync between Claude Code projects](./images/sync-projects.webp) | ![Discover](./images/discover.webp) | ![Manage](./images/manage.webp) |
 
 ## What's MCP?
 Model Context Protocol is like USB-C for AI — a standard way to connect AI models to different data sources and tools.

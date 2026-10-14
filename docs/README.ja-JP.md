@@ -2,7 +2,7 @@
 
 軽量なTauri GUIを使用して、Claude Desktop、Cline、CursorなどのAIクライアント間でMCP（モデルコンテキストプロトコル）サーバー設定を同期および管理し、内蔵のMCPマーケットプレイスをサポートします。
 
-![スクリーンショット](../images/manage.png)
+![スクリーンショット](../images/sync-to-codex.webp)
 
 ## 主な機能
 
@@ -28,9 +28,9 @@
 
 ## スクリーンショット
 
-| サーバー管理                    | サーバー探索                    | サーバーを追加                            |
+| サーバー管理                    | サーバー探索                    | ローカル同期                            |
 | ------------------------------- | ------------------------------- | ------------------------------- |
-| ![Manage](../images/manage.png) | ![Discover](../images/discover.png) | ![サーバーを追加](../images/add-server.png) |
+| ![Manage](../images/manage.webp) | ![Discover](../images/discover.webp) | ![ローカル同期](../images/sync-projects.webp) |
 
 ## 開発手順
 

@@ -28,7 +28,7 @@ Ajoutez, gérez et synchronisez des serveurs MCP (Model Context Protocol) sur de
 
 **La façon la plus rapide d'améliorer votre flux de travail IA**
 
-![Demo](../images/demo.gif)
+![Demo](../images/sync-to-codex.webp)
 
 ### 🎯 Fonctionnalités clés
 
@@ -63,9 +63,9 @@ Accédez à la synchronisation cloud, et plus encore !
 
 ## 📸 Captures d'écran
 
-| Gérer                           | 🔍 Découverte des serveurs      | ⚙️ ajouter serveur                |
+| Gérer                           | 🔍 Découverte des serveurs      | 🔄 Synchronisation locale                |
 | ------------------------------- | ------------------------------- | ------------------------------- |
-| ![Manage](../images/manage.png) | ![Discover](../images/discover.png) | ![ajouter-serveur](../images/add-server.png) |
+| ![Manage](../images/manage.webp) | ![Discover](../images/discover.webp) | ![Synchronisation locale](../images/sync-projects.webp) |
 
 ---
 

@@ -28,7 +28,7 @@
 
 **加速你的 AI 工具工作流程的最快方式**
 
-![Demo](../images/demo.gif)
+![Demo](../images/sync-to-codex.webp)
 
 ### 🎯 核心功能
 
@@ -63,9 +63,9 @@
 
 ## 📸 畫面截圖
 
-| 管理介面                        | 🔍 探索伺服器                   | ⚙️ 新增伺服器                       |
+| 管理介面                        | 🔍 探索伺服器                   | 🔄 本機同步                       |
 | ------------------------------- | ------------------------------- | ------------------------------- |
-| ![Manage](../images/manage.png) | ![Discover](../images/discover.png) | ![Add Server](../images/add-server.png) |
+| ![Manage](../images/manage.webp) | ![Discover](../images/discover.webp) | ![本機同步](../images/sync-projects.webp) |
 
 ---
 

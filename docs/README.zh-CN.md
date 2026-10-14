@@ -2,7 +2,7 @@
 
 使用轻量级 Tauri 图形界面，在 Claude Desktop、Cline、Cursor 等 AI 客户端之间同步和管理 MCP（模型上下文协议）服务器配置，并内置 MCP 服务器模板市场。
 
-![截图](../images/manage.png)
+![截图](../images/sync-to-codex.webp)
 
 💖 如果你觉得 MCP-Linker 有用，欢迎点个 ⭐ Star 鼓励我们继续开发！  
 👉 [![stars](https://img.shields.io/github/stars/milisp/mcp-linker?style=social)](https://github.com/milisp/mcp-linker)
@@ -31,9 +31,9 @@
 
 ## 截图展示
 
-| 管理服务器                    | 发现服务器                  | 添加服务器                      |
+| 管理服务器                    | 发现服务器                  | 本地同步                      |
 | ----------------------------- | --------------------------- | ----------------------------- |
-| ![管理](../images/manage.png) | ![发现](../images/discover.png) | ![Add Server](../images/add-server.png) |
+| ![管理](../images/manage.webp) | ![发现](../images/discover.webp) | ![本地同步](../images/sync-projects.webp) |
 
 ## 开发指南
 
