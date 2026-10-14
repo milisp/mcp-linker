@@ -122,7 +122,7 @@ export const LocalTable = () => {
       {error ? (
         <RefreshMcpConfig error={error} onRetry={loadConfig} />
       ) : syncOpen ? (
-        <LocalSyncPanel targetServers={serversData} onClose={() => setSyncOpen(false)} onSaved={loadConfig} />
+        <LocalSyncPanel onClose={() => setSyncOpen(false)} onSaved={loadConfig} />
       ) : (
         <DataTable
           columns={localColumns}

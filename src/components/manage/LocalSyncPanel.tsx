@@ -25,6 +25,7 @@ import {
   convertServer,
   ccLabel,
   ccSource,
+  clientIdOf,
   describe,
   isCCSource,
   missingNames,
@@ -38,7 +39,6 @@ import {
 import { type ClaudeCodeScope, useCCProjectStore } from "@/stores/ccProject";
 import { useClientPathStore } from "@/stores/clientPathStore";
 import { useProjectPreferences } from "@/stores/projectPreferences";
-import { ServerTableData } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import { ArrowLeft, Check, ChevronRight, ChevronsUpDown, ChevronsRight, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -55,43 +55,88 @@ async function readServers(client: string, path: string | null): Promise<ServerM
   return data?.mcpServers ?? {};
 }
 
-/** Two-pane copy: a source client's servers on the left stay put; copies and deletions are staged on the right until saved. */
-export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
-  targetServers: ServerTableData[];
+function useServers(client: string, path: string) {
+  const [servers, setServers] = useState<ServerMap>({});
+  const [loading, setLoading] = useState(false);
+  const load = useCallback(async () => {
+    if (!client) return setServers({});
+    setLoading(true);
+    try {
+      setServers(await readServers(client, path || null));
+    } catch (error) {
+      setServers({});
+      toast.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLoading(false);
+    }
+  }, [client, path]);
+  useEffect(() => { load(); }, [load]);
+  return { servers, loading, reload: load };
+}
+
+const sideLabel = (value: string) => {
+  if (!isCCSource(value)) return clientLabel(value);
+  const { scope, dir } = parseCCSource(value);
+  return ccLabel(scope, dir);
+};
+
+/** Two-pane copy between any two clients, Claude Code projects or scopes; copies and deletions are staged on the right until saved. */
+export function LocalSyncPanel({ onClose, onSaved }: {
   onClose: () => void;
   onSaved: () => Promise<void> | void;
 }) {
   const { t } = useTranslation();
-  const { selectedClient, selectedPath, getClientPath, setClientPath } = useClientPathStore();
+  const { selectedClient, selectedPath, getClientPath } = useClientPathStore();
   const { selectedProject, selectedScope } = useCCProjectStore();
   const visibleProjects = useProjectPreferences(state => state.preferences.claude_code?.visibleProjects);
-
-  // Other clients, plus every Claude Code project (as listed in the sidebar) and scope; never the target itself.
-  const targetValue = targetValueOf(selectedClient, selectedScope, selectedProject);
   const projects = useMemo(() => sidebarProjects(visibleProjects, selectedProject), [visibleProjects, selectedProject]);
-  const { others, sourceOptions } = useMemo(
-    () => buildSourceOptions(projects, getClients().map(({ id, label }) => ({ value: id, label })), targetValue),
-    [projects, targetValue],
-  );
-  const sourceLabel = (value: string) => sourceOptions.find(option => option.value === value)?.label ?? clientLabel(value);
-  const targetLabel = selectedClient === "claude_code" ? ccLabel(selectedScope, selectedProject ?? "") : clientLabel(selectedClient);
+  const pathOf = useCallback((value: string) => (takesPath(value) ? getClientPath(value) || "" : ""), [getClientPath]);
+
+  // The target starts as the sidebar's selection and follows it when that changes.
+  const sidebarTarget = targetValueOf(selectedClient, selectedScope, selectedProject);
+  const [toClient, setToClient] = useState(sidebarTarget);
+  const sidebarPath = takesPath(selectedClient) ? selectedPath || "" : "";
+  const [toPath, setToPath] = useState(sidebarPath);
+  useEffect(() => {
+    setToClient(sidebarTarget);
+    setToPath(sidebarPath);
+  }, [sidebarTarget, sidebarPath]);
 
   const [fromClient, setFromClient] = useState(() => localStorage.getItem("syncFromClient") || "");
+  const [fromPath, setFromPath] = useState(() => pathOf(fromClient));
+  const chooseFrom = (value: string) => {
+    setFromClient(value);
+    setFromPath(pathOf(value));
+  };
+  const chooseTo = (value: string) => {
+    setToClient(value);
+    setToPath(pathOf(value));
+  };
+
+  // A side can't be the other side, except for path-based clients, where the path tells them apart.
+  const excludeFrom = takesPath(toClient) ? "" : toClient;
+  const excludeTo = takesPath(fromClient) ? "" : fromClient;
+  const fromOptions = useMemo(
+    () => buildSourceOptions(projects, getClients().map(({ id, label }) => ({ value: id, label })), excludeFrom).sourceOptions,
+    [projects, excludeFrom],
+  );
 
   // Drop a remembered source that is no longer offered (it became the target, or its project left the sidebar).
   useEffect(() => {
-    if (fromClient && !sourceOptions.some(option => option.value === fromClient)) setFromClient("");
-  }, [fromClient, sourceOptions]);
-  const [fromPath, setFromPath] = useState("");
-  const [source, setSource] = useState<ServerMap>({});
-  const [loading, setLoading] = useState(false);
+    if (fromClient && !fromOptions.some(option => option.value === fromClient)) chooseFrom("");
+  }, [fromClient, fromOptions]);
+  useEffect(() => localStorage.setItem("syncFromClient", fromClient), [fromClient]);
+
+  const { servers: source, loading } = useServers(fromClient, fromPath);
+  const { servers: target, loading: targetLoading, reload: reloadTarget } = useServers(toClient, toPath);
+  const sameSide = !!fromClient && fromClient === toClient && fromPath === toPath;
+
   const [saving, setSaving] = useState(false);
   const [toCopy, setToCopy] = useState<Set<string>>(new Set());
   const [toDelete, setToDelete] = useState<Set<string>>(new Set());
   const [leftSel, setLeftSel] = useState<Set<string>>(new Set());
   const [rightSel, setRightSel] = useState<Set<string>>(new Set());
   const [leftFilter, setLeftFilter] = useState("");
-  const [projectPickerOpen, setProjectPickerOpen] = useState(false);
   const [rightFilter, setRightFilter] = useState("");
 
   const resetStaged = () => {
@@ -101,33 +146,8 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
     setRightSel(new Set());
   };
 
-  const loadSource = useCallback(async () => {
-    if (!fromClient) return setSource({});
-    setLoading(true);
-    try {
-      setSource(await readServers(fromClient, getClientPath(fromClient)));
-    } catch (error) {
-      setSource({});
-      toast.error(error instanceof Error ? error.message : String(error));
-    } finally {
-      setLoading(false);
-    }
-  }, [fromClient, getClientPath]);
-
-  useEffect(() => {
-    localStorage.setItem("syncFromClient", fromClient);
-    setFromPath(fromClient ? getClientPath(fromClient) || "" : "");
-    resetStaged();
-    loadSource();
-  }, [fromClient, loadSource, getClientPath]);
-
-  // The target changed under us (sidebar); staged moves no longer apply.
-  useEffect(resetStaged, [selectedClient, selectedPath, selectedProject, selectedScope]);
-
-  const target = useMemo(
-    () => Object.fromEntries(targetServers.map(({ name, ...rest }) => [name, rest as Record<string, any>])),
-    [targetServers],
-  );
+  // Either side changed; staged moves no longer apply.
+  useEffect(resetStaged, [fromClient, fromPath, toClient, toPath]);
 
   const leftNames = useMemo(() => Object.keys(source), [source]);
   const rightNames = useMemo(() => rightNamesOf(target, toCopy), [target, toCopy]);
@@ -147,14 +167,15 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
   };
 
   const writeTarget = async (name: string, config?: Record<string, any>) => {
-    if (selectedClient === "claude_code") {
-      if (selectedScope !== "user" && !selectedProject) throw new Error("Please select a Claude Code project");
-      const where = { workingDir: selectedProject || "", scope: selectedScope };
+    if (isCCSource(toClient)) {
+      const { scope, dir } = parseCCSource(toClient);
+      if (scope !== "user" && !dir) throw new Error("Please select a Claude Code project");
+      const where = { workingDir: dir, scope };
       return config
         ? claudeWrite("claude_mcp_add", { request: toClaudeRequest(name, config), ...where })
         : claudeWrite("claude_mcp_remove", { name, ...where });
     }
-    const where = { clientName: selectedClient, path: selectedPath || undefined, serverName: name };
+    const where = { clientName: toClient, path: toPath || undefined, serverName: name };
     return config
       ? clientWrite("update_mcp_server", { ...where, serverConfig: config })
       : clientWrite("remove_mcp_server", where);
@@ -179,33 +200,15 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
     };
     try {
       for (const name of toDelete) await run(name, () => writeTarget(name));
-      for (const name of toCopy) await run(name, async () => writeTarget(name, convertServer(selectedClient, source[name])));
+      for (const name of toCopy) await run(name, async () => writeTarget(name, convertServer(clientIdOf(toClient), source[name])));
     } catch {
       // The upgrade dialog already explains a missing license.
     } finally {
       if (done) toast.success(t("manage.sync.saved", { count: done }));
       if (failures.length) toast.error(failures.join("\n"));
       resetStaged();
-      await onSaved();
+      await Promise.all([reloadTarget(), onSaved()]);
       setSaving(false);
-    }
-  };
-
-  const cc = isCCSource(fromClient) ? parseCCSource(fromClient) : null;
-  const pickClient = (value: string) => {
-    if (value !== "claude_code") return setFromClient(value);
-    setFromClient(sourceOptions.find(option => isCCSource(option.value))?.value ?? "");
-  };
-  const pickScope = (scope: ClaudeCodeScope) =>
-    setFromClient(ccSource(scope, scope === "user" ? "" : cc?.dir || selectedProject || projects[0] || ""));
-  const isTarget = (scope: ClaudeCodeScope, dir: string) => ccSource(scope, dir) === targetValue;
-
-  const browseFromPath = async () => {
-    const picked = await pickClientPath(fromClient);
-    if (picked) {
-      setFromPath(picked);
-      setClientPath(fromClient, picked);
-      loadSource();
     }
   };
 
@@ -225,103 +228,39 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
               </Button>
             </>
           )}
-          <Button size="sm" onClick={save} disabled={!pending || saving}>
+          <Button size="sm" onClick={save} disabled={!pending || saving || sameSide}>
             {saving && <RefreshCw className="size-4 animate-spin" />}
             {t("save")}
           </Button>
         </div>
       </div>
 
+      {sameSide && <p className="text-sm text-destructive">{t("manage.sync.sameSide")}</p>}
+
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3">
         <ServerBox
           header={
-            <div className="flex flex-col gap-2">
-              <Select value={cc ? "claude_code" : fromClient} onValueChange={pickClient} disabled={saving}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t("manage.sync.pickSource")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="claude_code" textValue="Claude Code"><ClientIcon client="claude_code" />Claude Code</SelectItem>
-                  {others.map(option => (
-                    <SelectItem key={option.value} value={option.value} textValue={option.label}>
-                      <ClientIcon client={option.value} />
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {cc && (
-                <div className="flex gap-2">
-                  <Select value={cc.scope} onValueChange={value => pickScope(value as ClaudeCodeScope)} disabled={saving}>
-                    <SelectTrigger className="w-28" aria-label="Source scope"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(["local", "project", "user"] as const).map(scope => (
-                        <SelectItem
-                          key={scope}
-                          value={scope}
-                          disabled={scope === "user" ? isTarget("user", "") : !projects.length || isTarget(scope, cc.dir || selectedProject || "")}
-                        >
-                          {SCOPE_LABEL[scope]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {cc.scope !== "user" && (
-                    <Popover open={projectPickerOpen} onOpenChange={setProjectPickerOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" aria-expanded={projectPickerOpen} aria-label="Source project" className="min-w-0 flex-1 justify-between font-normal" disabled={saving}>
-                          <span className="min-w-0 truncate">{cc.dir ? basename(cc.dir) : "Choose a project"}</span>
-                          <ChevronsUpDown className="size-4 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-(--radix-popover-trigger-width) min-w-80 p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Filter projects" />
-                          <CommandList>
-                            <CommandEmpty>No matching project.</CommandEmpty>
-                            <CommandGroup>
-                              {projects.map(path => (
-                                <CommandItem
-                                  key={path}
-                                  value={path}
-                                  disabled={isTarget(cc.scope, path)}
-                                  onSelect={() => { setFromClient(ccSource(cc.scope, path)); setProjectPickerOpen(false); }}
-                                >
-                                  <span className="flex min-w-0 flex-col">
-                                    <span className="truncate">{basename(path)}</span>
-                                    <span className="break-all text-xs text-muted-foreground">{path}</span>
-                                  </span>
-                                  {cc.dir === path && <Check className="ml-auto" />}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                </div>
-              )}
-              {takesPath(fromClient) && (
-                <div className="flex gap-2">
-                  <Input
-                    value={fromPath}
-                    onChange={e => setFromPath(e.target.value)}
-                    onBlur={() => { setClientPath(fromClient, fromPath || null); loadSource(); }}
-                    placeholder={t("manage.sync.pathPlaceholder")}
-                  />
-                  <Button variant="outline" onClick={browseFromPath}>{t("manage.sync.browse")}</Button>
-                </div>
-              )}
-            </div>
+            <SidePicker
+              value={fromClient}
+              onChange={chooseFrom}
+              path={fromPath}
+              onPathChange={setFromPath}
+              exclude={excludeFrom}
+              projects={projects}
+              defaultProject={selectedProject}
+              placeholder={t("manage.sync.pickSource")}
+              pathPlaceholder={t("manage.sync.pathPlaceholder")}
+              side="Source"
+              disabled={saving}
+            />
           }
-          title={fromClient ? t("manage.sync.available", { client: sourceLabel(fromClient) }) : t("manage.sync.from")}
+          title={fromClient ? t("manage.sync.available", { client: sideLabel(fromClient) }) : t("manage.sync.from")}
           names={leftNames}
           filter={leftFilter}
           onFilter={setLeftFilter}
           selected={leftSel}
           onSelect={setLeftSel}
-          onActivate={name => copy([name])}
+          onActivate={name => !sameSide && copy([name])}
           configOf={name => source[name] ?? {}}
           badgeOf={name =>
             toCopy.has(name) ? { label: t("manage.sync.queued"), variant: "default" }
@@ -329,7 +268,7 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
             : undefined}
           empty={loading ? t("loading") : fromClient ? t("manage.sync.empty") : t("manage.sync.pickSource")}
           footer={
-            <Button variant="ghost" size="sm" onClick={() => copy(missing)} disabled={!missing.length || saving}>
+            <Button variant="ghost" size="sm" onClick={() => copy(missing)} disabled={!missing.length || saving || sameSide}>
               {t("manage.sync.copyMissing")}
               <ChevronsRight className="size-4" />
             </Button>
@@ -343,7 +282,7 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
             aria-label={t("manage.sync.copy")}
             title={t("manage.sync.copy")}
             onClick={() => copy([...leftSel])}
-            disabled={!leftSel.size || saving}
+            disabled={!leftSel.size || saving || sameSide}
           >
             <ChevronRight />
           </Button>
@@ -351,11 +290,21 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
 
         <ServerBox
           header={
-            <div className="flex h-9 items-center text-sm text-muted-foreground">
-              {t("manage.sync.to")}&nbsp;<ClientIcon client={selectedClient} className="mr-1.5" /><span className="truncate font-medium text-foreground">{targetLabel}</span>
-            </div>
+            <SidePicker
+              value={toClient}
+              onChange={chooseTo}
+              path={toPath}
+              onPathChange={setToPath}
+              exclude={excludeTo}
+              projects={projects}
+              defaultProject={selectedProject}
+              placeholder={t("manage.sync.pickTarget")}
+              pathPlaceholder={t("manage.sync.targetPathPlaceholder")}
+              side="Target"
+              disabled={saving}
+            />
           }
-          title={t("manage.sync.chosen", { client: targetLabel })}
+          title={toClient ? t("manage.sync.chosen", { client: sideLabel(toClient) }) : t("manage.sync.to")}
           names={rightNames}
           filter={rightFilter}
           onFilter={setRightFilter}
@@ -369,7 +318,7 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
               : toDelete.has(name) ? { label: t("manage.sync.removing"), variant: "destructive" }
               : undefined}
           struck={toDelete}
-          empty={t("manage.sync.empty")}
+          empty={targetLoading ? t("loading") : toClient ? t("manage.sync.empty") : t("manage.sync.pickTarget")}
           footer={
             <Button variant="ghost" size="sm" onClick={() => toggleDelete([...rightSel])} disabled={!rightSel.size || saving}>
               <Trash2 className="size-4" />
@@ -378,6 +327,128 @@ export function LocalSyncPanel({ targetServers, onClose, onSaved }: {
           }
         />
       </div>
+    </div>
+  );
+}
+
+/** Picks one side: a client, or a Claude Code scope and project, plus a config path for clients that take one. */
+function SidePicker({ value, onChange, path, onPathChange, exclude, projects, defaultProject, placeholder, pathPlaceholder, side, disabled }: {
+  value: string;
+  onChange: (value: string) => void;
+  path: string;
+  onPathChange: (path: string) => void;
+  exclude: string;
+  projects: string[];
+  defaultProject: string | null;
+  placeholder: string;
+  pathPlaceholder: string;
+  side: string;
+  disabled: boolean;
+}) {
+  const { t } = useTranslation();
+  const [projectPickerOpen, setProjectPickerOpen] = useState(false);
+  const [draft, setDraft] = useState(path);
+  useEffect(() => setDraft(path), [path]);
+
+  const { others, sourceOptions } = useMemo(
+    () => buildSourceOptions(projects, getClients().map(({ id, label }) => ({ value: id, label })), exclude),
+    [projects, exclude],
+  );
+  const cc = isCCSource(value) ? parseCCSource(value) : null;
+  const isExcluded = (scope: ClaudeCodeScope, dir: string) => ccSource(scope, dir) === exclude;
+
+  const pickClient = (next: string) => {
+    if (next !== "claude_code") return onChange(next);
+    onChange(sourceOptions.find(option => isCCSource(option.value))?.value ?? "");
+  };
+  const pickScope = (scope: ClaudeCodeScope) =>
+    onChange(ccSource(scope, scope === "user" ? "" : cc?.dir || defaultProject || projects[0] || ""));
+
+  const browse = async () => {
+    const picked = await pickClientPath(value);
+    if (picked) onPathChange(picked);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Select value={cc ? "claude_code" : value} onValueChange={pickClient} disabled={disabled}>
+        <SelectTrigger className="w-full" aria-label={`${side} client`}>
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="claude_code" textValue="Claude Code"><ClientIcon client="claude_code" />Claude Code</SelectItem>
+          {others.map(option => (
+            <SelectItem key={option.value} value={option.value} textValue={option.label}>
+              <ClientIcon client={option.value} />
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {cc && (
+        <div className="flex gap-2">
+          <Select value={cc.scope} onValueChange={next => pickScope(next as ClaudeCodeScope)} disabled={disabled}>
+            <SelectTrigger className="w-28" aria-label={`${side} scope`}><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(["local", "project", "user"] as const).map(scope => (
+                <SelectItem
+                  key={scope}
+                  value={scope}
+                  disabled={scope === "user" ? isExcluded("user", "") : !projects.length || isExcluded(scope, cc.dir || defaultProject || "")}
+                >
+                  {SCOPE_LABEL[scope]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {cc.scope !== "user" && (
+            <Popover open={projectPickerOpen} onOpenChange={setProjectPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" aria-expanded={projectPickerOpen} aria-label={`${side} project`} className="min-w-0 flex-1 justify-between font-normal" disabled={disabled}>
+                  <span className="min-w-0 truncate">{cc.dir ? basename(cc.dir) : "Choose a project"}</span>
+                  <ChevronsUpDown className="size-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-(--radix-popover-trigger-width) min-w-80 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Filter projects" />
+                  <CommandList>
+                    <CommandEmpty>No matching project.</CommandEmpty>
+                    <CommandGroup>
+                      {projects.map(dir => (
+                        <CommandItem
+                          key={dir}
+                          value={dir}
+                          disabled={isExcluded(cc.scope, dir)}
+                          onSelect={() => { onChange(ccSource(cc.scope, dir)); setProjectPickerOpen(false); }}
+                        >
+                          <span className="flex min-w-0 flex-col">
+                            <span className="truncate">{basename(dir)}</span>
+                            <span className="break-all text-xs text-muted-foreground">{dir}</span>
+                          </span>
+                          {cc.dir === dir && <Check className="ml-auto" />}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
+      )}
+      {takesPath(value) && (
+        <div className="flex gap-2">
+          <Input
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={() => draft !== path && onPathChange(draft)}
+            placeholder={pathPlaceholder}
+            disabled={disabled}
+          />
+          <Button variant="outline" onClick={browse} disabled={disabled}>{t("manage.sync.browse")}</Button>
+        </div>
+      )}
     </div>
   );
 }

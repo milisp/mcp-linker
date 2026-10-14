@@ -125,7 +125,9 @@ export interface TranslationSchema {
       from: string;
       to: string;
       pickSource: string;
+      pickTarget: string;
       pathPlaceholder: string;
+      targetPathPlaceholder: string;
       browse: string;
       available: string;
       chosen: string;
@@ -138,6 +140,7 @@ export interface TranslationSchema {
       exists: string;
       queued: string;
       overwrite: string;
+      sameSide: string;
       empty: string;
       pending: string;
       reset: string;

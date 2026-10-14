@@ -15,6 +15,8 @@ export const parseCCSource = (value: string) => {
   const [, scope, ...dir] = value.split("|");
   return { scope: scope as ClaudeCodeScope, dir: dir.join("|") };
 };
+/** The client id behind a side's value ("claude_code|…" is Claude Code). */
+export const clientIdOf = (value: string) => (isCCSource(value) ? "claude_code" : value);
 export const ccLabel = (scope: ClaudeCodeScope, dir: string) =>
   scope === "user" ? "Claude Code · User" : `Claude Code · ${basename(dir)} · ${SCOPE_LABEL[scope]}`;
 
