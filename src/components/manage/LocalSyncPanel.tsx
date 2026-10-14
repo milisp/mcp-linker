@@ -500,16 +500,36 @@ function SidePicker({ value, onChange, path, onPathChange, other, projects, defa
         </div>
       )}
       {hasProjectConfig(value) && (
-        <PathCombobox
-          value={path}
-          placeholder={pathPlaceholder}
-          items={[{ value: "", title: "User config", detail: "Global configuration" }, ...editorProjects.map(projectItem)]}
-          isBlocked={dir => other.client === value && other.path === dir}
-          onSelect={onPathChange}
-          onBrowse={browse}
-          ariaLabel={`${side} project`}
-          disabled={disabled}
-        />
+        <div className="flex gap-2">
+          <Select
+            value={path ? "project" : "user"}
+            onValueChange={scope => {
+              if (scope === "user") return onPathChange("");
+              const first = editorProjects.find(dir => !(other.client === value && other.path === dir));
+              if (first) onPathChange(first);
+              else void browse();
+            }}
+            disabled={disabled}
+          >
+            <SelectTrigger className="w-28" aria-label={`${side} scope`}><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user" disabled={other.client === value && !other.path}>{SCOPE_LABEL.user}</SelectItem>
+              <SelectItem value="project">{SCOPE_LABEL.project}</SelectItem>
+            </SelectContent>
+          </Select>
+          {path && (
+            <PathCombobox
+              value={path}
+              placeholder={pathPlaceholder}
+              items={editorProjects.map(projectItem)}
+              isBlocked={dir => other.client === value && other.path === dir}
+              onSelect={onPathChange}
+              onBrowse={browse}
+              ariaLabel={`${side} project`}
+              disabled={disabled}
+            />
+          )}
+        </div>
       )}
       {requiresConfigFile(value) && (
         <div className="flex gap-2">
