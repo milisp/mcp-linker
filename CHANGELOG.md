@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.5.0] - 2026-10-14
 
 ### New Features
 - **License activation** — activate a Personal or Pro license key in Settings → License. Personal includes a year of updates; Pro includes lifetime updates
