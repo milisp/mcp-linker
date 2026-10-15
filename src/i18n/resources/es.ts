@@ -138,7 +138,7 @@ const es: { translation: TranslationSchema } = {
         deleteSelected: "Eliminar seleccionados",
         identical: "idéntico",
         differs: "difiere",
-        overwriteTitle: "¿Sobrescribir {{count}} servidores existentes?",
+        overwriteTitle: "¿Sobrescribir servidores existentes?",
         overwriteBody: "El destino ya tiene estos servidores con otra configuración. Sobrescribir reemplaza su command, args, env, url y headers por los del origen; otros ajustes, como auto-approve o disabled, se conservan.",
         skipExisting: "Omitir estos",
         overwriteConfirm: "Sobrescribir",

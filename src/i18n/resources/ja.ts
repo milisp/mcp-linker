@@ -138,7 +138,7 @@ const ja: { translation: TranslationSchema } = {
         deleteSelected: "選択を削除",
         identical: "同一",
         differs: "差分あり",
-        overwriteTitle: "既存のサーバー {{count}} 件を上書きしますか？",
+        overwriteTitle: "既存のサーバーを上書きしますか？",
         overwriteBody: "ターゲットには設定の異なる同名サーバーがあります。上書きすると command、args、env、url、headers がソースの内容に置き換わります。auto-approve や disabled などその他の設定は保持されます。",
         skipExisting: "これらをスキップ",
         overwriteConfirm: "上書き",

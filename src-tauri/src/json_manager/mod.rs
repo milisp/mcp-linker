@@ -8,6 +8,7 @@ pub mod file_io;
 pub mod server_crud;
 pub mod server_state;
 pub mod utils;
+pub mod yaml;
 
 // Re-exports for convenience
 

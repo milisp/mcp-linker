@@ -139,7 +139,7 @@ const tc: { translation: TranslationSchema } = {
         deleteSelected: "刪除所選",
         identical: "相同",
         differs: "有差異",
-        overwriteTitle: "覆蓋 {{count}} 個已有的伺服器？",
+        overwriteTitle: "覆蓋已有的伺服器？",
         overwriteBody: "目標中已有這些同名伺服器，且設定不同。覆蓋會用來源設定取代它們的 command、args、env、url 和 headers；auto-approve、disabled 等其他設定會保留。",
         skipExisting: "略過這些",
         overwriteConfirm: "覆蓋",

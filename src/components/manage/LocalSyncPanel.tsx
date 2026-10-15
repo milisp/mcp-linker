@@ -258,7 +258,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("manage.sync.overwriteTitle", { count: overwrites.length })}</AlertDialogTitle>
+            <AlertDialogTitle>{t("manage.sync.overwriteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>{t("manage.sync.overwriteBody")}</AlertDialogDescription>
           </AlertDialogHeader>
           <ul className="max-h-60 space-y-1 overflow-y-auto text-sm">

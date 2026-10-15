@@ -1,4 +1,4 @@
-use super::entry_format;
+use super::{entry_format, yaml};
 use super::utils::get_key_by_client;
 use serde_json::{json, Value};
 use std::io::ErrorKind;
@@ -26,9 +26,20 @@ pub async fn read_client_file(path: &Path, client: &str) -> Result<Value, String
 }
 
 /// Writes a config read with `read_client_file`, servers back in the client's own shape.
+/// In an existing YAML file only the servers block is rewritten, so the rest keeps its
+/// comments and the exact spelling of its values.
 pub async fn write_client_file(path: &Path, client: &str, content: &Value) -> Result<(), String> {
+    let key = get_key_by_client(client);
     let mut file = content.clone();
-    entry_format::servers_from_common(client, get_key_by_client(client), &mut file);
+    entry_format::servers_from_common(client, key, &mut file);
+    if is_yaml(path)
+        && let Ok(existing) = fs::read_to_string(path).await
+    {
+        let servers = file.get(key).cloned().unwrap_or_else(|| json!({}));
+        return fs::write(path, yaml::splice_key(&existing, key, &servers))
+            .await
+            .map_err(|e| format!("Failed to write file: {}", e));
+    }
     write_json_file(path, &file).await
 }
 
@@ -155,7 +166,7 @@ pub async fn write_json_file(path: &Path, content: &Value) -> Result<(), String>
     let yaml = is_yaml(path);
     let json_string_result = task::spawn_blocking(move || {
         if yaml {
-            serde_yaml::to_string(&content_cloned).map_err(|e| format!("Failed to serialize YAML: {}", e))
+            Ok(yaml::to_yaml(&content_cloned))
         } else {
             serde_json::to_string_pretty(&content_cloned)
                 .map_err(|e| format!("Failed to serialize JSON: {}", e))
@@ -218,19 +229,23 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn round_trips_yaml_and_backs_up_its_comments() {
+    async fn hermes_writes_touch_only_its_servers_block() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("config.yaml");
-        let original = "# Hermes\nmodel: x\nmcp_servers:\n  time:\n    command: uvx\n    args: [mcp-server-time]\n";
+        let original = "# Hermes\nmodel: x\ndisplay:\n  memory_notifications: 'on'\n";
         std::fs::write(&path, original).unwrap();
 
-        let value = read_json_file(&path).await.unwrap();
-        assert_eq!(value, json!({ "model": "x", "mcp_servers": { "time": { "command": "uvx", "args": ["mcp-server-time"] } } }));
-        write_json_file(&path, &value).await.unwrap();
-        assert_eq!(std::fs::read_to_string(dir.path().join("config.yaml.bak")).unwrap(), original);
-        assert_eq!(read_json_file(&path).await.unwrap(), value);
-        // Key order survives the rewrite.
-        assert!(std::fs::read_to_string(&path).unwrap().starts_with("model: x"));
+        let mut value = read_client_file(&path, "hermes").await.unwrap();
+        assert_eq!(value["display"]["memory_notifications"], "on");
+        value["mcp_servers"] = json!({ "docs": { "type": "sse", "url": "https://s", "disabled": true } });
+        write_client_file(&path, "hermes", &value).await.unwrap();
+
+        assert_eq!(
+            std::fs::read_to_string(&path).unwrap(),
+            format!("{original}mcp_servers:\n  docs:\n    url: \"https://s\"\n    transport: sse\n    enabled: false\n")
+        );
+        assert!(!dir.path().join("config.yaml.bak").exists());
+        assert_eq!(read_client_file(&path, "hermes").await.unwrap()["mcp_servers"]["docs"]["disabled"], true);
     }
 
     #[test]

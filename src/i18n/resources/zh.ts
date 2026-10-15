@@ -138,7 +138,7 @@ const zh: { translation: TranslationSchema } = {
         deleteSelected: "删除所选",
         identical: "相同",
         differs: "有差异",
-        overwriteTitle: "覆盖 {{count}} 个已有的服务器？",
+        overwriteTitle: "覆盖已有的服务器？",
         overwriteBody: "目标中已有这些同名服务器，且配置不同。覆盖会用源配置替换它们的 command、args、env、url 和 headers；auto-approve、disabled 等其他设置会保留。",
         skipExisting: "跳过这些",
         overwriteConfirm: "覆盖",

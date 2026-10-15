@@ -33,34 +33,39 @@ fn map_servers(entry: Entry, key: &str, file: &mut Value, convert: fn(Entry, Map
 }
 
 fn to_common(entry: Entry, mut map: Map<String, Value>) -> Map<String, Value> {
-    // All of these turn a server off with `enabled: false`.
+    // All of these turn a server off with `enabled: false` (Hermes's YAML may spell it `no` or `off`).
     if let Some(enabled) = map.remove("enabled")
-        && enabled == json!(false)
+        && matches!(&enabled, Value::Bool(false)) | matches!(enabled.as_str(), Some("false" | "no" | "off"))
     {
         map.insert("disabled".into(), json!(true));
     }
     match entry {
-        Entry::OpenCode => match map.get("type").and_then(Value::as_str) {
-            Some("local") => {
-                map.remove("type");
-                let mut command = match map.remove("command") {
-                    Some(Value::Array(parts)) => parts,
-                    Some(other) => vec![other],
-                    None => Vec::new(),
-                };
-                if !command.is_empty() {
-                    map.insert("command".into(), command.remove(0));
+        Entry::OpenCode => {
+            match map.get("type").and_then(Value::as_str) {
+                Some("local") => {
+                    map.remove("type");
+                    let mut command = match map.remove("command") {
+                        Some(Value::Array(parts)) => parts,
+                        Some(other) => vec![other],
+                        None => Vec::new(),
+                    };
+                    if !command.is_empty() {
+                        map.insert("command".into(), command.remove(0));
+                    }
+                    map.insert("args".into(), Value::Array(command));
+                    if let Some(env) = map.remove("environment") {
+                        map.insert("env".into(), map_strings(env, opencode_to_env_ref));
+                    }
                 }
-                map.insert("args".into(), Value::Array(command));
-                if let Some(env) = map.remove("environment") {
-                    map.insert("env".into(), map_strings(env, opencode_to_env_ref));
+                Some("remote") => {
+                    map.insert("type".into(), json!("http"));
                 }
+                _ => {}
             }
-            Some("remote") => {
-                map.insert("type".into(), json!("http"));
+            if let Some(headers) = map.remove("headers") {
+                map.insert("headers".into(), map_strings(headers, opencode_to_env_ref));
             }
-            _ => {}
-        },
+        }
         Entry::Hermes if map.contains_key("url") => {
             let sse = map.remove("transport").is_some_and(|t| t == "sse");
             map.insert("type".into(), json!(if sse { "sse" } else { "http" }));
@@ -70,46 +75,53 @@ fn to_common(entry: Entry, mut map: Map<String, Value>) -> Map<String, Value> {
     map
 }
 
+/// The client's own shape. The keys that say what kind of server it is come first,
+/// the rest keep their order.
 fn from_common(entry: Entry, mut map: Map<String, Value>) -> Map<String, Value> {
-    if map.remove("disabled").is_some_and(|d| d == json!(true)) {
-        map.insert("enabled".into(), json!(false));
+    if entry == Entry::Common {
+        return map;
     }
     let remote = ["url", "serverUrl", "httpUrl"].iter().find_map(|k| map.remove(*k));
     let transport = map.remove("type").and_then(|t| t.as_str().map(str::to_lowercase));
-    match entry {
-        Entry::OpenCode => {
-            if let Some(url) = remote {
-                map.insert("type".into(), json!("remote"));
-                map.insert("url".into(), url);
-            } else if let Some(command) = map.remove("command") {
-                let mut parts = vec![command];
-                if let Some(Value::Array(args)) = map.remove("args") {
-                    parts.extend(args);
-                }
-                map.insert("type".into(), json!("local"));
-                map.insert("command".into(), Value::Array(parts));
-                if let Some(env) = map.remove("env") {
-                    map.insert("environment".into(), map_strings(env, env_ref_to_opencode));
-                }
-            }
+    let mut out = Map::new();
+    if let Some(url) = remote {
+        if entry == Entry::OpenCode {
+            out.insert("type".into(), json!("remote"));
         }
-        Entry::Hermes => {
-            if let Some(url) = remote {
-                map.insert("url".into(), url);
-                if transport.as_deref() == Some("sse") {
-                    map.insert("transport".into(), json!("sse"));
-                }
-            }
+        out.insert("url".into(), url);
+        if entry == Entry::Hermes && transport.as_deref() == Some("sse") {
+            out.insert("transport".into(), json!("sse"));
         }
-        // Pi infers the transport from `command` or `url`; an explicit `type` must be stdio or http.
-        Entry::Enabled => {
-            if let Some(url) = remote {
-                map.insert("url".into(), url);
-            }
+    } else if entry == Entry::OpenCode
+        && let Some(command) = map.remove("command")
+    {
+        let mut parts = vec![command];
+        if let Some(Value::Array(args)) = map.remove("args") {
+            parts.extend(args);
         }
-        Entry::Common => {}
+        out.insert("type".into(), json!("local"));
+        out.insert("command".into(), Value::Array(parts));
     }
-    map
+    // Pi infers the transport from `command` or `url` and Hermes has no `type`, so it stays dropped.
+    for (key, value) in map {
+        match key.as_str() {
+            "disabled" => {
+                if value == json!(true) {
+                    out.insert("enabled".into(), json!(false));
+                }
+            }
+            "env" if entry == Entry::OpenCode => {
+                out.insert("environment".into(), map_strings(value, env_ref_to_opencode));
+            }
+            "headers" if entry == Entry::OpenCode => {
+                out.insert("headers".into(), map_strings(value, env_ref_to_opencode));
+            }
+            _ => {
+                out.insert(key, value);
+            }
+        }
+    }
+    out
 }
 
 fn map_strings(value: Value, convert: fn(&str) -> String) -> Value {
@@ -168,8 +180,8 @@ mod tests {
             "type": "local",
             "command": ["npx", "-y", "pkg"],
             "environment": { "KEY": "{env:API_KEY}", "PLAIN": "x" },
-            "enabled": false,
-            "timeout": 5000
+            "timeout": 5000,
+            "enabled": false
         });
         let (common, back) = round_trip(Entry::OpenCode, file.clone());
         assert_eq!(common, json!({
@@ -181,9 +193,9 @@ mod tests {
 
     #[test]
     fn opencode_remote_server() {
-        let file = json!({ "type": "remote", "url": "https://s/mcp", "headers": { "A": "b" }, "oauth": false });
+        let file = json!({ "type": "remote", "url": "https://s/mcp", "oauth": false, "headers": { "A": "Bearer {env:T}" } });
         let (common, back) = round_trip(Entry::OpenCode, file.clone());
-        assert_eq!(common, json!({ "type": "http", "url": "https://s/mcp", "headers": { "A": "b" }, "oauth": false }));
+        assert_eq!(common, json!({ "type": "http", "url": "https://s/mcp", "headers": { "A": "Bearer ${T}" }, "oauth": false }));
         assert_eq!(back, file);
     }
 
@@ -205,6 +217,8 @@ mod tests {
         assert_eq!(back, json!({ "url": "https://s" }));
         let (_, back) = round_trip(Entry::Hermes, json!({ "command": "uvx", "args": ["t"], "enabled": false }));
         assert_eq!(back, json!({ "command": "uvx", "args": ["t"], "enabled": false }));
+        let (common, _) = round_trip(Entry::Hermes, json!({ "command": "uvx", "enabled": "no" }));
+        assert_eq!(common["disabled"], true);
     }
 
     #[test]

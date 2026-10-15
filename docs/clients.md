@@ -91,7 +91,7 @@ This document describes the supported MCP clients and their configuration file p
 - **Scope**: Global only
 - **Supported Platforms**: Cross-platform
 - **Path**: `~/.hermes/config.yaml` (`%LOCALAPPDATA%\hermes\config.yaml` on Windows, `$HERMES_HOME/config.yaml` when set)
-- **Note**: YAML, root key `mcp_servers`; remote entries use `transport: sse` instead of `type`. Rewriting the file drops YAML comments, as Hermes's own `hermes mcp add` does; a commented original is kept once as `config.yaml.bak`. Non-default Hermes profiles are not picked up unless `HERMES_HOME` points at them.
+- **Note**: YAML, root key `mcp_servers`; remote entries use `transport: sse` instead of `type`. Only the `mcp_servers` block is rewritten; the rest of the file, comments included, is left as is. Hermes reads the file with PyYAML (YAML 1.1), so mcp-linker writes that block itself and quotes strings such as `on`, `no` or dates that YAML 1.1 would read as other types (`src-tauri/src/json_manager/yaml.rs`). Non-default Hermes profiles are not picked up unless `HERMES_HOME` points at them.
 - **Disable**: `"enabled": false` (YAML `enabled: false`).
 
 ---

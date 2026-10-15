@@ -138,7 +138,7 @@ const de: { translation: TranslationSchema } = {
         deleteSelected: "Auswahl löschen",
         identical: "identisch",
         differs: "abweichend",
-        overwriteTitle: "{{count}} vorhandene Server überschreiben?",
+        overwriteTitle: "Vorhandene Server überschreiben?",
         overwriteBody: "Das Ziel hat diese Server bereits mit anderen Einstellungen. Beim Überschreiben werden command, args, env, url und headers durch die der Quelle ersetzt; andere Einstellungen wie auto-approve oder disabled bleiben erhalten.",
         skipExisting: "Diese überspringen",
         overwriteConfirm: "Überschreiben",
