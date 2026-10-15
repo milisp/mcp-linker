@@ -62,6 +62,40 @@ This document describes the supported MCP clients and their configuration file p
 
 ---
 
+## OpenCode
+
+- **Scope**: Global or project
+- **Supported Platforms**: Cross-platform
+- **Paths**:
+  - Global: `~/.config/opencode/opencode.json` on every platform (`opencode.jsonc` is used instead when only that file exists)
+  - Project: `<project>/opencode.json`
+- **Note**: Root key `mcp`. Entries use OpenCode's own shape, `{"type":"local","command":["npx","-y","pkg"],"environment":{...}}` or `{"type":"remote","url":...,"headers":{...}}`. MCP Linker converts them to and from the common shape when reading and writing (`src-tauri/src/json_manager/entry_format.rs`), including `{env:NAME}` <-> `${NAME}`.
+- **Disable**: `"enabled": false` on the entry.
+
+---
+
+## Pi
+
+- **Scope**: Global or project
+- **Supported Platforms**: Cross-platform
+- **Paths**:
+  - Global: `~/.pi/agent/mcp.json` (`$PI_CODING_AGENT_DIR/mcp.json` when set)
+  - Project: `<project>/.pi/mcp.json` (Pi reads it only after project trust is granted)
+- **Note**: Root key `mcpServers`, common shape. MCP is built into Pi since `@earendil-works/pi-coding-agent` 1.x. No SSE transport (Pi rejects it); `type` is dropped on write since Pi infers it from `command`/`url`.
+- **Disable**: `"enabled": false` on the entry.
+
+---
+
+## Hermes Agent
+
+- **Scope**: Global only
+- **Supported Platforms**: Cross-platform
+- **Path**: `~/.hermes/config.yaml` (`%LOCALAPPDATA%\hermes\config.yaml` on Windows, `$HERMES_HOME/config.yaml` when set)
+- **Note**: YAML, root key `mcp_servers`; remote entries use `transport: sse` instead of `type`. Rewriting the file drops YAML comments, as Hermes's own `hermes mcp add` does; a commented original is kept once as `config.yaml.bak`. Non-default Hermes profiles are not picked up unless `HERMES_HOME` points at them.
+- **Disable**: `"enabled": false` (YAML `enabled: false`).
+
+---
+
 ## MCPHub
 
 - **Scope**: Global

@@ -44,6 +44,20 @@ pub enum Disable {
     Native,
 }
 
+/// How a server entry is written in the client's file. Anything but `Common` is
+/// converted to and from the common shape at the file boundary (`json_manager::entry_format`).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Entry {
+    /// `command`/`args`/`env` or `type`/`url`/`headers`, off with `"disabled": true`.
+    Common,
+    /// The common shape, off with `"enabled": false` (Pi).
+    Enabled,
+    /// `{type: "local", command: [..], environment}` or `{type: "remote", url, headers}`, `"enabled": false`.
+    OpenCode,
+    /// The common shape in YAML, `transport: sse` instead of `type`, `"enabled": false`.
+    Hermes,
+}
+
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ClientInfo {
@@ -57,6 +71,8 @@ pub struct ClientInfo {
     /// Relative to a project folder, for `Location::UserOrProject`.
     pub project_file: Option<&'static str>,
     pub disable: Disable,
+    #[serde(skip)]
+    pub entry: Entry,
     /// mcp-linker's own store; not offered as a target.
     #[serde(skip)]
     pub internal: bool,
@@ -72,6 +88,7 @@ const fn json(id: &'static str, label: &'static str, url: &'static str) -> Clien
         location: Location::User,
         project_file: None,
         disable: Disable::Stash,
+        entry: Entry::Common,
         internal: false,
     }
 }
@@ -107,6 +124,27 @@ pub const CLIENTS: &[ClientInfo] = &[
     ClientInfo {
         disable: Disable::List,
         ..json("copilot_cli", "GitHub Copilot CLI", "https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli")
+    },
+    ClientInfo {
+        servers_key: "mcp",
+        location: Location::UserOrProject,
+        project_file: Some("opencode.json"),
+        disable: Disable::Flag,
+        entry: Entry::OpenCode,
+        ..json("opencode", "OpenCode", "https://opencode.ai/docs/mcp-servers/")
+    },
+    ClientInfo {
+        location: Location::UserOrProject,
+        project_file: Some(".pi/mcp.json"),
+        disable: Disable::Flag,
+        entry: Entry::Enabled,
+        ..json("pi", "Pi", "https://pi.dev/")
+    },
+    ClientInfo {
+        servers_key: "mcp_servers",
+        disable: Disable::Flag,
+        entry: Entry::Hermes,
+        ..json("hermes", "Hermes Agent", "https://github.com/NousResearch/hermes-agent")
     },
     ClientInfo {
         disable: Disable::Flag,
@@ -152,6 +190,14 @@ mod tests {
                 "{}",
                 client.id
             );
+        }
+    }
+
+    #[test]
+    fn converted_entries_disable_with_the_common_flag() {
+        // entry_format maps their `enabled: false` to `disabled: true`.
+        for client in CLIENTS.iter().filter(|c| c.entry != Entry::Common) {
+            assert_eq!(client.disable, Disable::Flag, "{}", client.id);
         }
     }
 
