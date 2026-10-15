@@ -25,7 +25,7 @@ serde_json = { version = "1", features = ["preserve_order"] }
 serde_yaml = "0.9"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
-dirs = "6.0.0"
+dirs = "7.0.0"
 tauri-plugin-os = "2"
 tauri-plugin-deep-link = "2"
 tokio = { version = "1.45.1", features = ["process", "macros", "full"] }
