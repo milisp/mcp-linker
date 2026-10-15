@@ -2377,7 +2377,7 @@ version = "2.6.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "claude-agent-sdk-rs",
  "dirs",

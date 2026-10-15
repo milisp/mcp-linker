@@ -34,7 +34,7 @@ anyhow = "1.0.98"
 claude-agent-sdk-rs = { git = "https://github.com/milisp/claude-agent-sdk-rs", tag = "v0.8.0" }
 tempfile = "3.8"
 ring = "0.17.8"
-base64 = "0.21.7"
+base64 = "0.22.1"
 chrono = { version = "0.4.41", features = ["serde", "clock"] }
 tauri-plugin-clipboard-manager = "2"
 log = "0.4.27"
