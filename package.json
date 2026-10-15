@@ -81,7 +81,7 @@
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^6.1.2",
     "esbuild": "0.25.5",
-    "rollup-plugin-visualizer": "^5.14.0",
+    "rollup-plugin-visualizer": "^7.1.1",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "~7.0.2",
