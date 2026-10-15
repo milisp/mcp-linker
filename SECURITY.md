@@ -4,18 +4,17 @@
 
 Only the latest release of MCP Linker receives security fixes.
 
-| Version | Supported |
-| ------- | --------- |
-| 2.6.x   | Yes       |
-| < 2.6   | No        |
+| Version        | Supported |
+| -------------- | --------- |
+| Latest release | Yes       |
+| Older releases | No        |
 
 ## Reporting a Vulnerability
 
 Please do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.
 
-Instead, report them privately by email to:
-
-**`<MAINTAINER-SECURITY-CONTACT>`** <!-- TODO(maintainer): replace with a security contact address, or enable GitHub private vulnerability reporting and link it here -->
+Instead, report them privately through GitHub:
+[Report a vulnerability](https://github.com/milisp/mcp-linker/security/advisories/new)
 
 Please include:
 
@@ -25,6 +24,5 @@ Please include:
 
 ## Response
 
-- You can expect an initial response within `<N>` business days. <!-- TODO(maintainer): set the response time -->
 - We will keep you informed while we investigate and fix the issue.
 - Reports will not be disclosed publicly until a fix has been released.
