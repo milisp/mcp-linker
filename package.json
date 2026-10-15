@@ -75,7 +75,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/cli": "^2.10.1",
     "@tauri-apps/plugin-fs": "~2.4.5",
-    "@types/node": "^22.19.15",
+    "@types/node": "^26.6.5",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@types/uuid": "^11.0.0",
