@@ -1,4 +1,14 @@
 import { ClientIcon } from "@/components/ClientIcon";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +22,7 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { clientLabel, getClients, hasProjectConfig, requiresConfigFile, takesPath } from "@/lib/clients";
+import { getClients, hasProjectConfig, requiresConfigFile, takesPath } from "@/lib/clients";
 import { listWorkspaces } from "@/components/settings/InstallationTarget";
 import { LicenseRequiredError, claudeWrite, clientWrite, toClaudeRequest } from "@/lib/claude";
 import { pickClientPath } from "@/lib/data";
@@ -23,12 +33,13 @@ import {
   type Staged,
   basename,
   buildSourceOptions,
+  changedFields,
   convertServer,
-  ccLabel,
   ccSource,
   clientIdOf,
   describe,
   isCCSource,
+  mergeOver,
   missingNames,
   parseCCSource,
   rightNamesOf,
@@ -74,12 +85,6 @@ function useServers(client: string, path: string) {
   useEffect(() => { load(); }, [load]);
   return { servers, loading, reload: load };
 }
-
-const sideLabel = (value: string) => {
-  if (!isCCSource(value)) return clientLabel(value);
-  const { scope, dir } = parseCCSource(value);
-  return ccLabel(scope, dir);
-};
 
 /** Two-pane copy between any two clients, Claude Code projects or scopes; copies and deletions are staged on the right until saved. */
 export function LocalSyncPanel({ onClose, onSaved }: {
@@ -152,13 +157,22 @@ export function LocalSyncPanel({ onClose, onSaved }: {
   const leftNames = useMemo(() => Object.keys(source), [source]);
   const rightNames = useMemo(() => rightNamesOf(target, toCopy), [target, toCopy]);
   const missing = missingNames(source, target, toCopy);
+  // For each source server the target already has: what a copy would change there (empty when identical).
+  const changes = useMemo(
+    () => Object.fromEntries(leftNames.filter(name => name in target).map(name => [name, changedFields(source[name], target[name])])),
+    [leftNames, source, target],
+  );
+  const identical = (name: string) => changes[name]?.length === 0;
+  const overwrites = [...toCopy].filter(name => name in target);
+  const [confirming, setConfirming] = useState(false);
 
   const applyStaged = (next: Staged) => {
     setToCopy(next.toCopy);
     setToDelete(next.toDelete);
   };
   const copy = (names: string[]) => {
-    applyStaged(stageCopy({ toCopy, toDelete }, names));
+    // Copying a server the target already has unchanged would do nothing.
+    applyStaged(stageCopy({ toCopy, toDelete }, names.filter(name => !identical(name))));
     setLeftSel(new Set());
   };
   const toggleDelete = (names: string[]) => {
@@ -183,7 +197,8 @@ export function LocalSyncPanel({ onClose, onSaved }: {
 
   const pending = toCopy.size + toDelete.size;
 
-  const save = async () => {
+  const save = async (skip: string[] = []) => {
+    setConfirming(false);
     setSaving(true);
     let done = 0;
     const failures: string[] = [];
@@ -200,7 +215,10 @@ export function LocalSyncPanel({ onClose, onSaved }: {
     };
     try {
       for (const name of toDelete) await run(name, () => writeTarget(name));
-      for (const name of toCopy) await run(name, async () => writeTarget(name, convertServer(clientIdOf(toClient), source[name])));
+      for (const name of toCopy) {
+        if (skip.includes(name)) continue;
+        await run(name, async () => writeTarget(name, mergeOver(target[name], convertServer(clientIdOf(toClient), source[name]))));
+      }
     } catch {
       // The upgrade dialog already explains a missing license.
     } finally {
@@ -228,7 +246,7 @@ export function LocalSyncPanel({ onClose, onSaved }: {
               </Button>
             </>
           )}
-          <Button size="sm" onClick={save} disabled={!pending || saving || sameSide}>
+          <Button size="sm" onClick={() => (overwrites.length ? setConfirming(true) : save())} disabled={!pending || saving || sameSide}>
             {saving && <RefreshCw className="size-4 animate-spin" />}
             {t("save")}
           </Button>
@@ -236,6 +254,30 @@ export function LocalSyncPanel({ onClose, onSaved }: {
       </div>
 
       {sameSide && <p className="text-sm text-destructive">{t("manage.sync.sameSide")}</p>}
+
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("manage.sync.overwriteTitle", { count: overwrites.length })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("manage.sync.overwriteBody")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <ul className="max-h-60 space-y-1 overflow-y-auto text-sm">
+            {overwrites.map(name => (
+              <li key={name}>
+                <span className="font-medium">{name}</span>
+                <span className="ml-2 font-mono text-xs text-muted-foreground">{changes[name]?.join(", ")}</span>
+              </li>
+            ))}
+          </ul>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            {overwrites.length < toCopy.size + toDelete.size && (
+              <Button variant="outline" onClick={() => save(overwrites)}>{t("manage.sync.skipExisting")}</Button>
+            )}
+            <AlertDialogAction onClick={() => save()}>{t("manage.sync.overwriteConfirm")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] gap-x-3 gap-y-2">
         <ServerBox
@@ -255,7 +297,6 @@ export function LocalSyncPanel({ onClose, onSaved }: {
               disabled={saving}
             />
           }
-          title={fromClient ? t("manage.sync.available", { client: sideLabel(fromClient) }) : t("manage.sync.from")}
           names={leftNames}
           filter={leftFilter}
           onFilter={setLeftFilter}
@@ -265,7 +306,8 @@ export function LocalSyncPanel({ onClose, onSaved }: {
           configOf={name => source[name] ?? {}}
           badgeOf={name =>
             toCopy.has(name) ? { label: t("manage.sync.queued"), variant: "default" }
-            : name in target ? { label: t("manage.sync.exists"), variant: "secondary" }
+            : identical(name) ? { label: t("manage.sync.identical"), variant: "secondary" }
+            : name in target ? { label: t("manage.sync.differs"), variant: "outline", title: changes[name]?.join(", ") }
             : undefined}
           empty={loading ? t("loading") : fromClient ? t("manage.sync.empty") : t("manage.sync.pickSource")}
           footer={
@@ -306,7 +348,6 @@ export function LocalSyncPanel({ onClose, onSaved }: {
               disabled={saving}
             />
           }
-          title={toClient ? t("manage.sync.chosen", { client: sideLabel(toClient) }) : t("manage.sync.to")}
           names={rightNames}
           filter={rightFilter}
           onFilter={setRightFilter}
@@ -316,7 +357,9 @@ export function LocalSyncPanel({ onClose, onSaved }: {
           configOf={name => (toCopy.has(name) ? source[name] : target[name]) ?? {}}
           badgeOf={name =>
             toCopy.has(name)
-              ? { label: t(name in target ? "manage.sync.overwrite" : "manage.sync.adding"), variant: "default" }
+              ? name in target
+                ? { label: t("manage.sync.overwrite"), variant: "destructive", title: changes[name]?.join(", ") }
+                : { label: t("manage.sync.adding"), variant: "default" }
               : toDelete.has(name) ? { label: t("manage.sync.removing"), variant: "destructive" }
               : undefined}
           struck={toDelete}
@@ -547,10 +590,9 @@ function SidePicker({ value, onChange, path, onPathChange, other, projects, defa
   );
 }
 
-function ServerBox({ className, header, title, names, filter, onFilter, selected, onSelect, onActivate, configOf, badgeOf, struck, empty, footer }: {
+function ServerBox({ className, header, names, filter, onFilter, selected, onSelect, onActivate, configOf, badgeOf, struck, empty, footer }: {
   className?: string;
   header: React.ReactNode;
-  title: string;
   names: string[];
   filter: string;
   onFilter: (value: string) => void;
@@ -558,7 +600,7 @@ function ServerBox({ className, header, title, names, filter, onFilter, selected
   onSelect: (next: Set<string>) => void;
   onActivate: (name: string) => void;
   configOf: (name: string) => Record<string, any>;
-  badgeOf: (name: string) => { label: string; variant: "default" | "secondary" | "destructive" } | undefined;
+  badgeOf: (name: string) => { label: string; variant: "default" | "secondary" | "destructive" | "outline"; title?: string } | undefined;
   struck?: Set<string>;
   empty: string;
   footer: React.ReactNode;
@@ -578,7 +620,6 @@ function ServerBox({ className, header, title, names, filter, onFilter, selected
     <div className={cn("row-span-2 row-start-1 grid min-w-0 grid-rows-subgrid", className)}>
       {header}
       <div className="flex min-h-0 flex-col overflow-hidden rounded-md border">
-        <div className="border-b bg-muted/50 px-3 py-2 text-sm font-medium">{title}</div>
         <div className="border-b p-2">
           <Input value={filter} onChange={e => onFilter(e.target.value)} placeholder={t("manage.sync.filter")} className="h-8" />
         </div>
@@ -602,7 +643,7 @@ function ServerBox({ className, header, title, names, filter, onFilter, selected
                   <div className={cn("truncate text-sm font-medium", struck?.has(name) && "text-muted-foreground line-through")}>{name}</div>
                   <div className="truncate font-mono text-xs text-muted-foreground">{describe(configOf(name))}</div>
                 </div>
-                {badge && <Badge variant={badge.variant}>{badge.label}</Badge>}
+                {badge && <Badge variant={badge.variant} title={badge.title}>{badge.label}</Badge>}
               </li>
             );
           })}

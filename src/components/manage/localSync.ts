@@ -122,6 +122,43 @@ export function fromPortable(client: string, server: PortableServer): Record<str
 /** Converts one client's server entry into another client's format. */
 export const convertServer = (toClient: string, config: Record<string, any>) => fromPortable(toClient, toPortable(config));
 
+// Keys that say how to reach a server. A copy replaces these and keeps the
+// target's other settings (autoApprove, disabled, timeouts, …).
+const CONNECTION_KEYS = new Set(["command", "args", "env", "cwd", "url", "serverUrl", "httpUrl", "type", "transportType", "headers", "http_headers"]);
+
+/** A copied server written over the target's entry of the same name. */
+export function mergeOver(existing: Record<string, any> | undefined, converted: Record<string, any>) {
+  if (!existing) return converted;
+  const kept = Object.entries(existing).filter(([key]) => !CONNECTION_KEYS.has(key));
+  return { ...Object.fromEntries(kept), ...converted };
+}
+
+const portableOf = (config: Record<string, any>) => {
+  try {
+    return toPortable(config) as Record<string, any>;
+  } catch {
+    return undefined;
+  }
+};
+
+const stable = (value: unknown) => JSON.stringify(value, (_, v) =>
+  v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v);
+
+/**
+ * What a copy would change on the target, compared in client-neutral form so the same
+ * server written two ways (e.g. an mcp-remote bridge and a url) counts as equal.
+ * env and header changes are named per key; their values are never shown.
+ */
+export function changedFields(from: Record<string, any>, to: Record<string, any>): string[] {
+  const [a, b] = [portableOf(from), portableOf(to)];
+  if (!a || !b) return stable(from) === stable(to) ? [] : ["config"];
+  return [...new Set([...Object.keys(a), ...Object.keys(b)])].sort().flatMap(key => {
+    if (key !== "env" && key !== "headers") return stable(a[key]) === stable(b[key]) ? [] : [key];
+    const [x, y] = [a[key] ?? {}, b[key] ?? {}];
+    return [...new Set([...Object.keys(x), ...Object.keys(y)])].sort().filter(k => x[k] !== y[k]).map(k => `${key}.${k}`);
+  });
+}
+
 export const describe = (config: Record<string, any>) =>
   config.command
     ? [config.command, ...(config.args ?? [])].join(" ")
