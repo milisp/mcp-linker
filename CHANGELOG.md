@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.0] - 2026-10-15
+
+### New Features
+- **OpenCode, Pi and Hermes Agent** — manage, enable/disable and sync MCP servers for three more clients. OpenCode and Pi support user and project configs; Hermes Agent's `config.yaml` is edited in place, keeping the rest of the file and its comments untouched
+- **Safer Local Sync** — servers the target already has are marked *identical* or *differs*, with the changed fields (args, env keys, …) on hover. Saving over a server with different settings asks first: overwrite, skip those, or cancel. Overwriting keeps the target's own settings such as auto-approve or disabled
+- Added the looot MCP preset (#43)
+
+### Improvements & Fixes
+- Config files rewritten by MCP Linker keep their original key order
+- Copying a server that is already identical on the target no longer counts as a change
+- Removed the repeated client title above each Local Sync list
+
 ## [2.5.0] - 2026-10-14
 
 ### New Features

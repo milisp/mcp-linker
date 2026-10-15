@@ -30,7 +30,7 @@ English · [简体中文](docs/README.zh-CN.md) · [繁體中文](docs/README.zh
 
 - **Local Sync** — Sync MCP server configs across multiple clients
 - **Official MCP Registry** — Browse and install servers straight from registry.modelcontextprotocol.io
-- **Multi-Client Support** — Claude Desktop/Code, Codex, Cursor, VS Code, Cline. [see Detail](./docs/clients.md)
+- **Multi-Client Support** — Claude Desktop/Code, Codex, Cursor, VS Code, GitHub Copilot CLI, Cline, OpenCode, Pi, Hermes Agent. [see Detail](./docs/clients.md)
 - **Cross-Platform** — macOS, Windows, Linux
 - **Smart Detection** — Auto-detect Python, Node.js, uv environments
 
