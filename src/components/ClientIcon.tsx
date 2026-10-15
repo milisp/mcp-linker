@@ -4,6 +4,9 @@ import clineIcon from "@/assets/icons/cline.svg";
 import codexIcon from "@/assets/icons/codex-color.svg";
 import cursorIcon from "@/assets/icons/cursor.svg";
 import copilotIcon from "@/assets/icons/github-copilot.svg";
+import hermesIcon from "@/assets/icons/hermesagent.svg";
+import opencodeIcon from "@/assets/icons/opencode.svg";
+import piIcon from "@/assets/icons/pi.svg";
 import { cn } from "@/lib/utils";
 
 const clientIcons: Record<string, string> = {
@@ -14,6 +17,9 @@ const clientIcons: Record<string, string> = {
   cursor: cursorIcon,
   copilot: copilotIcon,
   copilot_cli: copilotIcon,
+  hermes: hermesIcon,
+  opencode: opencodeIcon,
+  pi: piIcon,
 };
 
 /** Decorative client logo; renders nothing for clients without one. */

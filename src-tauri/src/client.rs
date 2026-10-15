@@ -45,6 +45,12 @@ impl ClientConfig {
             "copilot" => Self::vscode_user_dir(home).join("mcp.json"),
             "copilot_cli" => Self::copilot_home(home, std::env::var_os("COPILOT_HOME")).join("mcp-config.json"),
             "cursor" => home.join(".cursor/mcp.json"),
+            "hermes" => Self::hermes_home(home, std::env::var_os("HERMES_HOME")).join("config.yaml"),
+            "opencode" => Self::opencode_config(&home.join(".config/opencode")),
+            "pi" => std::env::var_os("PI_CODING_AGENT_DIR")
+                .filter(|dir| !dir.is_empty())
+                .map_or_else(|| home.join(".pi/agent"), PathBuf::from)
+                .join("mcp.json"),
             "mcphub" => home.join(".config/mcphub/servers.json"),
             "mcplinker" => home.join(".config/mcplinker/mcp.json"),
             other => return Err(format!("No user config location for '{other}'")),
@@ -79,6 +85,23 @@ impl ClientConfig {
     /// `$COPILOT_HOME`, as Copilot CLI itself resolves it, else `~/.copilot`.
     fn copilot_home(home: &Path, copilot_home: Option<std::ffi::OsString>) -> PathBuf {
         copilot_home.filter(|dir| !dir.is_empty()).map_or_else(|| home.join(".copilot"), PathBuf::from)
+    }
+
+    /// `$HERMES_HOME`, else `%LOCALAPPDATA%\\hermes` on Windows and `~/.hermes` elsewhere, as Hermes resolves it.
+    fn hermes_home(home: &Path, hermes_home: Option<std::ffi::OsString>) -> PathBuf {
+        if let Some(dir) = hermes_home.filter(|dir| !dir.is_empty()) {
+            return PathBuf::from(dir);
+        }
+        if cfg!(target_os = "windows") {
+            return home.join("AppData/Local/hermes");
+        }
+        home.join(".hermes")
+    }
+
+    /// opencode reads `opencode.json` or `opencode.jsonc` from `~/.config/opencode` on every platform.
+    fn opencode_config(dir: &Path) -> PathBuf {
+        let jsonc = dir.join("opencode.jsonc");
+        if jsonc.is_file() && !dir.join("opencode.json").is_file() { jsonc } else { dir.join("opencode.json") }
     }
 
     fn vscode_user_dir(home: &Path) -> PathBuf {
@@ -266,6 +289,38 @@ mod tests {
     fn cursor_uses_home_or_project_folder() {
         assert_eq!(path_of("cursor", None).unwrap(), PathBuf::from("/home/test/.cursor/mcp.json"));
         assert_eq!(path_of("cursor", Some("/work/app")).unwrap(), PathBuf::from("/work/app/.cursor/mcp.json"));
+    }
+
+    #[test]
+    fn opencode_uses_its_config_or_project_file() {
+        assert_eq!(path_of("opencode", None).unwrap(), PathBuf::from("/home/test/.config/opencode/opencode.json"));
+        assert_eq!(path_of("opencode", Some("/work/app")).unwrap(), PathBuf::from("/work/app/opencode.json"));
+    }
+
+    #[test]
+    fn opencode_prefers_an_existing_jsonc_only_without_json() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("opencode.jsonc"), "{}").unwrap();
+        assert_eq!(ClientConfig::opencode_config(dir.path()), dir.path().join("opencode.jsonc"));
+        std::fs::write(dir.path().join("opencode.json"), "{}").unwrap();
+        assert_eq!(ClientConfig::opencode_config(dir.path()), dir.path().join("opencode.json"));
+    }
+
+    #[test]
+    fn pi_uses_its_agent_dir_or_project_file() {
+        if std::env::var_os("PI_CODING_AGENT_DIR").is_none() {
+            assert_eq!(path_of("pi", None).unwrap(), PathBuf::from("/home/test/.pi/agent/mcp.json"));
+        }
+        assert_eq!(path_of("pi", Some("/work/app")).unwrap(), PathBuf::from("/work/app/.pi/mcp.json"));
+    }
+
+    #[test]
+    fn hermes_honors_hermes_home() {
+        let home = Path::new("/home/test");
+        assert_eq!(ClientConfig::hermes_home(home, Some("/opt/hermes".into())), PathBuf::from("/opt/hermes"));
+        let default = ClientConfig::hermes_home(home, None);
+        assert!(default.ends_with(if cfg!(windows) { "AppData/Local/hermes" } else { ".hermes" }));
+        assert_eq!(path_of("hermes", Some("/work/app")).unwrap().file_name().unwrap(), "config.yaml");
     }
 
     #[test]

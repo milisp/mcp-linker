@@ -1,16 +1,56 @@
+use super::{entry_format, yaml};
+use super::utils::get_key_by_client;
 use serde_json::{json, Value};
 use std::io::ErrorKind;
 use std::path::Path;
 use tokio::fs;
 use tokio::task;
 
-/// Read JSON file asynchronously
+/// Hermes keeps its servers in a YAML file; every other config is JSON.
+fn is_yaml(path: &Path) -> bool {
+    path.extension().is_some_and(|ext| ext == "yaml" || ext == "yml")
+}
+
+fn parse_yaml(text: &str) -> Result<Value, String> {
+    if text.trim().is_empty() {
+        return Ok(json!({}));
+    }
+    serde_yaml::from_str(text).map_err(|e| format!("Failed to parse YAML: {}", e))
+}
+
+/// Reads a client's config with its servers in the common entry shape (see `entry_format`).
+pub async fn read_client_file(path: &Path, client: &str) -> Result<Value, String> {
+    let mut file = read_json_file(path).await?;
+    entry_format::servers_to_common(client, get_key_by_client(client), &mut file);
+    Ok(file)
+}
+
+/// Writes a config read with `read_client_file`, servers back in the client's own shape.
+/// In an existing YAML file only the servers block is rewritten, so the rest keeps its
+/// comments and the exact spelling of its values.
+pub async fn write_client_file(path: &Path, client: &str, content: &Value) -> Result<(), String> {
+    let key = get_key_by_client(client);
+    let mut file = content.clone();
+    entry_format::servers_from_common(client, key, &mut file);
+    if is_yaml(path)
+        && let Ok(existing) = fs::read_to_string(path).await
+    {
+        let servers = file.get(key).cloned().unwrap_or_else(|| json!({}));
+        return fs::write(path, yaml::splice_key(&existing, key, &servers))
+            .await
+            .map_err(|e| format!("Failed to write file: {}", e));
+    }
+    write_json_file(path, &file).await
+}
+
+/// Read a JSON (or, by extension, YAML) config file asynchronously
 pub async fn read_json_file(path: &Path) -> Result<Value, String> {
     let path_buf = path.to_path_buf();
     let content_result = fs::read_to_string(&path_buf).await;
+    let parse = if is_yaml(path) { parse_yaml } else { parse_jsonc };
 
     match content_result {
-        Ok(content) => task::spawn_blocking(move || parse_jsonc(&content))
+        Ok(content) => task::spawn_blocking(move || parse(&content))
         .await
         .map_err(|e| format!("Failed to run blocking task for JSON parsing: {}", e))?,
         Err(e) => {
@@ -100,7 +140,15 @@ fn remove_trailing_commas(text: &str) -> String {
     out
 }
 
-/// Write JSON file asynchronously
+fn has_comments(text: &str, yaml: bool) -> bool {
+    if yaml {
+        text.lines().any(|line| line.trim_start().starts_with('#'))
+    } else {
+        serde_json::from_str::<Value>(text).is_err() && parse_jsonc(text).is_ok()
+    }
+}
+
+/// Write a JSON (or, by extension, YAML) config file asynchronously
 pub async fn write_json_file(path: &Path, content: &Value) -> Result<(), String> {
     let path_buf = path.to_path_buf();
     let content_cloned = content.clone(); // Clone for the blocking task
@@ -114,10 +162,15 @@ pub async fn write_json_file(path: &Path, content: &Value) -> Result<(), String>
             .map_err(|e| format!("Failed to create directory: {}", e))?;
     }
 
-    // Serialize JSON in a blocking task
+    // Serialize in a blocking task
+    let yaml = is_yaml(path);
     let json_string_result = task::spawn_blocking(move || {
-        serde_json::to_string_pretty(&content_cloned)
-            .map_err(|e| format!("Failed to serialize JSON: {}", e))
+        if yaml {
+            Ok(yaml::to_yaml(&content_cloned))
+        } else {
+            serde_json::to_string_pretty(&content_cloned)
+                .map_err(|e| format!("Failed to serialize JSON: {}", e))
+        }
     })
     .await
     .map_err(|e| format!("Failed to run blocking task for JSON serialization: {}", e))?;
@@ -126,8 +179,7 @@ pub async fn write_json_file(path: &Path, content: &Value) -> Result<(), String>
 
     // Comments cannot survive a rewrite; keep the commented original once.
     if let Ok(existing) = fs::read_to_string(&path_buf).await
-        && serde_json::from_str::<Value>(&existing).is_err()
-        && parse_jsonc(&existing).is_ok()
+        && has_comments(&existing, yaml)
     {
         let mut backup = path_buf.clone().into_os_string();
         backup.push(".bak");
@@ -174,6 +226,26 @@ mod tests {
     #[test]
     fn keeps_commas_between_items_followed_by_comments() {
         assert_eq!(parse_jsonc("[1, // one\n 2]").unwrap(), json!([1, 2]));
+    }
+
+    #[tokio::test]
+    async fn hermes_writes_touch_only_its_servers_block() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("config.yaml");
+        let original = "# Hermes\nmodel: x\ndisplay:\n  memory_notifications: 'on'\n";
+        std::fs::write(&path, original).unwrap();
+
+        let mut value = read_client_file(&path, "hermes").await.unwrap();
+        assert_eq!(value["display"]["memory_notifications"], "on");
+        value["mcp_servers"] = json!({ "docs": { "type": "sse", "url": "https://s", "disabled": true } });
+        write_client_file(&path, "hermes", &value).await.unwrap();
+
+        assert_eq!(
+            std::fs::read_to_string(&path).unwrap(),
+            format!("{original}mcp_servers:\n  docs:\n    url: \"https://s\"\n    transport: sse\n    enabled: false\n")
+        );
+        assert!(!dir.path().join("config.yaml.bak").exists());
+        assert_eq!(read_client_file(&path, "hermes").await.unwrap()["mcp_servers"]["docs"]["disabled"], true);
     }
 
     #[test]

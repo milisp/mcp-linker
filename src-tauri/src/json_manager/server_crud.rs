@@ -2,7 +2,7 @@ use serde_json::{Value, json};
 use std::path::Path;
 
 use super::disabled_list;
-use super::file_io::{read_json_file, write_json_file};
+use super::file_io::{read_client_file, write_client_file};
 use super::utils::{get_key_by_client, is_disabled_list_client, is_per_server_disabled_client, normalize_response_key, without_markers};
 
 /// Add a new MCP server
@@ -12,7 +12,7 @@ pub async fn add_mcp_server(
     name: &str,
     config: Value,
 ) -> Result<Value, String> {
-    let mut json = read_json_file(path).await?;
+    let mut json = read_client_file(path, client).await?;
     let key = get_key_by_client(client);
 
     if !json.is_object() {
@@ -29,7 +29,7 @@ pub async fn add_mcp_server(
 
     json[key][name] = without_markers(config);
 
-    write_json_file(path, &json).await?;
+    write_client_file(path, client, &json).await?;
     if is_disabled_list_client(client) {
         // A stale entry from an earlier server of the same name would start it disabled.
         disabled_list::set(path, &[name], false).await?;
@@ -40,7 +40,7 @@ pub async fn add_mcp_server(
 
 /// Remove an MCP server
 pub async fn remove_mcp_server(path: &Path, client: &str, name: &str) -> Result<Value, String> {
-    let mut json = read_json_file(path).await?;
+    let mut json = read_client_file(path, client).await?;
     let key = get_key_by_client(client);
 
     // A disabled server lives under "__disabled", so look there too.
@@ -50,7 +50,7 @@ pub async fn remove_mcp_server(path: &Path, client: &str, name: &str) -> Result<
         }
     }
 
-    write_json_file(path, &json).await?;
+    write_client_file(path, client, &json).await?;
     if is_disabled_list_client(client) {
         disabled_list::set(path, &[name], false).await?;
     }
@@ -66,7 +66,7 @@ pub async fn update_mcp_server(
     name: &str,
     config: Value,
 ) -> Result<Value, String> {
-    let mut json = read_json_file(path).await?;
+    let mut json = read_client_file(path, client).await?;
     let key = get_key_by_client(client);
 
     if !json.is_object() {
@@ -97,7 +97,7 @@ pub async fn update_mcp_server(
     }
     json[section][name] = config;
 
-    write_json_file(path, &json).await?;
+    write_client_file(path, client, &json).await?;
 
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
@@ -110,7 +110,7 @@ pub async fn batch_delete_mcp_servers(
     server_names: Vec<String>,
 ) -> Result<Value, String> {
 
-    let mut json = read_json_file(path).await?;
+    let mut json = read_client_file(path, client).await?;
     let key = get_key_by_client(client);
 
     if !json.is_object() {
@@ -130,7 +130,7 @@ pub async fn batch_delete_mcp_servers(
                 servers_obj.remove(server_name);
             }
         }
-        write_json_file(path, &json).await?;
+        write_client_file(path, client, &json).await?;
         return normalize_response_key(json, client);
     }
 
@@ -178,7 +178,7 @@ pub async fn batch_delete_mcp_servers(
         }
     }
 
-    write_json_file(path, &json).await?;
+    write_client_file(path, client, &json).await?;
 
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
@@ -187,10 +187,27 @@ pub async fn batch_delete_mcp_servers(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::json_manager::file_io::{read_json_file, write_json_file};
     use tempfile::tempdir;
 
     async fn write_fixture(path: &Path, value: Value) {
         write_json_file(path, &value).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn opencode_entries_are_written_in_its_own_shape() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("opencode.json");
+        write_fixture(&path, json!({ "$schema": "https://opencode.ai/config.json", "mcp": {} })).await;
+
+        update_mcp_server(&path, "opencode", "a", json!({ "command": "npx", "args": ["x"], "env": { "K": "${T}" } })).await.unwrap();
+        crate::json_manager::server_state::disable_mcp_server(&path, "opencode", "a").await.unwrap();
+
+        let saved = read_json_file(&path).await.unwrap();
+        assert_eq!(saved["$schema"], "https://opencode.ai/config.json");
+        assert_eq!(saved["mcp"]["a"], json!({ "type": "local", "command": ["npx", "x"], "environment": { "K": "{env:T}" }, "enabled": false }));
+        let listed = crate::json_manager::server_state::list_disabled_servers(&path, "opencode").await.unwrap();
+        assert_eq!(listed["a"]["command"], "npx");
     }
 
     #[tokio::test]

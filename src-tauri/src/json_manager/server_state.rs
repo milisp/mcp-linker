@@ -2,7 +2,7 @@ use serde_json::{json, Value};
 use std::path::Path;
 
 use super::disabled_list;
-use super::file_io::{read_json_file, write_json_file};
+use super::file_io::{read_client_file, write_client_file};
 use super::utils::{
     get_key_by_client, is_disabled_list_client, is_per_server_disabled_client,
     normalize_response_key, without_markers,
@@ -19,7 +19,7 @@ pub async fn update_disabled_mcp_server(
     name: &str,
     config: Value,
 ) -> Result<Value, String> {
-    let mut json = read_json_file(path).await?;
+    let mut json = read_client_file(path, client).await?;
     let key = get_key_by_client(client);
     let config = without_markers(config);
 
@@ -31,7 +31,7 @@ pub async fn update_disabled_mcp_server(
             json[key] = json!({});
         }
         json[key][name] = config;
-        write_json_file(path, &json).await?;
+        write_client_file(path, client, &json).await?;
         disabled_list::set(path, &[name], true).await?;
         return normalize_response_key(json, client);
     }
@@ -48,7 +48,7 @@ pub async fn update_disabled_mcp_server(
         let mut config_with_disabled = config;
         config_with_disabled["disabled"] = json!(true);
         json[key][name] = config_with_disabled;
-        write_json_file(path, &json).await?;
+        write_client_file(path, client, &json).await?;
         return normalize_response_key(json, client);
     }
 
@@ -64,7 +64,7 @@ pub async fn update_disabled_mcp_server(
     // Update the disabled server
     json["__disabled"][name] = config;
 
-    write_json_file(path, &json).await?;
+    write_client_file(path, client, &json).await?;
 
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
@@ -72,7 +72,7 @@ pub async fn update_disabled_mcp_server(
 
 /// Disable an MCP server
 pub async fn disable_mcp_server(path: &Path, client: &str, name: &str) -> Result<Value, String> {
-    let mut json = read_json_file(path).await?;
+    let mut json = read_client_file(path, client).await?;
     let key = get_key_by_client(client);
 
     if !json.is_object() {
@@ -97,7 +97,7 @@ pub async fn disable_mcp_server(path: &Path, client: &str, name: &str) -> Result
         }
         // Set disabled: true
         json[key][name]["disabled"] = json!(true);
-        write_json_file(path, &json).await?;
+        write_client_file(path, client, &json).await?;
         return normalize_response_key(json, client);
     }
 
@@ -123,7 +123,7 @@ pub async fn disable_mcp_server(path: &Path, client: &str, name: &str) -> Result
     // Add to disabled section
     json["__disabled"][name] = server_config;
 
-    write_json_file(path, &json).await?;
+    write_client_file(path, client, &json).await?;
 
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
@@ -131,7 +131,7 @@ pub async fn disable_mcp_server(path: &Path, client: &str, name: &str) -> Result
 
 /// Enable an MCP server
 pub async fn enable_mcp_server(path: &Path, client: &str, name: &str) -> Result<Value, String> {
-    let mut json = read_json_file(path).await?;
+    let mut json = read_client_file(path, client).await?;
     let key = get_key_by_client(client);
 
     if !json.is_object() {
@@ -158,7 +158,7 @@ pub async fn enable_mcp_server(path: &Path, client: &str, name: &str) -> Result<
         }
         // Remove the disabled key
         json[key][name].as_object_mut().unwrap().remove("disabled");
-        write_json_file(path, &json).await?;
+        write_client_file(path, client, &json).await?;
         return normalize_response_key(json, client);
     }
 
@@ -197,7 +197,7 @@ pub async fn enable_mcp_server(path: &Path, client: &str, name: &str) -> Result<
     // Add to active servers
     json[key][name] = server_config;
 
-    write_json_file(path, &json).await?;
+    write_client_file(path, client, &json).await?;
 
     // Normalize response key to mcpServers for client
     normalize_response_key(json, client)
@@ -205,7 +205,7 @@ pub async fn enable_mcp_server(path: &Path, client: &str, name: &str) -> Result<
 
 /// List all disabled servers
 pub async fn list_disabled_servers(path: &Path, client: &str) -> Result<Value, String> {
-    let json = read_json_file(path).await?;
+    let json = read_client_file(path, client).await?;
     let key = get_key_by_client(client);
 
     if is_disabled_list_client(client) {
@@ -250,6 +250,7 @@ pub async fn list_disabled_servers(path: &Path, client: &str) -> Result<Value, S
 mod tests {
     use super::super::server_crud::{add_mcp_server, remove_mcp_server};
     use super::*;
+    use crate::json_manager::file_io::{read_json_file, write_json_file};
     use tempfile::tempdir;
 
     #[tokio::test]

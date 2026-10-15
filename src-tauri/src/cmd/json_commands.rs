@@ -19,8 +19,7 @@ pub async fn read_json_file(client_name: String, path: Option<String>) -> Result
     let app_config = ClientConfig::new(&client_name, path.as_deref())?;
     let file_path = app_config.get_path();
 
-    // Remove the file existence check - let JsonManager handle it
-    let mut json = JsonManager::read_json_file(file_path).await?;
+    let mut json = crate::json_manager::file_io::read_client_file(file_path, &client_name).await?;
 
     // Ensure the JSON always has the required structure
     if !json.is_object() {

@@ -3,10 +3,12 @@ use std::path::Path;
 
 // Module declarations
 pub mod disabled_list;
+pub mod entry_format;
 pub mod file_io;
 pub mod server_crud;
 pub mod server_state;
 pub mod utils;
+pub mod yaml;
 
 // Re-exports for convenience
 
@@ -15,10 +17,6 @@ pub struct JsonManager;
 
 impl JsonManager {
     // File I/O operations
-    pub async fn read_json_file(path: &Path) -> Result<Value, String> {
-        file_io::read_json_file(path).await
-    }
-
     pub async fn write_json_file(path: &Path, content: &Value) -> Result<(), String> {
         file_io::write_json_file(path, content).await
     }

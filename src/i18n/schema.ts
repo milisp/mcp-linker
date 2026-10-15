@@ -122,22 +122,23 @@ export interface TranslationSchema {
     localSync: string;
     sync: {
       back: string;
-      from: string;
-      to: string;
       pickSource: string;
       pickTarget: string;
       pathPlaceholder: string;
       targetPathPlaceholder: string;
       browse: string;
-      available: string;
-      chosen: string;
       filter: string;
       adding: string;
       removing: string;
       copy: string;
       copyMissing: string;
       deleteSelected: string;
-      exists: string;
+      identical: string;
+      differs: string;
+      overwriteTitle: string;
+      overwriteBody: string;
+      skipExisting: string;
+      overwriteConfirm: string;
       queued: string;
       overwrite: string;
       sameSide: string;

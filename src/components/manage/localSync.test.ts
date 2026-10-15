@@ -1,10 +1,12 @@
 import { describe as group, expect, it } from "vitest";
 import {
   buildSourceOptions,
+  changedFields,
   ccLabel,
   ccSource,
   convertServer,
   describe,
+  mergeOver,
   missingNames,
   parseCCSource,
   rightNamesOf,
@@ -181,5 +183,27 @@ group("convertServer", () => {
 
   it("rejects entries with neither command nor url", () => {
     expect(() => convertServer("cursor", { type: "stdio" })).toThrow();
+  });
+});
+
+group("copying over an existing server", () => {
+  it("finds no change for the same server written by another client", () => {
+    const desktop = { command: "npx", args: ["-y", "mcp-remote", "https://s", "--header", "A:${MCP_REMOTE_HEADER_0}"], env: { MCP_REMOTE_HEADER_0: "x" } };
+    expect(changedFields(desktop, { type: "http", url: "https://s", headers: { A: "x" } })).toEqual([]);
+    expect(changedFields({ command: "npx", args: ["a"], env: { B: "1", A: "2" } }, { command: "npx", args: ["a"], env: { A: "2", B: "1" } })).toEqual([]);
+  });
+
+  it("names changed args and env keys without their values", () => {
+    expect(changedFields(
+      { command: "npx", args: ["a"], env: { KEY: "new", ADDED: "1" } },
+      { command: "npx", args: ["b"], env: { KEY: "old", GONE: "1" } },
+    )).toEqual(["args", "env.ADDED", "env.GONE", "env.KEY"]);
+    expect(changedFields({ url: "https://a" }, { command: "x" })).toEqual(["args", "command", "transport", "url"]);
+  });
+
+  it("replaces connection fields and keeps the target's own settings", () => {
+    const existing = { url: "https://old", type: "sse", autoApprove: ["read"], disabled: true };
+    expect(mergeOver(existing, { command: "npx", args: [] })).toEqual({ command: "npx", args: [], autoApprove: ["read"], disabled: true });
+    expect(mergeOver(undefined, { url: "https://s" })).toEqual({ url: "https://s" });
   });
 });
