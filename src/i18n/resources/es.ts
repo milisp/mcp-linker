@@ -100,7 +100,8 @@ const es: { translation: TranslationSchema } = {
       renew: "Renovar",
     },
     upgrade: {
-      description: "Esto requiere una licencia de MCP Linker, Personal o Pro, de pago único.",
+      needsPlus: "Esto requiere MCP Linker Plus o Pro, de pago único.",
+      needsPro: "Esto requiere MCP Linker Pro, de pago único.",
       enterKey: "Introducir clave de licencia",
       buy: "Comprar una licencia",
       freeClients: "Claude Desktop y Cursor son gratis.",

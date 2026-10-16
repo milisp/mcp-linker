@@ -578,7 +578,7 @@ pub async fn mcp_inspector_connect(
     config: ConnectionConfig,
     working_dir: Option<String>,
 ) -> Result<ConnectionResult, String> {
-    crate::license::require("Live tool inspection")?;
+    crate::license::require(crate::license::Tier::Plus, "Live tool inspection")?;
     let transport = timeout(REQUEST_TIMEOUT, Transport::open(config, working_dir))
         .await
         .map_err(|_| "Connection startup timed out after 30 seconds")??;

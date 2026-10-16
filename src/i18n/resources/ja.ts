@@ -100,7 +100,8 @@ const ja: { translation: TranslationSchema } = {
       renew: "更新する",
     },
     upgrade: {
-      description: "この機能には MCP Linker のライセンス（Personal または Pro、買い切り）が必要です。",
+      needsPlus: "この機能には MCP Linker Plus または Pro（買い切り）が必要です。",
+      needsPro: "この機能には MCP Linker Pro（買い切り）が必要です。",
       enterKey: "ライセンスキーを入力",
       buy: "ライセンスを購入",
       freeClients: "Claude Desktop と Cursor は無料です。",

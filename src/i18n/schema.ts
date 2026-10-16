@@ -97,7 +97,8 @@ export interface TranslationSchema {
     renew: string;
   };
   upgrade: {
-    description: string;
+    needsPlus: string;
+    needsPro: string;
     enterKey: string;
     buy: string;
     freeClients: string;

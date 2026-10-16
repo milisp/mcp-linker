@@ -346,7 +346,7 @@ export function UpdateChecker() {
             </DialogHeader>
 
             {(() => {
-              // Personal keys cover a year of updates; a newer version runs as the free version.
+              // Plus keys cover a year of updates; a newer version runs as the free version.
               const released = releaseDay(update?.date);
               const until = updatesUntil ? Date.parse(updatesUntil) : NaN;
               if (released === null || Number.isNaN(until) || released <= until) return null;

@@ -1,6 +1,7 @@
 //! The one list of supported clients. The frontend gets it through `list_clients`;
 //! Rust code looks entries up with `find` instead of matching on client ids.
 
+use crate::license::Tier;
 use serde::Serialize;
 
 /// How the client's servers are read and written.
@@ -73,8 +74,8 @@ pub struct ClientInfo {
     pub disable: Disable,
     #[serde(skip)]
     pub entry: Entry,
-    /// Writing this client's config needs no license (`license::require_client`).
-    pub free: bool,
+    /// The license tier needed to change this client's config (`license::require_client`).
+    pub tier: Tier,
     /// mcp-linker's own store; not offered as a target.
     #[serde(skip)]
     pub internal: bool,
@@ -91,7 +92,7 @@ const fn json(id: &'static str, label: &'static str, url: &'static str) -> Clien
         project_file: None,
         disable: Disable::Stash,
         entry: Entry::Common,
-        free: false,
+        tier: Tier::Plus,
         internal: false,
     }
 }
@@ -101,18 +102,20 @@ pub const CLIENTS: &[ClientInfo] = &[
         storage: Storage::ClaudeCode,
         location: Location::ClaudeCode,
         disable: Disable::Native,
+        tier: Tier::Pro,
         ..json("claude_code", "Claude Code", "https://code.claude.com/docs/en/mcp")
     },
     ClientInfo {
         storage: Storage::CodexToml,
         disable: Disable::Native,
+        tier: Tier::Pro,
         ..json("codex", "Codex", "https://github.com/openai/codex")
     },
-    ClientInfo { free: true, ..json("claude", "Claude Desktop", "https://claude.ai/download") },
+    ClientInfo { tier: Tier::Free, ..json("claude", "Claude Desktop", "https://claude.ai/download") },
     ClientInfo {
         location: Location::UserOrProject,
         project_file: Some(".cursor/mcp.json"),
-        free: true,
+        tier: Tier::Free,
         ..json("cursor", "Cursor", "https://cursor.com/")
     },
     ClientInfo {
@@ -165,7 +168,7 @@ pub const CLIENTS: &[ClientInfo] = &[
     },
     ClientInfo {
         internal: true,
-        free: true,
+        tier: Tier::Free,
         ..json("mcplinker", "MCP Linker", "")
     },
 ];
@@ -219,9 +222,12 @@ mod tests {
     }
 
     #[test]
-    fn only_claude_desktop_and_cursor_are_free_targets() {
-        let free: Vec<_> = list_clients().into_iter().filter(|c| c.free).map(|c| c.id).collect();
-        assert_eq!(free, ["claude", "cursor"]);
+    fn claude_desktop_and_cursor_are_free_and_claude_code_and_codex_are_pro() {
+        let with = |tier| list_clients().into_iter().filter(|c| c.tier == tier).map(|c| c.id).collect::<Vec<_>>();
+        assert_eq!(with(Tier::Free), ["claude", "cursor"]);
+        assert_eq!(with(Tier::Pro), ["claude_code", "codex"]);
+        let list = serde_json::to_value(list_clients()).unwrap();
+        assert_eq!(list[0]["tier"], "pro");
     }
 
     #[test]

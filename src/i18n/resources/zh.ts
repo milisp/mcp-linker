@@ -100,7 +100,8 @@ const zh: { translation: TranslationSchema } = {
       renew: "续费",
     },
     upgrade: {
-      description: "此功能需要 MCP Linker 许可证（Personal 或 Pro，一次性购买）。",
+      needsPlus: "此功能需要 MCP Linker Plus 或 Pro（一次性购买）。",
+      needsPro: "此功能需要 MCP Linker Pro（一次性购买）。",
       enterKey: "输入许可证密钥",
       buy: "购买许可证",
       freeClients: "Claude Desktop 和 Cursor 免费。",
