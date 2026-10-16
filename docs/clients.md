@@ -2,6 +2,10 @@
 
 This document describes the supported MCP clients and their configuration file paths, categorized by platform and scope.
 
+**Free vs. paid**: Claude Desktop and Cursor can be changed without a license.
+Every other client can be viewed for free; changing it needs a license
+(`free` in `src-tauri/src/clients.rs`, see [license.md](license.md)).
+
 ---
 
 ## Claude Code
@@ -93,6 +97,19 @@ This document describes the supported MCP clients and their configuration file p
 - **Path**: `~/.hermes/config.yaml` (`%LOCALAPPDATA%\hermes\config.yaml` on Windows, `$HERMES_HOME/config.yaml` when set)
 - **Note**: YAML, root key `mcp_servers`; remote entries use `transport: sse` instead of `type`. Only the `mcp_servers` block is rewritten; the rest of the file, comments included, is left as is. Hermes reads the file with PyYAML (YAML 1.1), so mcp-linker writes that block itself and quotes strings such as `on`, `no` or dates that YAML 1.1 would read as other types (`src-tauri/src/json_manager/yaml.rs`). Non-default Hermes profiles are not picked up unless `HERMES_HOME` points at them.
 - **Disable**: `"enabled": false` (YAML `enabled: false`).
+
+---
+
+## Augment (Auggie CLI)
+
+- **Scope**: Global or project
+- **Supported Platforms**: Cross-platform
+- **Paths**:
+  - Global: `~/.augment/settings.json` (`C:\Users\<user>\.augment\settings.json` on Windows)
+  - Project: `<project>/.augment/settings.json`
+- **Note**: Root key `mcpServers`, common shape (`command`/`args`/`env`, or `type` `http`/`sse` with `url`/`headers`); the same entries `auggie mcp add` writes. Other settings in the file are left as they are.
+- **Disable**: Auggie has no per-server flag, so disabled entries are parked under `__disabled`.
+- **Not supported**: the VS Code extension's own store (`globalStorage/augment.vscode-augment/augment-global-state/mcpServers.json`, an array with `id`, `disabled` and a one-line `command`). It is undocumented internal state the extension rewrites while running.
 
 ---
 

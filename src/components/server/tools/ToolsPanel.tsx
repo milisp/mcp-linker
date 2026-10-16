@@ -1,6 +1,6 @@
 import { ClaudeCodeToolsPanel } from "./ClaudeCodeToolsPanel";
 import { useCCProjectStore } from "@/stores/ccProject";
-import { requirePro, useLicensed } from "@/stores/license";
+import { requireClient, requirePro, useHasTier } from "@/stores/license";
 import { Button } from "@/components/ui/button";
 import type { ServerConfig } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
@@ -52,7 +52,7 @@ function InspectorToolsPanel({ config, serverName, selectedClient, workingDir, c
     setPolicyDirty(true); setPolicyMessage(null);
   };
   const savePolicy = async () => {
-    if (!policy.serverExists || policyBusy) return;
+    if (!policy.serverExists || policyBusy || !requireClient("codex")) return;
     const generation = policyGeneration.current;
     setPolicyBusy(true); setPolicyMessage(null);
     try {
@@ -137,8 +137,10 @@ function InspectorToolsPanel({ config, serverName, selectedClient, workingDir, c
 
 export function ToolsPanel(props: Parameters<typeof InspectorToolsPanel>[0]) {
   const scope = useCCProjectStore(state => state.selectedScope);
-  const licensed = useLicensed();
-  if (!licensed) return <div className="space-y-2 text-sm text-muted-foreground"><p>Connect to this server to list its tools and try them out. Live tool inspection needs an MCP Linker license.</p><Button variant="outline" size="sm" onClick={() => requirePro("inspection")}>Unlock tool inspection</Button></div>;
+  // Claude Code is a Pro client, so inspecting its servers needs Pro too.
+  const tier = props.selectedClient === "claude_code" ? "pro" : "plus";
+  const licensed = useHasTier(tier);
+  if (!licensed) return <div className="space-y-2 text-sm text-muted-foreground"><p>Connect to this server to list its tools and try them out. Live tool inspection needs an MCP Linker {tier === "pro" ? "Pro" : "Plus or Pro"} license.</p><Button variant="outline" size="sm" onClick={() => requirePro("inspection", tier)}>Unlock tool inspection</Button></div>;
   if (props.selectedClient === "claude_code" && scope !== "local") return <p className="text-sm text-muted-foreground">Claude Code tool inspection currently supports Local scope only. Project and User configurations can be saved, but cannot be inspected here yet.</p>;
   return props.selectedClient === "claude_code"
     ? <ClaudeCodeToolsPanel serverName={props.serverName} workingDir={props.workingDir} saveRevision={props.saveRevision} />

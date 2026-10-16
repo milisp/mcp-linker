@@ -3,9 +3,9 @@
 //! The key is checked with Polar once, at activation, and the result is kept
 //! in `license.json` in the app config directory. There is no background
 //! re-validation, expiry, or grace period: a one-time purchase must never lock
-//! a customer out because they are offline or Polar is unavailable. A Personal
-//! key covers builds released within a year of purchase; older builds keep
-//! working with it forever.
+//! a customer out because they are offline or Polar is unavailable. Plus and
+//! Pro keys cover builds released within a year of purchase; older builds keep
+//! working with them forever. Pro adds the Pro-only clients (Claude Code, Codex).
 
 use ring::rand::{SecureRandom, SystemRandom};
 use serde::{Deserialize, Serialize};
@@ -28,17 +28,30 @@ const ORGANIZATION_ID: &str = match option_env!("MCP_LINKER_POLAR_ORG_ID") {
     None => "",
 };
 
-/// Benefit ids whose keys include a year of updates (Personal). Any other key,
-/// including the ones issued to pre-license buyers, gets lifetime updates.
-/// Debug builds talk to the Polar sandbox, whose Personal benefit has another
-/// id: `MCP_LINKER_POLAR_PERSONAL_BENEFIT_ID=<sandbox id> bun tauri dev`.
-const PERSONAL_BENEFIT_ID: &str = match option_env!("MCP_LINKER_POLAR_PERSONAL_BENEFIT_ID") {
+/// The Plus and Pro benefits; both include a year of updates. Any other key,
+/// such as the ones issued to pre-license buyers, is Pro with lifetime
+/// updates. Debug builds talk to the Polar sandbox, whose benefits have other
+/// ids: `MCP_LINKER_POLAR_PLUS_BENEFIT_ID=<id> MCP_LINKER_POLAR_PRO_BENEFIT_ID=<id> bun tauri dev`.
+const PLUS_BENEFIT_ID: &str = match option_env!("MCP_LINKER_POLAR_PLUS_BENEFIT_ID") {
     Some(id) => id,
     None => "28a294aa-b224-4b6e-9e09-9dc077213ae0",
 };
-const PERSONAL_UPDATE_DAYS: i64 = 365;
+const PRO_BENEFIT_ID: &str = match option_env!("MCP_LINKER_POLAR_PRO_BENEFIT_ID") {
+    Some(id) => id,
+    None => "fe8d3992-90f8-46a0-9ee8-4b9f32b697d0",
+};
+const UPDATE_DAYS: i64 = 365;
 
-/// Unix time this binary was built, set by build.rs. A Personal key unlocks
+/// What a license unlocks; each tier includes the ones before it.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Tier {
+    Free,
+    Plus,
+    Pro,
+}
+
+/// Unix time this binary was built, set by build.rs. A Plus or Pro key unlocks
 /// builds made on or before its `updates_until`.
 const BUILD_TIME: i64 = match option_env!("MCP_LINKER_BUILD_TIME") {
     Some(time) => parse_i64(time),
@@ -78,31 +91,36 @@ fn covers_this_build(updates_until: Option<&str>) -> bool {
         .is_none_or(|date| BUILD_TIME <= date.timestamp())
 }
 
-fn is_licensed(license: &License) -> bool {
-    (license.activation_id.is_some() && covers_this_build(license.updates_until.as_deref()))
-        || dev_bypass()
-}
-
-/// Errors unless this device holds a license that covers this build. Paid
-/// features call this in their commands; the UI checks first and offers an
-/// upgrade.
-pub fn require(feature: &str) -> Result<(), String> {
-    if is_licensed(&lock()) {
-        Ok(())
+/// The tier this device has for this build. Licenses saved before tiers
+/// existed have no `tier`; back then only Personal (now Plus) keys had an
+/// update window, so a window means Plus and none means Pro.
+fn tier_of(license: &License) -> Tier {
+    if dev_bypass() {
+        Tier::Pro
+    } else if license.activation_id.is_none() || !covers_this_build(license.updates_until.as_deref()) {
+        Tier::Free
     } else {
-        Err(format!("{feature} requires an MCP Linker Personal or Pro license."))
+        license.tier.unwrap_or(if license.updates_until.is_some() { Tier::Plus } else { Tier::Pro })
     }
 }
 
-/// Managing Claude Code servers is free in Local scope; Project and User
-/// scope are paid.
-pub fn require_for_claude_code(
-    scope: crate::claude_code_commands::ClaudeMcpScope,
-) -> Result<(), String> {
-    if scope == crate::claude_code_commands::ClaudeMcpScope::Local {
-        Ok(())
-    } else {
-        require("Claude Code Project and User scope")
+/// Errors unless this device holds at least `tier` for this build. Paid
+/// features call this in their commands; the UI checks first and offers an
+/// upgrade.
+pub fn require(tier: Tier, feature: &str) -> Result<(), String> {
+    if tier_of(&lock()) >= tier {
+        return Ok(());
+    }
+    let plan = if tier == Tier::Pro { "an MCP Linker Pro" } else { "an MCP Linker Plus or Pro" };
+    Err(format!("{feature} requires {plan} license."))
+}
+
+/// Writing a client's config needs the client's tier from `clients.rs`.
+/// Reading is free for every client.
+pub fn require_client(id: &str) -> Result<(), String> {
+    match crate::clients::find(id) {
+        Some(client) => require(client.tier, &format!("Changing {} servers", client.label)),
+        None => require(Tier::Pro, &format!("Changing '{id}' servers")),
     }
 }
 
@@ -120,6 +138,8 @@ pub struct License {
     /// lifetime updates.
     #[serde(default)]
     pub updates_until: Option<String>,
+    #[serde(default)]
+    pub tier: Option<Tier>,
 }
 
 impl License {
@@ -131,6 +151,7 @@ impl License {
             display_key: None,
             activated_at: None,
             updates_until: None,
+            tier: None,
         }
     }
 }
@@ -139,6 +160,8 @@ impl License {
 #[serde(rename_all = "camelCase")]
 pub struct LicenseStatus {
     pub licensed: bool,
+    /// `free` when unlicensed or when this build is past the key's updates.
+    pub tier: Tier,
     pub display_key: Option<String>,
     pub device_id: Option<String>,
     pub updates_until: Option<String>,
@@ -160,9 +183,13 @@ struct ActivatedKey {
     created_at: Option<String>,
 }
 
-/// A year after purchase for Personal keys, `None` (lifetime) for the rest.
+fn tier_for(key: &ActivatedKey) -> Tier {
+    if key.benefit_id.as_deref() == Some(PLUS_BENEFIT_ID) { Tier::Plus } else { Tier::Pro }
+}
+
+/// A year after purchase for Plus and Pro keys, `None` (lifetime) for the rest.
 fn updates_until(key: &ActivatedKey) -> Option<String> {
-    if key.benefit_id.as_deref() != Some(PERSONAL_BENEFIT_ID) {
+    if !matches!(key.benefit_id.as_deref(), Some(id) if id == PLUS_BENEFIT_ID || id == PRO_BENEFIT_ID) {
         return None;
     }
     let purchased = key
@@ -170,7 +197,7 @@ fn updates_until(key: &ActivatedKey) -> Option<String> {
         .as_deref()
         .and_then(|date| chrono::DateTime::parse_from_rfc3339(date).ok())
         .map_or_else(chrono::Utc::now, |date| date.with_timezone(&chrono::Utc));
-    Some((purchased + chrono::Duration::days(PERSONAL_UPDATE_DAYS)).to_rfc3339())
+    Some((purchased + chrono::Duration::days(UPDATE_DAYS)).to_rfc3339())
 }
 
 fn license_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -201,8 +228,10 @@ fn persist(license: &License) -> Result<(), String> {
 }
 
 fn status_of(license: &License) -> LicenseStatus {
+    let tier = tier_of(license);
     LicenseStatus {
-        licensed: is_licensed(license),
+        licensed: tier != Tier::Free,
+        tier,
         display_key: if license.activation_id.is_none() && dev_bypass() {
             Some("Development bypass (MCP_LINKER_LICENSE_DISABLE)".into())
         } else {
@@ -309,6 +338,7 @@ pub async fn activate_license(key: String) -> Result<LicenseStatus, String> {
     license.key = Some(key);
     license.activation_id = Some(activation.id);
     license.updates_until = updates_until(&activation.license_key);
+    license.tier = Some(tier_for(&activation.license_key));
     license.display_key = activation.license_key.display_key;
     license.activated_at = Some(chrono::Utc::now().to_rfc3339());
     persist(&license)?;
@@ -348,6 +378,7 @@ pub async fn deactivate_license() -> Result<LicenseStatus, String> {
     license.display_key = None;
     license.activated_at = None;
     license.updates_until = None;
+    license.tier = None;
     persist(&license)?;
     Ok(status_of(&license))
 }
@@ -366,14 +397,38 @@ mod tests {
     }
 
     #[test]
-    fn personal_keys_get_a_year_from_purchase() {
-        let until = updates_until(&key(PERSONAL_BENEFIT_ID, "2026-10-13T22:08:05.157102Z")).unwrap();
+    fn plus_keys_get_a_year_from_purchase() {
+        let key = key(PLUS_BENEFIT_ID, "2026-10-13T22:08:05.157102Z");
+        assert_eq!(tier_for(&key), Tier::Plus);
+        let until = updates_until(&key).unwrap();
         assert!(until.starts_with("2027-10-13T22:08:05"), "{until}");
     }
 
     #[test]
-    fn other_keys_get_lifetime_updates() {
-        assert_eq!(updates_until(&key("commercial-benefit", "2026-10-13T00:00:00Z")), None);
+    fn pro_keys_get_a_year_from_purchase() {
+        let key = key(PRO_BENEFIT_ID, "2026-10-16T09:00:00Z");
+        assert_eq!(tier_for(&key), Tier::Pro);
+        assert!(updates_until(&key).unwrap().starts_with("2027-10-16T09:00:00"));
+    }
+
+    #[test]
+    fn other_keys_are_pro_with_lifetime_updates() {
+        let key = key("legacy-benefit", "2026-10-13T00:00:00Z");
+        assert_eq!(tier_for(&key), Tier::Pro);
+        assert_eq!(updates_until(&key), None);
+    }
+
+    #[test]
+    fn licenses_saved_without_a_tier_get_it_from_their_update_window() {
+        let activated = |updates_until: Option<&str>| License {
+            activation_id: Some("a".into()),
+            updates_until: updates_until.map(Into::into),
+            ..License::empty()
+        };
+        assert_eq!(tier_of(&License::empty()), Tier::Free);
+        assert_eq!(tier_of(&activated(Some("2999-01-01T00:00:00Z"))), Tier::Plus);
+        assert_eq!(tier_of(&activated(None)), Tier::Pro);
+        assert_eq!(tier_of(&activated(Some("2000-01-01T00:00:00Z"))), Tier::Free);
     }
 
     #[test]

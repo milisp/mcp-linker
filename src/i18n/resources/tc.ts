@@ -101,13 +101,14 @@ const tc: { translation: TranslationSchema } = {
       renew: "續費",
     },
     upgrade: {
-      description: "此功能需要 MCP Linker 授權（Personal 或 Pro，一次性購買）。",
+      needsPlus: "此功能需要 MCP Linker Plus 或 Pro（一次性購買）。",
+      needsPro: "此功能需要 MCP Linker Pro（一次性購買）。",
       enterKey: "輸入授權金鑰",
       buy: "購買授權",
+      freeClients: "Claude Desktop 和 Cursor 免費。",
       features: {
-        claudeScope: "Claude Code 的 Project 和 User scope",
+        client: "修改 {{client}} 的 server",
         claudeCopy: "在 Claude Code 專案之間複製 server",
-        sync: "在用戶端之間同步",
         batch: "批次操作",
         inspection: "MCP 工具即時檢查",
       },

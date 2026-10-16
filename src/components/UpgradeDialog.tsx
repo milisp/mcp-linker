@@ -16,19 +16,19 @@ import { useTranslation } from "react-i18next";
 
 export function UpgradeDialog() {
   const { t } = useTranslation();
-  const feature = useLicense(state => state.upgradeFor);
+  const upgrade = useLicense(state => state.upgrade);
   const close = useLicense(state => state.closeUpgrade);
   const navigate = useViewStore(state => state.navigate);
 
   return (
-    <Dialog open={feature !== null} onOpenChange={open => !open && close()}>
+    <Dialog open={upgrade !== null} onOpenChange={open => !open && close()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="h-4 w-4" />
-            {feature && t(`upgrade.features.${feature}`)}
+            {upgrade && t(`upgrade.features.${upgrade.feature}`, { client: upgrade.client })}
           </DialogTitle>
-          <DialogDescription>{t("upgrade.description")}</DialogDescription>
+          <DialogDescription>{t(upgrade?.tier === "pro" ? "upgrade.needsPro" : "upgrade.needsPlus")} {t("upgrade.freeClients")}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button

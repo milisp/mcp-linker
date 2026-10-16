@@ -1,5 +1,6 @@
 // Client metadata comes from Rust (src-tauri/src/clients.rs), the single source of truth.
 // It is loaded once before the app renders, so lookups here are synchronous.
+import type { Tier } from "@/lib/license";
 import { invoke } from "@tauri-apps/api/core";
 
 export type ClientInfo = {
@@ -14,6 +15,8 @@ export type ClientInfo = {
   projectFile: string | null;
   /** flag: `"disabled": true` · stash: parked under `__disabled` · list: names in the client's settings.json (Copilot CLI) · native: the client's own mechanism. */
   disable: "flag" | "stash" | "list" | "native";
+  /** The license tier needed to change this client's config. */
+  tier: Tier;
 };
 
 let clients: ClientInfo[] = [];

@@ -142,7 +142,7 @@ pub async fn claude_mcp_add(
     scope: Option<ClaudeMcpScope>,
 ) -> Result<ClaudeCodeResponse, String> {
     let scope = scope.unwrap_or_default();
-    crate::license::require_for_claude_code(scope)?;
+    crate::license::require_client("claude_code")?;
     let (claude_config_path, keys) = scope_target(&working_dir, scope)?;
 
     // Create backup if config file exists
@@ -197,7 +197,7 @@ pub async fn claude_mcp_remove(
     scope: Option<ClaudeMcpScope>,
 ) -> Result<ClaudeCodeResponse, String> {
     let scope = scope.unwrap_or_default();
-    crate::license::require_for_claude_code(scope)?;
+    crate::license::require_client("claude_code")?;
     let (claude_config_path, keys) = scope_target(&working_dir, scope)?;
 
     if !claude_config_path.exists() {
@@ -443,7 +443,7 @@ pub async fn claude_mcp_copy(
     to_scope: ClaudeMcpScope,
     overwrite: bool,
 ) -> Result<ClaudeCodeResponse, String> {
-    crate::license::require("Copying servers between Claude Code projects")?;
+    crate::license::require(crate::license::Tier::Pro, "Copying servers between Claude Code projects")?;
     let (source_path, source_keys) = scope_target(&from_dir, from_scope)?;
     let (target_path, target_keys) = scope_target(&to_dir, to_scope)?;
     if source_path == target_path && source_keys == target_keys {

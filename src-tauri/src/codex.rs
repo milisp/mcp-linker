@@ -563,7 +563,8 @@ pub async fn codex_set_tool_policy(
     enabled_tools: Option<Vec<String>>,
     disabled_tools: Vec<String>,
 ) -> Result<ToolPolicy, String> {
-    crate::license::require("Live tool inspection")?;
+    crate::license::require_client("codex")?;
+    crate::license::require(crate::license::Tier::Plus, "Live tool inspection")?;
     let _guard = CODEX_CFG_LOCK.lock().await;
     let path = get_config_path()?;
     let mut doc = load_document(&path).await?;

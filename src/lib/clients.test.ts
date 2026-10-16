@@ -3,7 +3,7 @@ import { type ClientInfo, clientLabel, hasProjectConfig, requiresConfigFile, set
 
 const client = (id: string, overrides: Partial<ClientInfo> = {}): ClientInfo => ({
   id, label: id.toUpperCase(), url: "", storage: "json", serversKey: "mcpServers",
-  location: "user", projectFile: null, disable: "stash", ...overrides,
+  location: "user", projectFile: null, disable: "stash", tier: "plus", ...overrides,
 });
 
 describe("client metadata helpers", () => {

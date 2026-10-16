@@ -1,5 +1,5 @@
 import { useCCProjectStore } from "@/stores/ccProject";
-import { requirePro } from "@/stores/license";
+import { requireClient, requirePro } from "@/stores/license";
 import { type InvokeArgs, invoke } from "@tauri-apps/api/core";
 
 /** Thrown after the upgrade dialog has been shown; callers need not toast it. */
@@ -13,15 +13,9 @@ type ClaudeWriteCommand =
   | "claude_disable_server"
   | "claude_update_disabled";
 
-/**
- * Every Claude Code change goes through here. Local scope is free; Project and
- * User scope and copying between projects are paid.
- */
+/** Every Claude Code change goes through here. Claude Code is a paid client. */
 export function claudeWrite<T = unknown>(command: ClaudeWriteCommand, args?: InvokeArgs): Promise<T> {
-  const scope = (args as { scope?: string } | undefined)?.scope ?? "local";
-  const allowed = command === "claude_mcp_copy"
-    ? requirePro("claudeCopy")
-    : scope === "local" || requirePro("claudeScope");
+  const allowed = command === "claude_mcp_copy" ? requirePro("claudeCopy") : requireClient("claude_code");
   if (!allowed) {
     return Promise.reject(new LicenseRequiredError("A license is required for this Claude Code change."));
   }
@@ -36,10 +30,13 @@ type ClientWriteCommand =
   | "disable_mcp_server"
   | "update_disabled_mcp_server";
 
-/** Writes for the JSON/TOML clients. */
+/** Writes for the JSON/TOML clients; only the free clients work without a license. */
 export function clientWrite<T = unknown>(command: ClientWriteCommand, args: InvokeArgs & { clientName: string }): Promise<T> {
   if (args.clientName === "claude_code") {
     return Promise.reject(new Error("Claude Code servers must be written with the Claude Code commands."));
+  }
+  if (!requireClient(args.clientName)) {
+    return Promise.reject(new LicenseRequiredError(`A license is required to change ${args.clientName} servers.`));
   }
   return invoke<T>(command, args);
 }
