@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.0] - 2026-10-16
+
+### New Features
+- **Augment** — manage, enable/disable and sync MCP servers for the Auggie CLI, in `~/.augment/settings.json` or a project's `.augment/settings.json` (#19)
+- **Plus and Pro** — Personal is now called Plus. The upgrade dialog says which plan a feature needs
+
+### Changes to what's free
+- Seeing your servers in every client stays free
+- Adding, editing, enabling and removing servers is free in **Claude Desktop** and **Cursor**, including syncing between them
+- **Plus** unlocks every other client except Claude Code and Codex: GitHub Copilot, Copilot CLI, OpenCode, Augment, Cline, Pi, Hermes Agent, mcphub.nvim and custom clients, plus batch actions and live tool inspection
+- **Pro** adds Claude Code (every scope) and Codex. Claude Code in Local scope and Codex used to be free; they now need Pro
+- Plus and Pro both include a year of updates, and the version you have keeps working forever. Keys bought before license keys existed keep lifetime updates. See [pricing](https://mcp-linker.milisp.dev/pricing)
+
+### Product Hunt launch
+- 50% off Plus or Pro with code `PRODUCTHUNT` until Oct 23
+
+### Under the hood
+- Tauri 2.12
+
 ## [2.6.1] - 2026-10-16
 
 ### New Features
