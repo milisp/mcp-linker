@@ -178,6 +178,10 @@ const ja: { translation: TranslationSchema } = {
       serverCount_other: "{{count}} 件のサーバー",
       notFound: "コレクションが見つかりません。",
     },
+    announcement: {
+      learnMore: "詳細",
+      dismiss: "閉じる",
+    },
   },
 };
 

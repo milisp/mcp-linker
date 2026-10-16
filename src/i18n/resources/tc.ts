@@ -179,6 +179,10 @@ const tc: { translation: TranslationSchema } = {
       serverCount_other: "{{count}} 個 server",
       notFound: "找不到此專題。",
     },
+    announcement: {
+      learnMore: "了解更多",
+      dismiss: "關閉",
+    },
   },
 };
 
