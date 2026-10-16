@@ -178,6 +178,10 @@ const de: { translation: TranslationSchema } = {
       serverCount_other: "{{count}} Server",
       notFound: "Sammlung nicht gefunden.",
     },
+    announcement: {
+      learnMore: "Mehr erfahren",
+      dismiss: "Schließen",
+    },
   },
 };
 

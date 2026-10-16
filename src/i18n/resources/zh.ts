@@ -178,6 +178,10 @@ const zh: { translation: TranslationSchema } = {
       serverCount_other: "{{count}} 个 server",
       notFound: "未找到该专题。",
     },
+    announcement: {
+      learnMore: "了解更多",
+      dismiss: "关闭",
+    },
   },
 };
 

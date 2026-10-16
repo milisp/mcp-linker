@@ -1,3 +1,4 @@
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import {
   SidebarInset,
@@ -39,6 +40,8 @@ const Layout = () => {
               </div>
               {!["auth", "notes", "about", "settings"].includes(view) && <><ClientSelector /><InstallationScope /><InstallationTarget allowClientChange={false} compact /></>}
             </header>
+
+          <AnnouncementBanner />
 
           <main className="flex-1 overflow-auto">
             <AppRoutes />

@@ -178,6 +178,10 @@ const en: { translation: TranslationSchema } = {
       serverCount_other: "{{count}} servers",
       notFound: "Collection not found.",
     },
+    announcement: {
+      learnMore: "Learn more",
+      dismiss: "Dismiss",
+    },
   },
 };
 

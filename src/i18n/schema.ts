@@ -175,4 +175,8 @@ export interface TranslationSchema {
     serverCount_other: string;
     notFound: string;
   };
+  announcement: {
+    learnMore: string;
+    dismiss: string;
+  };
 }
