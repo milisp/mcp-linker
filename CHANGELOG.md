@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 - **Announcements** — news such as launches and promotions now appear as a banner at the top of the app. Dismiss one and it stays hidden
 
 ### Product Hunt launch
-- MCP Linker is live on [Product Hunt](https://www.producthunt.com/products/mcp-linker) — 50% off a license during launch week. See [pricing](https://mcp-linker.milisp.dev/pricing)
+- MCP Linker is live on [Product Hunt](https://www.producthunt.com/products/mcp-linker) — 50% off a license with code `PRODUCTHUNT` until Oct 23. See [pricing](https://mcp-linker.milisp.dev/pricing)
 
 ## [2.6.0] - 2026-10-15
 
