@@ -100,10 +100,10 @@ export interface TranslationSchema {
     description: string;
     enterKey: string;
     buy: string;
+    freeClients: string;
     features: {
-      claudeScope: string;
+      client: string;
       claudeCopy: string;
-      sync: string;
       batch: string;
       inspection: string;
     };

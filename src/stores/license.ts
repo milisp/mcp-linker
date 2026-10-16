@@ -1,13 +1,16 @@
+import { clientLabel, getClient } from "@/lib/clients";
 import { getLicenseStatus, type LicenseStatus } from "@/lib/license";
 import { create } from "zustand";
 
 /** Paid features. Keep in step with `license::require` calls in src-tauri. */
-export type ProFeature = "claudeScope" | "claudeCopy" | "sync" | "batch" | "inspection";
+export type ProFeature = "client" | "claudeCopy" | "batch" | "inspection";
 
 interface LicenseState {
   status: LicenseStatus | null;
   /** Feature the upgrade dialog is open for, if any. */
   upgradeFor: ProFeature | null;
+  /** Label of the paid client the dialog is for, with `upgradeFor: "client"`. */
+  upgradeClient: string | null;
   load: () => Promise<void>;
   setStatus: (status: LicenseStatus) => void;
   closeUpgrade: () => void;
@@ -16,9 +19,10 @@ interface LicenseState {
 export const useLicense = create<LicenseState>()(set => ({
   status: null,
   upgradeFor: null,
+  upgradeClient: null,
   load: async () => set({ status: await getLicenseStatus() }),
   setStatus: status => set({ status }),
-  closeUpgrade: () => set({ upgradeFor: null }),
+  closeUpgrade: () => set({ upgradeFor: null, upgradeClient: null }),
 }));
 
 export const useLicensed = () => useLicense(state => state.status?.licensed === true);
@@ -30,3 +34,10 @@ export function requirePro(feature: ProFeature): boolean {
   return false;
 }
 
+
+/** Writing to a client's config: free for the clients marked `free`, else as `requirePro`. */
+export function requireClient(clientId: string): boolean {
+  if (getClient(clientId)?.free || useLicense.getState().status?.licensed) return true;
+  useLicense.setState({ upgradeFor: "client", upgradeClient: clientLabel(clientId) });
+  return false;
+}

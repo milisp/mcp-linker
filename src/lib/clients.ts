@@ -14,6 +14,8 @@ export type ClientInfo = {
   projectFile: string | null;
   /** flag: `"disabled": true` · stash: parked under `__disabled` · list: names in the client's settings.json (Copilot CLI) · native: the client's own mechanism. */
   disable: "flag" | "stash" | "list" | "native";
+  /** Writing this client's config needs no license. */
+  free: boolean;
 };
 
 let clients: ClientInfo[] = [];

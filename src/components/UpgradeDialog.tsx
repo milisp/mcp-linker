@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 export function UpgradeDialog() {
   const { t } = useTranslation();
   const feature = useLicense(state => state.upgradeFor);
+  const client = useLicense(state => state.upgradeClient);
   const close = useLicense(state => state.closeUpgrade);
   const navigate = useViewStore(state => state.navigate);
 
@@ -26,9 +27,9 @@ export function UpgradeDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="h-4 w-4" />
-            {feature && t(`upgrade.features.${feature}`)}
+            {feature && t(`upgrade.features.${feature}`, { client })}
           </DialogTitle>
-          <DialogDescription>{t("upgrade.description")}</DialogDescription>
+          <DialogDescription>{t("upgrade.description")} {t("upgrade.freeClients")}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button

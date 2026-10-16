@@ -103,10 +103,10 @@ const zh: { translation: TranslationSchema } = {
       description: "此功能需要 MCP Linker 许可证（Personal 或 Pro，一次性购买）。",
       enterKey: "输入许可证密钥",
       buy: "购买许可证",
+      freeClients: "Claude Desktop 和 Cursor 免费。",
       features: {
-        claudeScope: "Claude Code 的 Project 和 User scope",
+        client: "修改 {{client}} 的 server",
         claudeCopy: "在 Claude Code 项目之间复制 server",
-        sync: "在客户端之间同步",
         batch: "批量操作",
         inspection: "MCP 工具实时检查",
       },

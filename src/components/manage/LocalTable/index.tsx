@@ -84,7 +84,7 @@ export const LocalTable = () => {
     updateConfig(name, serverConfig, isDisabled);
   };
 
-  const handleLocalSync = () => requirePro("sync") && setSyncOpen(true);
+  const handleLocalSync = () => setSyncOpen(true);
 
   const localColumns = useServerTableColumns({
     disabledServers,

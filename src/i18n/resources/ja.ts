@@ -103,10 +103,10 @@ const ja: { translation: TranslationSchema } = {
       description: "この機能には MCP Linker のライセンス（Personal または Pro、買い切り）が必要です。",
       enterKey: "ライセンスキーを入力",
       buy: "ライセンスを購入",
+      freeClients: "Claude Desktop と Cursor は無料です。",
       features: {
-        claudeScope: "Claude Code の Project / User スコープ",
+        client: "{{client}} のサーバーを変更",
         claudeCopy: "Claude Code プロジェクト間でサーバーをコピー",
-        sync: "クライアント間の同期",
         batch: "一括操作",
         inspection: "ライブツール検査",
       },

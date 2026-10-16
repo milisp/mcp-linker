@@ -9,24 +9,29 @@ involved.
 
 ## What a license unlocks
 
-Managing is free, linking is paid. Free: adding, editing, enabling, disabling,
-and deleting servers one at a time in every client (Claude Code in Local scope
-only), viewing every client, and Discover. A license unlocks what the clients'
-own settings can't do:
+Viewing is free everywhere; changing is free in two clients. Free: viewing
+every client's servers, Discover, and adding, editing, enabling, disabling and
+deleting servers one at a time in **Claude Desktop** and **Cursor**, including
+syncing between those two. The clients marked `free: true` in
+`src-tauri/src/clients.rs` are the free ones (plus mcp-linker's own store).
+A license unlocks:
 
 | Feature | UI gate | Command check |
 |---|---|---|
-| Claude Code Project and User scope | `claudeWrite` (`claudeScope`) in `src/lib/claude.ts` | `license::require_for_claude_code` in `claude_mcp_add`, `claude_mcp_remove` |
+| Changing servers in every other client (Claude Code, Codex, Copilot, Copilot CLI, Cline, OpenCode, Pi, Hermes, Augment, mcphub, Custom) | `requireClient` via `clientWrite` / `claudeWrite` in `src/lib/claude.ts` | `license::require_client` in every write command: `add/update/remove_mcp_server`, `enable/disable/update_disabled_mcp_server`, `write_json_file`, `claude_mcp_add/remove`, `claude_enable/disable_server`, `claude_update_disabled`, `codex_set_tool_policy` |
 | Copying Claude Code servers between projects | `claudeWrite` (`claudeCopy`) | `claude_mcp_copy` |
-| Sync between clients | `LocalTable` Local Sync | — (each write it makes is an ordinary free write) |
 | Batch actions | `LocalTable` batch handlers | `batch_delete_mcp_servers` |
 | Live tool inspection, including Codex tool policy | `ToolsPanel` | `mcp_inspector_connect`, `claude_mcp_tools`, `codex_set_tool_policy` |
 
-The UI calls `requirePro(feature)` from `src/stores/license.ts` (directly, or
-through `claudeWrite`), which opens the upgrade dialog when unlicensed.
-Commands call `license::require` or `require_for_claude_code`, which read the
+Sync between clients has no gate of its own: each write it makes goes through
+`clientWrite` / `claudeWrite`, so syncing into a paid client opens the upgrade
+dialog.
+
+The UI calls `requirePro(feature)` or `requireClient(id)` from
+`src/stores/license.ts`, which open the upgrade dialog when unlicensed.
+Commands call `license::require` or `license::require_client`, which read the
 license kept in memory in step with `license.json`. Add both when gating a new
-feature. Reading configuration is never gated.
+feature or making a client paid. Reading configuration is never gated.
 
 The source is AGPL-3.0, so these checks keep honest users honest; they are not
 DRM.

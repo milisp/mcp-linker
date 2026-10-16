@@ -103,10 +103,10 @@ const de: { translation: TranslationSchema } = {
       description: "Dafür brauchst du eine MCP Linker Lizenz, Personal oder Pro, als Einmalkauf.",
       enterKey: "Lizenzschlüssel eingeben",
       buy: "Lizenz kaufen",
+      freeClients: "Claude Desktop und Cursor sind kostenlos.",
       features: {
-        claudeScope: "Claude Code Project- und User-Scope",
+        client: "{{client}}-Server ändern",
         claudeCopy: "Server zwischen Claude Code-Projekten kopieren",
-        sync: "Zwischen Clients synchronisieren",
         batch: "Stapelaktionen",
         inspection: "Live-Tool-Prüfung",
       },

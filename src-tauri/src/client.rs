@@ -39,6 +39,7 @@ impl ClientConfig {
             return Ok(dir.join(file));
         }
         Ok(match name {
+            "augment" => home.join(".augment/settings.json"),
             "claude" => Self::app_support_dir(home).join("Claude/claude_desktop_config.json"),
             "cline" => Self::vscode_user_dir(home)
                 .join("globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"),

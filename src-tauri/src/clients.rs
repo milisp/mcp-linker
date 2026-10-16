@@ -73,6 +73,8 @@ pub struct ClientInfo {
     pub disable: Disable,
     #[serde(skip)]
     pub entry: Entry,
+    /// Writing this client's config needs no license (`license::require_client`).
+    pub free: bool,
     /// mcp-linker's own store; not offered as a target.
     #[serde(skip)]
     pub internal: bool,
@@ -89,6 +91,7 @@ const fn json(id: &'static str, label: &'static str, url: &'static str) -> Clien
         project_file: None,
         disable: Disable::Stash,
         entry: Entry::Common,
+        free: false,
         internal: false,
     }
 }
@@ -105,10 +108,11 @@ pub const CLIENTS: &[ClientInfo] = &[
         disable: Disable::Native,
         ..json("codex", "Codex", "https://github.com/openai/codex")
     },
-    json("claude", "Claude Desktop", "https://claude.ai/download"),
+    ClientInfo { free: true, ..json("claude", "Claude Desktop", "https://claude.ai/download") },
     ClientInfo {
         location: Location::UserOrProject,
         project_file: Some(".cursor/mcp.json"),
+        free: true,
         ..json("cursor", "Cursor", "https://cursor.com/")
     },
     ClientInfo {
@@ -147,6 +151,11 @@ pub const CLIENTS: &[ClientInfo] = &[
         ..json("hermes", "Hermes Agent", "https://github.com/NousResearch/hermes-agent")
     },
     ClientInfo {
+        location: Location::UserOrProject,
+        project_file: Some(".augment/settings.json"),
+        ..json("augment", "Augment (Auggie CLI)", "https://docs.augmentcode.com/cli/integrations")
+    },
+    ClientInfo {
         disable: Disable::Flag,
         ..json("mcphub", "mcphub.nvim", "https://github.com/ravitemer/mcphub.nvim")
     },
@@ -156,6 +165,7 @@ pub const CLIENTS: &[ClientInfo] = &[
     },
     ClientInfo {
         internal: true,
+        free: true,
         ..json("mcplinker", "MCP Linker", "")
     },
 ];
@@ -206,6 +216,12 @@ mod tests {
         for client in CLIENTS {
             assert_eq!(client.disable == Disable::Native, client.storage != Storage::Json, "{}", client.id);
         }
+    }
+
+    #[test]
+    fn only_claude_desktop_and_cursor_are_free_targets() {
+        let free: Vec<_> = list_clients().into_iter().filter(|c| c.free).map(|c| c.id).collect();
+        assert_eq!(free, ["claude", "cursor"]);
     }
 
     #[test]

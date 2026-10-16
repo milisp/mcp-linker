@@ -94,15 +94,13 @@ pub fn require(feature: &str) -> Result<(), String> {
     }
 }
 
-/// Managing Claude Code servers is free in Local scope; Project and User
-/// scope are paid.
-pub fn require_for_claude_code(
-    scope: crate::claude_code_commands::ClaudeMcpScope,
-) -> Result<(), String> {
-    if scope == crate::claude_code_commands::ClaudeMcpScope::Local {
-        Ok(())
-    } else {
-        require("Claude Code Project and User scope")
+/// Writing a client's config is free for the clients marked `free` in
+/// `clients.rs` and paid for the rest. Reading is free for every client.
+pub fn require_client(id: &str) -> Result<(), String> {
+    match crate::clients::find(id) {
+        Some(client) if client.free => Ok(()),
+        Some(client) => require(&format!("Changing {} servers", client.label)),
+        None => require(&format!("Changing '{id}' servers")),
     }
 }
 
