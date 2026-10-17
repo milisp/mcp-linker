@@ -10,8 +10,6 @@
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](#)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-<a href="https://www.producthunt.com/products/mcp-linker?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-mcp-linker" target="_blank" rel="noopener noreferrer"><img alt="MCP Linker - Sync MCP servers between Claude Code, Codex, Cursor &amp; more | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1281069&amp;theme=light&amp;t=1792059401133"></a>
-
 English · [简体中文](docs/README.zh-CN.md) · [繁體中文](docs/README.zh-TW.md) · [日本語](docs/README.ja-JP.md) · [Deutsch](docs/README.de.md) · [Français](docs/README.fr.md) · [Español](docs/README.es.md)
 
 **One-click add and sync MCP servers across AI clients — No LLM calls needed, Built-in marketplace**
