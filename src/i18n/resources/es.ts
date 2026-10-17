@@ -107,7 +107,6 @@ const es: { translation: TranslationSchema } = {
       freeClients: "Claude Desktop y Cursor son gratis.",
       features: {
         client: "Cambiar servidores de {{client}}",
-        claudeCopy: "Copiar servidores entre proyectos de Claude Code",
         batch: "Acciones por lotes",
         inspection: "Inspección de herramientas en vivo",
       },
@@ -154,8 +153,6 @@ const es: { translation: TranslationSchema } = {
       name: "Nombre",
       actions: "Acciones",
       tools: "Herramientas",
-      copyToProject: "Copiar al proyecto",
-      copyTo: "Copiar a…",
       selectAll: "Seleccionar todo",
       selectRow: "Seleccionar fila",
       enableSelected: "Habilitar seleccionados",

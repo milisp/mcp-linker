@@ -3,11 +3,10 @@ import { getLicenseStatus, type LicenseStatus, type Tier } from "@/lib/license";
 import { create } from "zustand";
 
 /** Paid features. Keep in step with `license::require` calls in src-tauri. */
-export type ProFeature = "client" | "claudeCopy" | "batch" | "inspection";
+export type ProFeature = "client" | "batch" | "inspection";
 
 /** The tier each feature needs by default; `client` comes from the client. */
 const FEATURE_TIER: Record<Exclude<ProFeature, "client">, Tier> = {
-  claudeCopy: "pro",
   batch: "plus",
   inspection: "plus",
 };

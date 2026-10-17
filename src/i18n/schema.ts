@@ -104,7 +104,6 @@ export interface TranslationSchema {
     freeClients: string;
     features: {
       client: string;
-      claudeCopy: string;
       batch: string;
       inspection: string;
     };
@@ -151,8 +150,6 @@ export interface TranslationSchema {
     name: string;
     actions: string;
     tools: string;
-    copyToProject: string;
-    copyTo: string;
     selectAll: string;
     selectRow: string;
     enableSelected: string;
