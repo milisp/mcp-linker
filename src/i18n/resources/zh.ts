@@ -107,7 +107,6 @@ const zh: { translation: TranslationSchema } = {
       freeClients: "Claude Desktop 和 Cursor 免费。",
       features: {
         client: "修改 {{client}} 的 server",
-        claudeCopy: "在 Claude Code 项目之间复制 server",
         batch: "批量操作",
         inspection: "MCP 工具实时检查",
       },
@@ -154,8 +153,6 @@ const zh: { translation: TranslationSchema } = {
       name: "名称",
       actions: "操作",
       tools: "工具",
-      copyToProject: "复制到项目",
-      copyTo: "复制到…",
       selectAll: "全选",
       selectRow: "选择行",
       enableSelected: "启用所选",

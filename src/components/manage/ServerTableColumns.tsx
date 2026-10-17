@@ -4,8 +4,6 @@ import { installedServerPath } from "@/components/server/utils/installedServer";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ServerConfig, ServerTableData } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
-import { useClientPathStore } from "@/stores/clientPathStore";
-import { CopyToProjectButton } from "./CopyToProjectDialog";
 import { ServerActionButtons } from "./ServerActionButtons";
 import { ServerStatusSwitch } from "./ServerStatusSwitch";
 import { useTranslation } from "react-i18next";
@@ -91,7 +89,6 @@ export const useServerTableColumns = ({
       return (
         <div className="flex items-center justify-end gap-1">
           <Button variant="ghost" size="icon" className="size-8" aria-label={`${t("manage.tools")}: ${serverName}`} title={t("manage.tools")} onClick={() => useViewStore.getState().navigate(installedServerPath(serverName))}><Wrench className="size-4" /></Button>
-          {useClientPathStore.getState().selectedClient === "claude_code" && !(serverName in disabledServers) && <CopyToProjectButton serverName={serverName} />}
           <ServerActionButtons
           serverName={serverName}
           serverConfig={serverConfig}

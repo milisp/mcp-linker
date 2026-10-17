@@ -107,7 +107,6 @@ const ja: { translation: TranslationSchema } = {
       freeClients: "Claude Desktop と Cursor は無料です。",
       features: {
         client: "{{client}} のサーバーを変更",
-        claudeCopy: "Claude Code プロジェクト間でサーバーをコピー",
         batch: "一括操作",
         inspection: "ライブツール検査",
       },
@@ -154,8 +153,6 @@ const ja: { translation: TranslationSchema } = {
       name: "名前",
       actions: "操作",
       tools: "ツール",
-      copyToProject: "プロジェクトにコピー",
-      copyTo: "コピー先…",
       selectAll: "すべて選択",
       selectRow: "行を選択",
       enableSelected: "選択項目を有効化",

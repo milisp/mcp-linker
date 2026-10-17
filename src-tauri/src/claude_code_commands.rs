@@ -401,85 +401,6 @@ fn server_to_json(server: &ClaudeCodeServer) -> Result<serde_json::Value, String
     Ok(json)
 }
 
-fn read_config(path: &Path) -> Result<serde_json::Value, String> {
-    if !path.exists() {
-        return Ok(serde_json::json!({}));
-    }
-    let text = fs::read_to_string(path).map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
-    serde_json::from_str(&text).map_err(|e| format!("Failed to parse {}: {}", path.display(), e))
-}
-
-/// Copies one server entry as raw JSON, so fields MCP Linker does not model
-/// (OAuth settings, timeouts, non-string values) survive the copy.
-fn copy_entry(
-    source: &serde_json::Value,
-    source_keys: &[String],
-    target: &mut serde_json::Value,
-    target_keys: &[String],
-    name: &str,
-    overwrite: bool,
-) -> Result<(), String> {
-    let entry = servers_at(source, source_keys)
-        .and_then(|servers| servers.get(name))
-        .cloned()
-        .ok_or_else(|| format!("Server '{}' not found", name))?;
-    let servers = servers_at_mut(target, target_keys)?;
-    if servers.contains_key(name) && !overwrite {
-        return Err(format!("EXISTS: A server named '{}' already exists there.", name));
-    }
-    servers.insert(name.to_string(), entry);
-    Ok(())
-}
-
-/// Copy a server to another project and/or scope. An existing server with the
-/// same name is replaced only when `overwrite` is true; errors starting with
-/// "EXISTS:" let the UI ask first.
-#[command]
-pub async fn claude_mcp_copy(
-    name: String,
-    from_dir: String,
-    from_scope: ClaudeMcpScope,
-    to_dir: String,
-    to_scope: ClaudeMcpScope,
-    overwrite: bool,
-) -> Result<ClaudeCodeResponse, String> {
-    crate::license::require(crate::license::Tier::Pro, "Copying servers between Claude Code projects")?;
-    let (source_path, source_keys) = scope_target(&from_dir, from_scope)?;
-    let (target_path, target_keys) = scope_target(&to_dir, to_scope)?;
-    if source_path == target_path && source_keys == target_keys {
-        return Err("Choose a different project or scope to copy to.".into());
-    }
-
-    let source = read_config(&source_path)?;
-    let mut target = if source_path == target_path {
-        source.clone()
-    } else {
-        read_config(&target_path)?
-    };
-    copy_entry(&source, &source_keys, &mut target, &target_keys, &name, overwrite)?;
-
-    let backup_path = if target_path.exists() {
-        Some(create_backup(&target_path)?)
-    } else {
-        None
-    };
-    let json = serde_json::to_string_pretty(&target).map_err(|e| e.to_string())?;
-    if let Err(e) = fs::write(&target_path, json) {
-        if let Some(backup_path) = &backup_path {
-            let _ = restore_backup(&target_path, backup_path);
-        }
-        return Err(format!("Failed to write {}: {}", target_path.display(), e));
-    }
-    if let Some(backup_path) = backup_path {
-        let _ = fs::remove_file(backup_path);
-    }
-
-    Ok(ClaudeCodeResponse {
-        success: true,
-        message: format!("Copied '{}'", name),
-    })
-}
-
 fn create_backup(config_path: &PathBuf) -> Result<PathBuf, String> {
     if !config_path.exists() {
         return Err("Config file does not exist".to_string());
@@ -519,27 +440,6 @@ mod tests {
         assert_eq!(claude_transport("sse", false).unwrap(), "sse");
         assert_eq!(claude_transport("", true).unwrap(), "stdio");
         assert!(claude_transport("websocket", false).is_err());
-    }
-
-    #[test]
-    fn copy_entry_keeps_raw_fields_and_refuses_silent_overwrite() {
-        let source = serde_json::json!({
-            "projects": { "/a": { "mcpServers": {
-                "Polar": { "type": "http", "url": "https://mcp.polar.sh/mcp", "oauth": { "clientId": "x" }, "timeout": 30 }
-            } } }
-        });
-        let from = vec!["projects".to_string(), "/a".to_string(), "mcpServers".to_string()];
-        let to = vec!["projects".to_string(), "/b".to_string(), "mcpServers".to_string()];
-        let mut target = source.clone();
-
-        copy_entry(&source, &from, &mut target, &to, "Polar", false).unwrap();
-        assert_eq!(target["projects"]["/b"]["mcpServers"]["Polar"], source["projects"]["/a"]["mcpServers"]["Polar"]);
-        assert_eq!(target["projects"]["/a"], source["projects"]["/a"]);
-
-        let err = copy_entry(&source, &from, &mut target, &to, "Polar", false).unwrap_err();
-        assert!(err.starts_with("EXISTS:"));
-        copy_entry(&source, &from, &mut target, &to, "Polar", true).unwrap();
-        assert!(copy_entry(&source, &from, &mut target, &to, "Missing", false).is_err());
     }
 
     #[test]

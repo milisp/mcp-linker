@@ -1,5 +1,5 @@
 import { useCCProjectStore } from "@/stores/ccProject";
-import { requireClient, requirePro } from "@/stores/license";
+import { requireClient } from "@/stores/license";
 import { type InvokeArgs, invoke } from "@tauri-apps/api/core";
 
 /** Thrown after the upgrade dialog has been shown; callers need not toast it. */
@@ -8,15 +8,13 @@ export class LicenseRequiredError extends Error {}
 type ClaudeWriteCommand =
   | "claude_mcp_add"
   | "claude_mcp_remove"
-  | "claude_mcp_copy"
   | "claude_enable_server"
   | "claude_disable_server"
   | "claude_update_disabled";
 
 /** Every Claude Code change goes through here. Claude Code is a paid client. */
 export function claudeWrite<T = unknown>(command: ClaudeWriteCommand, args?: InvokeArgs): Promise<T> {
-  const allowed = command === "claude_mcp_copy" ? requirePro("claudeCopy") : requireClient("claude_code");
-  if (!allowed) {
+  if (!requireClient("claude_code")) {
     return Promise.reject(new LicenseRequiredError("A license is required for this Claude Code change."));
   }
   return invoke<T>(command, args);
