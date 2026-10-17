@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.1] - 2026-10-17
+
+### Changes
+- Removed **Copy to project** — Local Sync now covers it
+
+### Under the hood
+- Updated `rand` to 0.8.6
+
 ## [2.7.0] - 2026-10-16
 
 ### New Features
